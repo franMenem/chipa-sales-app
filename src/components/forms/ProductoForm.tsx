@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { productoSchema } from '../../utils/validators';
+import { productoBaseSchema } from '../../utils/validators';
 import type { UnitType } from '../../lib/types';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -26,7 +26,7 @@ interface ProductoFormProps {
     id: string;
     name: string;
     price_sale: number;
-    margin_goal?: number;
+    margin_goal?: number | null;
     recipe_items: RecipeItemInput[];
   };
 }
@@ -34,7 +34,7 @@ interface ProductoFormProps {
 interface ProductoFormData {
   name: string;
   price_sale: number;
-  margin_goal: number;
+  margin_goal?: number | null;
 }
 
 const unitLabels: Record<UnitType, string> = {
@@ -64,7 +64,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductoFormData>({
-    resolver: zodResolver(productoSchema),
+    resolver: zodResolver(productoBaseSchema),
     defaultValues: editData
       ? {
           name: editData.name,

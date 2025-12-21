@@ -6,7 +6,7 @@ import { useToast } from './useToast';
 interface CreateProductoInput {
   name: string;
   price_sale: number;
-  margin_goal?: number;
+  margin_goal?: number | null;
   recipe_items: {
     insumo_id: string;
     quantity_in_base_units: number;
@@ -48,7 +48,7 @@ export function useProductos() {
           if (recipeError) throw recipeError;
 
           // Calculate cost_unit
-          const cost_unit = (recipeItems || []).reduce((total, item: any) => {
+          const cost_unit = (recipeItems || []).reduce((total, item) => {
             if (!item.insumo) return total;
             return total + (item.quantity_in_base_units * item.insumo.base_unit_cost);
           }, 0);
@@ -92,7 +92,7 @@ export function useProducto(id: string | undefined) {
       if (recipeError) throw recipeError;
 
       // Calculate cost_unit
-      const cost_unit = (recipeItems || []).reduce((total, item: any) => {
+      const cost_unit = (recipeItems || []).reduce((total, item) => {
         if (!item.insumo) return total;
         return total + (item.quantity_in_base_units * item.insumo.base_unit_cost);
       }, 0);

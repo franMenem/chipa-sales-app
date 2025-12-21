@@ -19,27 +19,30 @@ export function VentasList({ ventas, onFilterChange }: VentasListProps) {
   const deleteMutation = useDeleteVenta();
 
   const handleDateFilterChange = (filter: string) => {
-    setDateFilter(filter as any);
+    setDateFilter(filter as 'today' | 'week' | 'month' | 'all');
 
     const now = new Date();
     let start: string | undefined;
     let end: string | undefined;
 
     switch (filter) {
-      case 'today':
+      case 'today': {
         start = new Date(now.setHours(0, 0, 0, 0)).toISOString();
         end = new Date(now.setHours(23, 59, 59, 999)).toISOString();
         break;
-      case 'week':
+      }
+      case 'week': {
         const weekAgo = new Date(now);
         weekAgo.setDate(weekAgo.getDate() - 7);
         start = weekAgo.toISOString();
         break;
-      case 'month':
+      }
+      case 'month': {
         const monthAgo = new Date(now);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         start = monthAgo.toISOString();
         break;
+      }
       case 'all':
         start = undefined;
         end = undefined;

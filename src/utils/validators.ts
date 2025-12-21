@@ -22,8 +22,8 @@ export const recipeItemSchema = z.object({
     .positive('La cantidad debe ser mayor a 0'),
 });
 
-// Producto validation schema
-export const productoSchema = z.object({
+// Producto base validation schema (without recipe items)
+export const productoBaseSchema = z.object({
   name: z
     .string()
     .min(1, 'El nombre es requerido')
@@ -37,12 +37,17 @@ export const productoSchema = z.object({
     .max(100, 'El margen no puede ser mayor a 100')
     .nullable()
     .optional(),
+});
+
+// Producto validation schema (with recipe items)
+export const productoSchema = productoBaseSchema.extend({
   recipe_items: z
     .array(recipeItemSchema)
     .min(1, 'Debe agregar al menos un ingrediente a la receta'),
 });
 
 export type ProductoSchema = z.infer<typeof productoSchema>;
+export type ProductoBaseSchema = z.infer<typeof productoBaseSchema>;
 
 // Venta validation schema
 export const ventaSchema = z.object({

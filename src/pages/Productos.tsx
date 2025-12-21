@@ -9,7 +9,16 @@ import { supabase } from '../lib/supabase';
 
 export function Productos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProducto, setEditingProducto] = useState<any>(null);
+  const [editingProducto, setEditingProducto] = useState<{
+    id: string;
+    name: string;
+    price_sale: number;
+    margin_goal?: number | null;
+    recipe_items: Array<{
+      insumo_id: string;
+      quantity_in_base_units: number;
+    }>;
+  } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const { data: productos, isLoading, error } = useProductos();
 
@@ -96,7 +105,7 @@ export function Productos() {
       <ProductoForm
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        editData={editingProducto}
+        editData={editingProducto || undefined}
       />
     </Layout>
   );

@@ -125,12 +125,13 @@ export function getDateRange(
     case 'today':
       startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
       break;
-    case 'week':
+    case 'week': {
       const dayOfWeek = now.getDay();
       const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       startDate = new Date(now.getTime() - diffToMonday * 24 * 60 * 60 * 1000);
       startDate.setHours(0, 0, 0, 0);
       break;
+    }
     case 'month':
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
       break;
