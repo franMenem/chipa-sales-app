@@ -67,6 +67,7 @@ export function Insumos() {
           name: editingInsumo.name,
           price_per_unit: editingInsumo.price_per_unit,
           unit_type: editingInsumo.unit_type,
+          quantity: editingInsumo.quantity,
         } : undefined}
       />
     </Layout>

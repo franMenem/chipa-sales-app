@@ -82,14 +82,18 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
                     <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                       {insumo.name}
                     </h3>
-                    <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                      <span>
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
+                      <span className="font-medium">
                         {formatCurrency(insumo.price_per_unit)} / {unitLabels[insumo.unit_type]}
                       </span>
                       <span className="text-xs">•</span>
-                      <span className="text-xs">
-                        Costo base: {formatCurrency(insumo.base_unit_cost)}/{unitLabels[insumo.unit_type] === 'kg' || unitLabels[insumo.unit_type] === 'L' ? 'g o ml' : 'ud'}
+                      <span>
+                        Cantidad: {insumo.quantity} {unitLabels[insumo.unit_type]}
                       </span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                      Costo base: {formatCurrency(insumo.base_unit_cost)}/
+                      {unitLabels[insumo.unit_type] === 'kg' || unitLabels[insumo.unit_type] === 'L' ? 'g o ml' : 'ud'}
                     </div>
                   </div>
                 </div>

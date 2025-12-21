@@ -10,6 +10,9 @@ export const insumoSchema = z.object({
     .number()
     .positive('El precio debe ser mayor a 0'),
   unit_type: z.enum(['kg', 'l', 'unit', 'g', 'ml']),
+  quantity: z
+    .number()
+    .positive('La cantidad debe ser mayor a 0'),
 });
 
 export type InsumoSchema = z.infer<typeof insumoSchema>;

@@ -18,6 +18,7 @@ interface InsumoFormProps {
     name: string;
     price_per_unit: number;
     unit_type: UnitType;
+    quantity: number;
   };
 }
 
@@ -25,6 +26,7 @@ interface InsumoFormData {
   name: string;
   price_per_unit: number;
   unit_type: UnitType;
+  quantity: number;
 }
 
 const unitOptions = [
@@ -48,7 +50,6 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
   const createMutation = useCreateInsumo();
   const updateMutation = useUpdateInsumo();
   
-  const [quantity, setQuantity] = useState<number>(1);
   const [totalPrice, setTotalPrice] = useState<number>(0);
 
   const {
@@ -64,10 +65,12 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
       name: '',
       price_per_unit: 0,
       unit_type: 'kg',
+      quantity: 1,
     },
   });
 
   const pricePerUnit = watch('price_per_unit');
+  const quantity = watch('quantity');
   const unitType = watch('unit_type');
 
   // Reset form when modal opens/closes or edit data changes
@@ -77,9 +80,9 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
         name: '',
         price_per_unit: 0,
         unit_type: 'kg',
+        quantity: 1,
       });
-      setQuantity(1);
-      setTotalPrice(0);
+      setTotalPrice(editData ? editData.price_per_unit * editData.quantity : 0);
     }
   }, [isOpen, editData, reset]);
 
@@ -151,54 +154,53 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
           {...register('unit_type')}
         />
 
-        {!isEdit && (
-          <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
-                calculate
-              </span>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Calcular precio por unidad
+        <Input
+          label={`Cantidad de ${unitLabels[unitType] || 'unidades'} compradas`}
+          type="number"
+          step="0.01"
+          min="0.01"
+          placeholder="Ej: 5"
+          icon="scale"
+          error={errors.quantity?.message}
+          helperText={`¿Cuántos ${unitLabels[unitType]} compraste?`}
+          {...register('quantity', { valueAsNumber: true })}
+        />
+
+        <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
+              calculate
+            </span>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Calcular precio por unidad
+            </p>
+          </div>
+
+          <Input
+            label="Precio total de la compra"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            icon="payments"
+            helperText="Precio total que pagaste en guaraníes (₲)"
+            value={totalPrice}
+            onChange={(e) => setTotalPrice(Number(e.target.value))}
+          />
+
+          {quantity > 0 && totalPrice > 0 && (
+            <div className="bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-900 rounded-lg p-3">
+              <p className="text-xs text-primary-600 dark:text-primary-400 mb-1">
+                Precio calculado por {unitLabels[unitType]}:
+              </p>
+              <p className="text-lg font-bold text-primary-700 dark:text-primary-300">
+                {formatCurrency(pricePerUnit)} / {unitLabels[unitType]}
               </p>
             </div>
+          )}
+        </div>
 
-            <Input
-              label={`Cantidad de ${unitLabels[unitType] || 'unidades'} que compraste`}
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="Ej: 5"
-              icon="scale"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-            />
-
-            <Input
-              label="Precio total de la compra"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              icon="payments"
-              helperText="Precio total que pagaste en guaraníes (₲)"
-              value={totalPrice}
-              onChange={(e) => setTotalPrice(Number(e.target.value))}
-            />
-
-            {quantity > 0 && totalPrice > 0 && (
-              <div className="bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-900 rounded-lg p-3">
-                <p className="text-xs text-primary-600 dark:text-primary-400 mb-1">
-                  Precio calculado por {unitLabels[unitType]}:
-                </p>
-                <p className="text-lg font-bold text-primary-700 dark:text-primary-300">
-                  {formatCurrency(pricePerUnit)} / {unitLabels[unitType]}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {(isEdit || (quantity === 1 && totalPrice === 0)) && (
+        {totalPrice === 0 && (
           <Input
             label={`Precio por ${unitLabels[unitType] || 'unidad'}`}
             type="number"
@@ -207,7 +209,7 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
             placeholder="0.00"
             icon="payments"
             error={errors.price_per_unit?.message}
-            helperText={`Precio en guaraníes (₲) por cada ${unitLabels[unitType]}`}
+            helperText={`O ingresa directamente el precio en guaraníes (₲) por cada ${unitLabels[unitType]}`}
             {...register('price_per_unit', { valueAsNumber: true })}
           />
         )}

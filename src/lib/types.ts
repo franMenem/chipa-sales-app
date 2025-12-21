@@ -9,6 +9,7 @@ export interface Insumo {
   name: string;
   price_per_unit: number;
   unit_type: UnitType;
+  quantity: number; // Cantidad comprada
   base_unit_cost: number; // Calculated field
   created_at: string;
   updated_at: string;
@@ -71,6 +72,7 @@ export interface InsumoFormData {
   name: string;
   price_per_unit: number;
   unit_type: UnitType;
+  quantity: number;
 }
 
 export interface RecipeItemFormData {
