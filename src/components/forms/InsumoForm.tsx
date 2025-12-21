@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insumoSchema } from '../../utils/validators';
@@ -8,6 +8,7 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { useCreateInsumo, useUpdateInsumo } from '../../hooks/useInsumos';
+import { formatCurrency } from '../../utils/formatters';
 
 interface InsumoFormProps {
   isOpen: boolean;
@@ -34,15 +35,28 @@ const unitOptions = [
   { value: 'unit', label: 'Unidades' },
 ];
 
+const unitLabels: Record<UnitType, string> = {
+  kg: 'kg',
+  l: 'L',
+  g: 'g',
+  ml: 'ml',
+  unit: 'ud',
+};
+
 export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
   const isEdit = !!editData;
   const createMutation = useCreateInsumo();
   const updateMutation = useUpdateInsumo();
+  
+  const [quantity, setQuantity] = useState<number>(1);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<InsumoFormData>({
     resolver: zodResolver(insumoSchema),
@@ -53,6 +67,9 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
     },
   });
 
+  const pricePerUnit = watch('price_per_unit');
+  const unitType = watch('unit_type');
+
   // Reset form when modal opens/closes or edit data changes
   useEffect(() => {
     if (isOpen) {
@@ -61,8 +78,18 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
         price_per_unit: 0,
         unit_type: 'kg',
       });
+      setQuantity(1);
+      setTotalPrice(0);
     }
   }, [isOpen, editData, reset]);
+
+  // Calculate price per unit when quantity or total price changes
+  useEffect(() => {
+    if (quantity > 0 && totalPrice > 0) {
+      const calculatedPrice = totalPrice / quantity;
+      setValue('price_per_unit', calculatedPrice);
+    }
+  }, [quantity, totalPrice, setValue]);
 
   const onSubmit = async (data: InsumoFormData) => {
     try {
@@ -117,24 +144,73 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
           {...register('name')}
         />
 
-        <Input
-          label="Precio por unidad"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-          icon="payments"
-          error={errors.price_per_unit?.message}
-          helperText="Precio en guaraníes (₲)"
-          {...register('price_per_unit', { valueAsNumber: true })}
-        />
-
         <Select
           label="Tipo de unidad"
           options={unitOptions}
           error={errors.unit_type?.message}
           {...register('unit_type')}
         />
+
+        {!isEdit && (
+          <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
+                calculate
+              </span>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Calcular precio por unidad
+              </p>
+            </div>
+
+            <Input
+              label={`Cantidad de ${unitLabels[unitType] || 'unidades'} que compraste`}
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="Ej: 5"
+              icon="scale"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+            />
+
+            <Input
+              label="Precio total de la compra"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              icon="payments"
+              helperText="Precio total que pagaste en guaraníes (₲)"
+              value={totalPrice}
+              onChange={(e) => setTotalPrice(Number(e.target.value))}
+            />
+
+            {quantity > 0 && totalPrice > 0 && (
+              <div className="bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-900 rounded-lg p-3">
+                <p className="text-xs text-primary-600 dark:text-primary-400 mb-1">
+                  Precio calculado por {unitLabels[unitType]}:
+                </p>
+                <p className="text-lg font-bold text-primary-700 dark:text-primary-300">
+                  {formatCurrency(pricePerUnit)} / {unitLabels[unitType]}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(isEdit || (quantity === 1 && totalPrice === 0)) && (
+          <Input
+            label={`Precio por ${unitLabels[unitType] || 'unidad'}`}
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            icon="payments"
+            error={errors.price_per_unit?.message}
+            helperText={`Precio en guaraníes (₲) por cada ${unitLabels[unitType]}`}
+            {...register('price_per_unit', { valueAsNumber: true })}
+          />
+        )}
 
         {isEdit && (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl p-3">
