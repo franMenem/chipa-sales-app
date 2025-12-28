@@ -91,7 +91,7 @@ export function Reports() {
         </Card>
 
         {/* Summary Metrics */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col gap-3">
           <Card className="bg-blue-50 dark:bg-blue-950/30">
             <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
               Ingresos totales

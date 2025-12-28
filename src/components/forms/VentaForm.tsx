@@ -6,6 +6,7 @@ import { QuantityStepper } from '../ui/QuantityStepper';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/useProductos';
+import { useInsumos } from '../../hooks/useInsumos';
 import { useCreateVenta } from '../../hooks/useVentas';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -16,6 +17,7 @@ interface VentaFormProps {
 
 export function VentaForm({ isOpen, onClose }: VentaFormProps) {
   const { data: productos = [] } = useProductos();
+  const { data: insumos = [] } = useInsumos();
   const createMutation = useCreateVenta();
 
   const [selectedProductoId, setSelectedProductoId] = useState('');
@@ -28,6 +30,28 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
   const selectedProducto = useMemo(() => {
     return productos.find((p) => p.id === selectedProductoId);
   }, [selectedProductoId, productos]);
+
+  // Calcular stock disponible
+  const availableStock = useMemo(() => {
+    if (!selectedProducto?.recipe_items || selectedProducto.recipe_items.length === 0) {
+      return 0;
+    }
+
+    const possibleUnitsPerInsumo = selectedProducto.recipe_items.map((item) => {
+      const insumo = insumos.find((i) => i.id === item.insumo_id);
+      if (!insumo) return 0;
+
+      let availableInBaseUnits = insumo.quantity;
+      if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
+        availableInBaseUnits = insumo.quantity * 1000;
+      }
+
+      const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
+      return possibleUnits;
+    });
+
+    return Math.min(...possibleUnitsPerInsumo);
+  }, [selectedProducto, insumos]);
 
   const priceToUse = customPrice ?? selectedProducto?.price_sale ?? 0;
 
@@ -62,6 +86,17 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
 
     if (quantity <= 0) {
       alert('La cantidad debe ser mayor a 0');
+      return;
+    }
+
+    // Validar stock disponible
+    if (quantity > availableStock) {
+      alert(`Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`);
+      return;
+    }
+
+    if (availableStock === 0) {
+      alert('No hay stock disponible de este producto. Por favor, agrega más insumos.');
       return;
     }
 
@@ -161,6 +196,53 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
               </div>
             </Card>
 
+            {/* Stock Info */}
+            <Card className={`${
+              availableStock === 0
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                : availableStock <= 5
+                ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className={`material-symbols-outlined text-3xl ${
+                  availableStock === 0
+                    ? 'text-red-500'
+                    : availableStock <= 5
+                    ? 'text-yellow-600'
+                    : 'text-green-600'
+                }`}>
+                  {availableStock === 0 ? 'error' : availableStock <= 5 ? 'warning' : 'check_circle'}
+                </span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      Stock disponible
+                    </span>
+                    <span className={`font-bold text-lg ${
+                      availableStock === 0
+                        ? 'text-red-600 dark:text-red-400'
+                        : availableStock <= 5
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {availableStock} unidades
+                    </span>
+                  </div>
+                  {availableStock === 0 && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      No hay stock disponible. Agrega más insumos para poder vender.
+                    </p>
+                  )}
+                  {availableStock > 0 && availableStock <= 5 && (
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+                      Stock bajo. Considera agregar más insumos.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -171,9 +253,15 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
                   value={quantity}
                   onChange={setQuantity}
                   min={1}
+                  max={availableStock}
                   step={1}
                 />
               </div>
+              {quantity > availableStock && (
+                <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2">
+                  La cantidad excede el stock disponible
+                </p>
+              )}
             </div>
 
             {/* Custom Price (Optional) */}

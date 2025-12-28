@@ -27,40 +27,38 @@ export function Dashboard() {
   return (
     <Layout title="Dashboard" subtitle="Vista general">
       <div className="p-4 space-y-6">
-        {/* KPIs - Horizontal Scroll */}
-        <div className="overflow-x-auto -mx-4 px-4">
-          <div className="flex gap-3 min-w-max">
-            <KpiCard
-              label="Ventas hoy"
-              value={formatCurrency(stats?.salesToday || 0)}
-              icon="payments"
-              iconColor="blue"
-            />
-            <KpiCard
-              label="Ventas este mes"
-              value={formatCurrency(stats?.salesThisMonth || 0)}
-              icon="trending_up"
-              iconColor="primary"
-            />
-            <KpiCard
-              label="Ganancia hoy"
-              value={formatCurrency(stats?.profitToday || 0)}
-              icon="account_balance_wallet"
-              iconColor="green"
-            />
-            <KpiCard
-              label="Ganancia este mes"
-              value={formatCurrency(stats?.profitThisMonth || 0)}
-              icon="analytics"
-              iconColor="green"
-            />
-            <KpiCard
-              label="Margen promedio"
-              value={`${(stats?.averageMargin || 0).toFixed(1)}%`}
-              icon="percent"
-              iconColor="orange"
-            />
-          </div>
+        {/* KPIs - Vertical Stack */}
+        <div className="flex flex-col gap-3">
+          <KpiCard
+            label="Ventas hoy"
+            value={formatCurrency(stats?.salesToday || 0)}
+            icon="payments"
+            iconColor="blue"
+          />
+          <KpiCard
+            label="Ventas este mes"
+            value={formatCurrency(stats?.salesThisMonth || 0)}
+            icon="trending_up"
+            iconColor="primary"
+          />
+          <KpiCard
+            label="Ganancia hoy"
+            value={formatCurrency(stats?.profitToday || 0)}
+            icon="account_balance_wallet"
+            iconColor="green"
+          />
+          <KpiCard
+            label="Ganancia este mes"
+            value={formatCurrency(stats?.profitThisMonth || 0)}
+            icon="analytics"
+            iconColor="green"
+          />
+          <KpiCard
+            label="Margen promedio"
+            value={`${(stats?.averageMargin || 0).toFixed(1)}%`}
+            icon="percent"
+            iconColor="orange"
+          />
         </div>
 
         {/* Charts */}

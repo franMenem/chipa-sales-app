@@ -70,7 +70,7 @@ export function useVenta(id: string | undefined) {
   });
 }
 
-// Create venta (with cost snapshot)
+// Create venta (with cost snapshot and automatic stock deduction)
 export function useCreateVenta() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -80,6 +80,44 @@ export function useCreateVenta() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
+      // Obtener la receta del producto para descontar los insumos
+      const { data: recipeItems, error: recipeError } = await supabase
+        .from('recipe_items')
+        .select('*, insumo:insumos(*)')
+        .eq('producto_id', input.producto_id);
+
+      if (recipeError) throw recipeError;
+
+      // Descontar insumos basado en la cantidad vendida
+      if (recipeItems && recipeItems.length > 0) {
+        for (const item of recipeItems) {
+          const insumo = item.insumo;
+          if (!insumo) continue;
+
+          // Calcular cuánto descontar
+          const quantityToDeduct = item.quantity_in_base_units * input.quantity;
+
+          // Convertir a la unidad del insumo
+          let newQuantity = insumo.quantity;
+          if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
+            // La receta está en unidades base (g o ml), convertir a kg o l
+            newQuantity = insumo.quantity - (quantityToDeduct / 1000);
+          } else {
+            // Unidades directas
+            newQuantity = insumo.quantity - quantityToDeduct;
+          }
+
+          // Actualizar el insumo
+          const { error: updateError } = await supabase
+            .from('insumos')
+            .update({ quantity: Math.max(0, newQuantity) })
+            .eq('id', insumo.id);
+
+          if (updateError) throw updateError;
+        }
+      }
+
+      // Crear la venta
       const { data, error } = await supabase
         .from('ventas')
         .insert({
@@ -96,7 +134,9 @@ export function useCreateVenta() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      toast.success('Venta registrada', 'La venta se registró correctamente');
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      toast.success('Venta registrada', 'La venta se registró correctamente y el stock se actualizó');
     },
     onError: (error: Error) => {
       toast.error('Error al registrar venta', error.message);

@@ -36,6 +36,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   INSUMOS: '/insumos',
   PRODUCTOS: '/productos',
+  STOCK: '/stock',
   VENTAS: '/ventas',
   COSTOS_FIJOS: '/costos-fijos',
   REPORTS: '/reports',

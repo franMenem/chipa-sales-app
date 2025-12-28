@@ -22,6 +22,11 @@ export function BottomNav() {
       label: 'Productos',
     },
     {
+      path: ROUTES.STOCK,
+      icon: 'warehouse',
+      label: 'Stock',
+    },
+    {
       path: ROUTES.VENTAS,
       icon: 'receipt_long',
       label: 'Ventas',

@@ -10,6 +10,7 @@ const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login }
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Insumos = lazy(() => import('./pages/Insumos').then(m => ({ default: m.Insumos })));
 const Productos = lazy(() => import('./pages/Productos').then(m => ({ default: m.Productos })));
+const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock })));
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
 const CostosFijos = lazy(() => import('./pages/CostosFijos').then(m => ({ default: m.CostosFijos })));
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
@@ -77,6 +78,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Productos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock"
+                element={
+                  <ProtectedRoute>
+                    <Stock />
                   </ProtectedRoute>
                 }
               />
