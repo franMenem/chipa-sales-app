@@ -164,7 +164,7 @@ export function VentasList({ ventas, onFilterChange }: VentasListProps) {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="flex flex-col gap-3">
         <Card className="bg-blue-50 dark:bg-blue-950/30">
           <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
             Ingresos
@@ -238,45 +238,21 @@ export function VentasList({ ventas, onFilterChange }: VentasListProps) {
               </div>
 
               {/* Metrics */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mb-0.5">
                     Ingreso
                   </p>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <p className="text-base font-bold text-blue-700 dark:text-blue-300">
                     {formatCurrency(venta.total_income)}
                   </p>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">
-                    Costo
-                  </p>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    {formatCurrency(venta.total_cost)}
-                  </p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3">
+                  <p className="text-xs text-green-600 dark:text-green-400 mb-0.5">
                     Ganancia
                   </p>
-                  <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                  <p className="text-base font-bold text-green-700 dark:text-green-300">
                     {formatCurrency(venta.profit)}
-                  </p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">
-                    Margen
-                  </p>
-                  <p
-                    className={`text-sm font-semibold ${
-                      venta.profit_margin < 20
-                        ? 'text-red-600 dark:text-red-400'
-                        : venta.profit_margin >= 40
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-yellow-600 dark:text-yellow-400'
-                    }`}
-                  >
-                    {venta.profit_margin.toFixed(1)}%
                   </p>
                 </div>
               </div>

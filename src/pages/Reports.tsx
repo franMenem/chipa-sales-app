@@ -74,7 +74,7 @@ export function Reports() {
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
             Filtrar por rango de fechas
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <Input
               label="Desde"
               type="date"
@@ -114,6 +114,22 @@ export function Reports() {
             </p>
             <p className="text-xl font-bold text-green-700 dark:text-green-300">
               {formatCurrency(totalProfit)}
+            </p>
+          </Card>
+          <Card className="bg-primary/10 dark:bg-primary/20 border-2 border-primary/30">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-primary text-lg">
+                account_balance
+              </span>
+              <p className="text-xs text-primary font-semibold">
+                En Banco (Ingresos - Costos)
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-primary">
+              {formatCurrency(totalProfit)}
+            </p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+              Dinero disponible después de costos
             </p>
           </Card>
         </div>

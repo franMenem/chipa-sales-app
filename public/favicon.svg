@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo verde -->
+  <rect width="32" height="32" fill="#13ec5b" rx="6"/>
+
+  <!-- Forma de chipa/medialuna en blanco -->
+  <g fill="white">
+    <!-- Círculo principal superior -->
+    <circle cx="16" cy="14" r="6.5"/>
+
+    <!-- Círculo inferior izquierdo -->
+    <circle cx="13" r="4.5" cy="19"/>
+
+    <!-- Círculo inferior derecho -->
+    <circle cx="19" cy="19" r="4.5"/>
+  </g>
+</svg>
