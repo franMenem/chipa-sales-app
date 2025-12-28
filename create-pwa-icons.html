@@ -1,11 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Generar Iconos PWA</title>
+    <title>Generar Iconos PWA - Chipa Sales</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+            background: #f6f8f6;
+        }
+        h1 { color: #13ec5b; }
+        .preview { display: flex; gap: 20px; justify-content: center; margin: 30px 0; }
+        .preview canvas { border: 2px solid #ddd; border-radius: 15px; }
+        button {
+            background: #13ec5b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { brightness: 1.1; }
+    </style>
 </head>
 <body>
-    <h1>Generador de Iconos PWA</h1>
-    <p>Abre la consola del navegador (F12) y los iconos se descargarán automáticamente.</p>
+    <h1>🥐 Generador de Iconos PWA - Chipa Sales</h1>
+    <p>Click en el botón para descargar los iconos con el logo de medialuna.</p>
+
+    <div class="preview" id="preview"></div>
+
+    <button onclick="generateAndDownload()">Generar y Descargar Iconos</button>
 
     <script>
         function createIcon(size) {
@@ -14,14 +41,14 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            // Fondo verde (color primario)
+            // Fondo verde (color primario con gradiente)
             const gradient = ctx.createLinearGradient(0, 0, size, size);
             gradient.addColorStop(0, '#13ec5b');
             gradient.addColorStop(1, '#0fbd49');
             ctx.fillStyle = gradient;
 
             // Esquinas redondeadas
-            const radius = size * 0.15;
+            const radius = size * 0.18;
             ctx.beginPath();
             ctx.moveTo(radius, 0);
             ctx.lineTo(size - radius, 0);
@@ -35,12 +62,36 @@
             ctx.closePath();
             ctx.fill();
 
-            // Texto "CS"
+            // Dibujar forma de medialuna/chipa
             ctx.fillStyle = 'white';
-            ctx.font = `bold ${size * 0.45}px Arial, sans-serif`;
+
+            // Círculo base (parte superior)
+            const centerX = size / 2;
+            const centerY = size / 2.2;
+            const mainRadius = size * 0.28;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, mainRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Círculo inferior derecho (forma de C)
+            ctx.beginPath();
+            ctx.arc(centerX + mainRadius * 0.4, centerY + mainRadius * 0.8, mainRadius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Círculo inferior izquierdo
+            ctx.beginPath();
+            ctx.arc(centerX - mainRadius * 0.4, centerY + mainRadius * 0.8, mainRadius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Texto "Chipa Sales" abajo
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.12}px Arial, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('CS', size / 2, size / 2);
+            ctx.fillText('Chipa', size / 2, size * 0.78);
+            ctx.font = `bold ${size * 0.09}px Arial, sans-serif`;
+            ctx.fillText('Sales', size / 2, size * 0.88);
 
             return canvas;
         }
@@ -56,25 +107,38 @@
             });
         }
 
-        // Generar y descargar iconos
-        setTimeout(() => {
+        function generateAndDownload() {
             console.log('Generando iconos PWA...');
 
-            const icon192 = createIcon(192);
-            downloadCanvas(icon192, 'pwa-192x192.png');
+            // Generar preview
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '<p>Generando...</p>';
 
             setTimeout(() => {
-                const icon512 = createIcon(512);
-                downloadCanvas(icon512, 'pwa-512x512.png');
+                preview.innerHTML = '';
+
+                // Icono 192x192
+                const icon192 = createIcon(192);
+                preview.appendChild(icon192);
+                downloadCanvas(icon192, 'pwa-192x192.png');
 
                 setTimeout(() => {
-                    const iconApple = createIcon(180);
-                    downloadCanvas(iconApple, 'apple-touch-icon.png');
+                    // Icono 512x512
+                    const icon512 = createIcon(512);
+                    const preview512 = createIcon(192); // versión pequeña para preview
+                    preview.appendChild(preview512);
+                    downloadCanvas(icon512, 'pwa-512x512.png');
 
-                    console.log('✅ Iconos generados! Guárdalos en la carpeta public/');
+                    setTimeout(() => {
+                        // Apple touch icon 180x180
+                        const iconApple = createIcon(180);
+                        downloadCanvas(iconApple, 'apple-touch-icon.png');
+
+                        alert('✅ Iconos generados!\n\nSe descargaron 3 archivos:\n- pwa-192x192.png\n- pwa-512x512.png\n- apple-touch-icon.png\n\nMuévelos a la carpeta public/ de tu proyecto');
+                    }, 500);
                 }, 500);
-            }, 500);
-        }, 500);
+            }, 100);
+        }
     </script>
 </body>
 </html>

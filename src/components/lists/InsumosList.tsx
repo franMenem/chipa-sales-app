@@ -75,7 +75,7 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
                     <span className="material-symbols-outlined text-primary text-[20px]">
-                      inventory_2
+                      nutrition
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -88,12 +88,8 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
                       </span>
                       <span className="text-xs">•</span>
                       <span>
-                        Cantidad: {insumo.quantity} {unitLabels[insumo.unit_type]}
+                        Stock: {insumo.quantity} {unitLabels[insumo.unit_type]}
                       </span>
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                      Costo base: {formatCurrency(insumo.base_unit_cost)}/
-                      {unitLabels[insumo.unit_type] === 'kg' || unitLabels[insumo.unit_type] === 'L' ? 'g o ml' : 'ud'}
                     </div>
                   </div>
                 </div>
@@ -105,9 +101,7 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
                     icon="edit"
                     onClick={() => onEdit(insumo)}
                     aria-label={`Editar ${insumo.name}`}
-                  >
-                    Editar
-                  </Button>
+                  />
                   <Button
                     variant="ghost"
                     size="sm"

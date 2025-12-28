@@ -104,9 +104,7 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
                         icon="edit"
                         onClick={() => onEdit(producto)}
                         aria-label={`Editar ${producto.name}`}
-                      >
-                        Editar
-                      </Button>
+                      />
                       <Button
                         variant="ghost"
                         size="sm"
