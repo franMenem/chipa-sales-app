@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { AddStockForm } from '../components/forms/AddStockForm';
+import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { useProductos } from '../hooks/useProductos';
 import { useInsumos } from '../hooks/useInsumos';
 import type { ProductoWithCost, Insumo } from '../lib/types';
@@ -113,13 +113,23 @@ export function Stock() {
                           Agregar
                         </Button>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                        <span className="material-symbols-outlined text-lg">
-                          inventory_2
-                        </span>
-                        <span>
-                          Stock disponible: <strong>{producto.stockDisponible}</strong> unidades
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                          <span className="material-symbols-outlined text-lg">
+                            inventory_2
+                          </span>
+                          <span>
+                            Stock terminado: <strong className="text-primary">{producto.finished_stock || 0}</strong> unidades
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
+                          <span className="material-symbols-outlined text-base">
+                            calculate
+                          </span>
+                          <span>
+                            Stock calculado por insumos: <strong>{producto.stockDisponible}</strong> unidades
+                          </span>
+                        </div>
                       </div>
                       {producto.recipe_items && producto.recipe_items.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
@@ -196,7 +206,7 @@ export function Stock() {
         )}
       </div>
 
-      <AddStockForm
+      <AdjustFinishedStockForm
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         producto={selectedProducto}

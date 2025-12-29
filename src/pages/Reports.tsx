@@ -122,14 +122,14 @@ export function Reports() {
                 account_balance
               </span>
               <p className="text-xs text-primary font-semibold">
-                En Banco (Ingresos - Costos)
+                En Banco (Total Ventas)
               </p>
             </div>
             <p className="text-2xl font-bold text-primary">
-              {formatCurrency(totalProfit)}
+              {formatCurrency(totalIncome)}
             </p>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Dinero disponible después de costos
+              Dinero total recibido de las ventas
             </p>
           </Card>
         </div>

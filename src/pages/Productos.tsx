@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { ProductoForm } from '../components/forms/ProductoForm';
-import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/useProductos';
 import type { ProductoWithCost } from '../lib/types';
@@ -10,8 +9,6 @@ import { supabase } from '../lib/supabase';
 
 export function Productos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const [selectedProductoForStock, setSelectedProductoForStock] = useState<ProductoWithCost | null>(null);
   const [editingProducto, setEditingProducto] = useState<{
     id: string;
     name: string;
@@ -24,16 +21,6 @@ export function Productos() {
   } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const { data: productos, isLoading, error } = useProductos();
-
-  const handleAdjustStock = (producto: ProductoWithCost) => {
-    setSelectedProductoForStock(producto);
-    setIsStockModalOpen(true);
-  };
-
-  const handleCloseStockModal = () => {
-    setIsStockModalOpen(false);
-    setSelectedProductoForStock(null);
-  };
 
   const handleAdd = () => {
     setEditingProducto(null);
@@ -105,7 +92,7 @@ export function Productos() {
             </p>
           </div>
         ) : (
-          <ProductosList productos={productos || []} onEdit={handleEdit} onAdjustStock={handleAdjustStock} />
+          <ProductosList productos={productos || []} onEdit={handleEdit} />
         )}
 
         {isLoadingRecipe && (
@@ -119,12 +106,6 @@ export function Productos() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         editData={editingProducto || undefined}
-      />
-
-      <AdjustFinishedStockForm
-        isOpen={isStockModalOpen}
-        onClose={handleCloseStockModal}
-        producto={selectedProductoForStock}
       />
     </Layout>
   );

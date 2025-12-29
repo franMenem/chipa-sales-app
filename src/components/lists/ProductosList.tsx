@@ -9,10 +9,9 @@ import { useDeleteProducto } from '../../hooks/useProductos';
 interface ProductosListProps {
   productos: ProductoWithCost[];
   onEdit: (producto: ProductoWithCost) => void;
-  onAdjustStock: (producto: ProductoWithCost) => void;
 }
 
-export function ProductosList({ productos, onEdit, onAdjustStock }: ProductosListProps) {
+export function ProductosList({ productos, onEdit }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const deleteMutation = useDeleteProducto();
 
@@ -105,14 +104,6 @@ export function ProductosList({ productos, onEdit, onAdjustStock }: ProductosLis
                         icon="edit"
                         onClick={() => onEdit(producto)}
                         aria-label={`Editar ${producto.name}`}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon="inventory_2"
-                        onClick={() => onAdjustStock(producto)}
-                        aria-label={`Ajustar stock de ${producto.name}`}
-                        className="text-primary hover:bg-primary/10"
                       />
                       <Button
                         variant="ghost"
