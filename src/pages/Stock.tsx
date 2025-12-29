@@ -50,13 +50,20 @@ export function Stock() {
     return Math.min(...possibleUnitsPerInsumo);
   };
 
-  const productosConStock = (productos || []).map((producto) => ({
-    ...producto,
-    stockDisponible: calculateAvailableStock(producto, insumos || []),
-  }));
+  const productosConStock = (productos || []).map((producto) => {
+    const stockFromInsumos = calculateAvailableStock(producto, insumos || []);
+    const finishedStock = producto.finished_stock || 0;
+    const totalStock = stockFromInsumos + finishedStock;
 
-  // Ordenar por stock (menor a mayor)
-  const productosSorted = [...productosConStock].sort((a, b) => a.stockDisponible - b.stockDisponible);
+    return {
+      ...producto,
+      stockDisponible: stockFromInsumos,
+      stockTotal: totalStock,
+    };
+  });
+
+  // Ordenar por stock total (menor a mayor)
+  const productosSorted = [...productosConStock].sort((a, b) => a.stockTotal - b.stockTotal);
 
   return (
     <Layout
@@ -84,8 +91,8 @@ export function Stock() {
         ) : (
           <div className="space-y-3">
             {productosSorted.map((producto) => {
-              const isLowStock = producto.stockDisponible <= 5;
-              const isOutOfStock = producto.stockDisponible === 0;
+              const isLowStock = producto.stockTotal <= 5;
+              const isOutOfStock = producto.stockTotal === 0;
 
               return (
                 <div
@@ -114,21 +121,18 @@ export function Stock() {
                         </Button>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                          <span className="material-symbols-outlined text-lg">
-                            inventory_2
+                        <div className="flex items-center gap-2 text-base font-semibold text-slate-800 dark:text-slate-200">
+                          <span className="material-symbols-outlined text-xl text-primary">
+                            inventory
                           </span>
                           <span>
-                            Stock terminado: <strong className="text-primary">{producto.finished_stock || 0}</strong> unidades
+                            Stock total disponible: <strong className="text-primary">{producto.stockTotal}</strong> unidades
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
-                          <span className="material-symbols-outlined text-base">
-                            calculate
-                          </span>
-                          <span>
-                            Stock calculado por insumos: <strong>{producto.stockDisponible}</strong> unidades
-                          </span>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500 ml-7">
+                          <span>→ Terminados: <strong>{producto.finished_stock || 0}</strong></span>
+                          <span>•</span>
+                          <span>Por insumos: <strong>{producto.stockDisponible}</strong></span>
                         </div>
                       </div>
                       {producto.recipe_items && producto.recipe_items.length > 0 && (
