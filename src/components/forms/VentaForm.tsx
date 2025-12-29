@@ -33,24 +33,32 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
 
   // Calcular stock disponible
   const availableStock = useMemo(() => {
-    if (!selectedProducto?.recipe_items || selectedProducto.recipe_items.length === 0) {
-      return 0;
+    if (!selectedProducto) return 0;
+
+    // Stock de productos terminados
+    const finishedStock = selectedProducto.finished_stock || 0;
+
+    // Stock que se puede hacer con insumos
+    let stockFromInsumos = 0;
+    if (selectedProducto.recipe_items && selectedProducto.recipe_items.length > 0) {
+      const possibleUnitsPerInsumo = selectedProducto.recipe_items.map((item) => {
+        const insumo = insumos.find((i) => i.id === item.insumo_id);
+        if (!insumo) return 0;
+
+        let availableInBaseUnits = insumo.quantity;
+        if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
+          availableInBaseUnits = insumo.quantity * 1000;
+        }
+
+        const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
+        return possibleUnits;
+      });
+
+      stockFromInsumos = Math.min(...possibleUnitsPerInsumo);
     }
 
-    const possibleUnitsPerInsumo = selectedProducto.recipe_items.map((item) => {
-      const insumo = insumos.find((i) => i.id === item.insumo_id);
-      if (!insumo) return 0;
-
-      let availableInBaseUnits = insumo.quantity;
-      if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-        availableInBaseUnits = insumo.quantity * 1000;
-      }
-
-      const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
-      return possibleUnits;
-    });
-
-    return Math.min(...possibleUnitsPerInsumo);
+    // Stock total = productos terminados + lo que se puede hacer con insumos
+    return finishedStock + stockFromInsumos;
   }, [selectedProducto, insumos]);
 
   const priceToUse = customPrice ?? selectedProducto?.price_sale ?? 0;

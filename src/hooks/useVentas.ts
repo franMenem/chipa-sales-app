@@ -80,40 +80,72 @@ export function useCreateVenta() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // Obtener la receta del producto para descontar los insumos
-      const { data: recipeItems, error: recipeError } = await supabase
-        .from('recipe_items')
-        .select('*, insumo:insumos(*)')
-        .eq('producto_id', input.producto_id);
+      // Obtener el producto para verificar finished_stock
+      const { data: producto, error: productoError } = await supabase
+        .from('productos')
+        .select('finished_stock')
+        .eq('id', input.producto_id)
+        .single();
 
-      if (recipeError) throw recipeError;
+      if (productoError) throw productoError;
 
-      // Descontar insumos basado en la cantidad vendida
-      if (recipeItems && recipeItems.length > 0) {
-        for (const item of recipeItems) {
-          const insumo = item.insumo;
-          if (!insumo) continue;
+      let quantityToDeductFromInsumos = input.quantity;
+      const finishedStock = producto.finished_stock || 0;
 
-          // Calcular cuánto descontar
-          const quantityToDeduct = item.quantity_in_base_units * input.quantity;
+      // Descontar primero del stock terminado
+      if (finishedStock > 0) {
+        const quantityFromFinished = Math.min(finishedStock, input.quantity);
+        const newFinishedStock = finishedStock - quantityFromFinished;
 
-          // Convertir a la unidad del insumo
-          let newQuantity = insumo.quantity;
-          if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-            // La receta está en unidades base (g o ml), convertir a kg o l
-            newQuantity = insumo.quantity - (quantityToDeduct / 1000);
-          } else {
-            // Unidades directas
-            newQuantity = insumo.quantity - quantityToDeduct;
+        // Actualizar finished_stock
+        const { error: updateFinishedError } = await supabase
+          .from('productos')
+          .update({ finished_stock: newFinishedStock })
+          .eq('id', input.producto_id);
+
+        if (updateFinishedError) throw updateFinishedError;
+
+        // Reducir la cantidad que necesitamos descontar de los insumos
+        quantityToDeductFromInsumos -= quantityFromFinished;
+      }
+
+      // Si aún necesitamos descontar más, descontar de los insumos
+      if (quantityToDeductFromInsumos > 0) {
+        // Obtener la receta del producto para descontar los insumos
+        const { data: recipeItems, error: recipeError } = await supabase
+          .from('recipe_items')
+          .select('*, insumo:insumos(*)')
+          .eq('producto_id', input.producto_id);
+
+        if (recipeError) throw recipeError;
+
+        // Descontar insumos basado en la cantidad restante
+        if (recipeItems && recipeItems.length > 0) {
+          for (const item of recipeItems) {
+            const insumo = item.insumo;
+            if (!insumo) continue;
+
+            // Calcular cuánto descontar
+            const quantityToDeduct = item.quantity_in_base_units * quantityToDeductFromInsumos;
+
+            // Convertir a la unidad del insumo
+            let newQuantity = insumo.quantity;
+            if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
+              // La receta está en unidades base (g o ml), convertir a kg o l
+              newQuantity = insumo.quantity - (quantityToDeduct / 1000);
+            } else {
+              // Unidades directas
+              newQuantity = insumo.quantity - quantityToDeduct;
+            }
+
+            // Actualizar el insumo
+            const { error: updateError } = await supabase
+              .from('insumos')
+              .update({ quantity: Math.max(0, newQuantity) })
+              .eq('id', insumo.id);
+
+            if (updateError) throw updateError;
           }
-
-          // Actualizar el insumo
-          const { error: updateError } = await supabase
-            .from('insumos')
-            .update({ quantity: Math.max(0, newQuantity) })
-            .eq('id', insumo.id);
-
-          if (updateError) throw updateError;
         }
       }
 
