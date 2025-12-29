@@ -5,6 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
+import { useInsumos } from '../hooks/useInsumos';
 import { formatCurrency } from '../utils/formatters';
 
 export function Reports() {
@@ -19,6 +20,7 @@ export function Reports() {
 
   const { data: topProducts } = useTopProducts(10);
   const { data: profitTrend } = useDailyProfitTrend(30);
+  const { data: insumos = [] } = useInsumos();
 
   const handleExportCSV = () => {
     if (!topProducts || !profitTrend) {
@@ -58,6 +60,13 @@ export function Reports() {
   const totalCost = profitTrend?.reduce((sum, d) => sum + d.cost, 0) || 0;
   const totalProfit = profitTrend?.reduce((sum, d) => sum + d.profit, 0) || 0;
 
+  // Calcular inversión total en insumos
+  // Inversión = valor del stock actual + costos ya vendidos
+  const currentStockValue = insumos.reduce((sum, insumo) => {
+    return sum + (insumo.price_per_unit * insumo.quantity);
+  }, 0);
+  const totalInvestment = currentStockValue + totalCost;
+
   return (
     <Layout
       title="Reportes"
@@ -92,6 +101,22 @@ export function Reports() {
 
         {/* Summary Metrics */}
         <div className="flex flex-col gap-3">
+          <Card className="bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-900">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-lg">
+                shopping_cart
+              </span>
+              <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold">
+                Inversión Total
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+              {formatCurrency(totalInvestment)}
+            </p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+              Stock actual ({formatCurrency(currentStockValue)}) + Costos vendidos ({formatCurrency(totalCost)})
+            </p>
+          </Card>
           <Card className="bg-blue-50 dark:bg-blue-950/30">
             <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
               Ingresos totales
