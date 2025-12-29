@@ -297,14 +297,13 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
 
                 return (
                   <Card key={item.insumo_id}>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-slate-900 dark:text-white truncate">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-slate-900 dark:text-white">
                           {insumo.name}
                         </h4>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {formatCurrency(itemCost)} (
-                          {formatCurrency(insumo.base_unit_cost)}/
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                          Costo: {formatCurrency(itemCost)} ({formatCurrency(insumo.base_unit_cost)}/
                           {unitLabels[insumo.unit_type] === 'kg' ||
                           unitLabels[insumo.unit_type] === 'L'
                             ? 'g o ml'
@@ -312,21 +311,28 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                           )
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <QuantityStepper
-                          value={item.quantity_in_base_units}
-                          onChange={(val) => handleQuantityChange(item.insumo_id, val)}
-                          min={0.1}
-                          step={0.1}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          icon="delete"
-                          onClick={() => handleRemoveInsumo(item.insumo_id)}
-                          className="text-red-600 dark:text-red-400"
-                        />
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                            Cantidad
+                          </label>
+                          <QuantityStepper
+                            value={item.quantity_in_base_units}
+                            onChange={(val) => handleQuantityChange(item.insumo_id, val)}
+                            min={0.1}
+                            step={0.1}
+                          />
+                        </div>
+                        <div className="pt-5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            icon="delete"
+                            onClick={() => handleRemoveInsumo(item.insumo_id)}
+                            className="text-red-600 dark:text-red-400"
+                          />
+                        </div>
                       </div>
                     </div>
                   </Card>
