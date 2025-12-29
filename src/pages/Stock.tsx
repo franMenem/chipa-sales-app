@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
+import { Button } from '../components/ui/Button';
+import { AddStockForm } from '../components/forms/AddStockForm';
 import { useProductos } from '../hooks/useProductos';
 import { useInsumos } from '../hooks/useInsumos';
 import type { ProductoWithCost, Insumo } from '../lib/types';
@@ -6,8 +9,20 @@ import type { ProductoWithCost, Insumo } from '../lib/types';
 export function Stock() {
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
+  const [selectedProducto, setSelectedProducto] = useState<ProductoWithCost | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isLoading = loadingProductos || loadingInsumos;
+
+  const handleAddStock = (producto: ProductoWithCost) => {
+    setSelectedProducto(producto);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProducto(null);
+  };
 
   // Calcular stock disponible para cada producto
   const calculateAvailableStock = (producto: ProductoWithCost, insumosData: Insumo[]) => {
@@ -85,9 +100,19 @@ export function Stock() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
-                        {producto.name}
-                      </h3>
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+                          {producto.name}
+                        </h3>
+                        <Button
+                          size="sm"
+                          icon="add"
+                          onClick={() => handleAddStock(producto)}
+                          className="shrink-0"
+                        >
+                          Agregar
+                        </Button>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                         <span className="material-symbols-outlined text-lg">
                           inventory_2
@@ -170,6 +195,12 @@ export function Stock() {
           </div>
         )}
       </div>
+
+      <AddStockForm
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        producto={selectedProducto}
+      />
     </Layout>
   );
 }

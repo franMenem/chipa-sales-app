@@ -120,8 +120,17 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
       );
       setRecipeItems(editData?.recipe_items || []);
       setSelectedInsumoId('');
+    } else {
+      // Reset when closing
+      reset({
+        name: '',
+        price_sale: 0,
+        margin_goal: 50,
+      });
+      setRecipeItems([]);
+      setSelectedInsumoId('');
     }
-  }, [isOpen, editData, reset]);
+  }, [isOpen, editData?.id, reset]);
 
   const handleAddInsumo = () => {
     if (!selectedInsumoId) return;

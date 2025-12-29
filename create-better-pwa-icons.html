@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador Mejorado de Iconos PWA - Chipa Sales</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #f6f8f6 0%, #e8f5e9 100%);
+            min-height: 100vh;
+        }
+        h1 {
+            color: #13ec5b;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .preview {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        .preview-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .preview canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            display: block;
+        }
+        .preview-label {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+        button {
+            background: linear-gradient(135deg, #13ec5b 0%, #0fbd49 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(19, 236, 91, 0.3);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(19, 236, 91, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 30px auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #13ec5b;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>🥐 Generador de Iconos PWA Profesional</h1>
+    <p class="subtitle">Chipa Sales - Iconos de alta calidad</p>
+
+    <div class="preview" id="preview"></div>
+
+    <button onclick="generateAndDownload()">✨ Generar Iconos de Alta Calidad</button>
+
+    <div class="instructions">
+        <h3>📝 Instrucciones:</h3>
+        <ol>
+            <li>Click en el botón de arriba</li>
+            <li>Se descargarán 3 archivos PNG</li>
+            <li>Mueve los archivos a la carpeta <code>public/</code></li>
+            <li>Haz commit y push a tu repositorio</li>
+            <li>En iOS: borra la PWA actual y reinstala</li>
+        </ol>
+    </div>
+
+    <script>
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Fondo con gradiente profesional
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#13ec5b');
+            gradient.addColorStop(0.5, '#11d954');
+            gradient.addColorStop(1, '#0fbd49');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Aplicar esquinas redondeadas
+            ctx.globalCompositeOperation = 'destination-in';
+            const radius = size * 0.225; // 22.5% para iOS style
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.arcTo(size, 0, size, radius, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.arcTo(size, size, size - radius, size, radius);
+            ctx.lineTo(radius, size);
+            ctx.arcTo(0, size, 0, size - radius, radius);
+            ctx.lineTo(0, radius);
+            ctx.arcTo(0, 0, radius, 0, radius);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Dibujar icono de chipa (mejorado)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 512; // Escala base
+
+            // Sombra suave para el icono
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = size * 0.02;
+            ctx.shadowOffsetY = size * 0.01;
+
+            ctx.fillStyle = 'white';
+
+            // Cuerpo principal de la chipa (círculo grande)
+            const mainRadius = size * 0.22;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - size * 0.05, mainRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bumps inferiores para dar forma de chipa
+            const bumpRadius = mainRadius * 0.68;
+            const bumpY = centerY + size * 0.08;
+
+            // Bump izquierdo
+            ctx.beginPath();
+            ctx.arc(centerX - mainRadius * 0.42, bumpY, bumpRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bump derecho
+            ctx.beginPath();
+            ctx.arc(centerX + mainRadius * 0.42, bumpY, bumpRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bump central inferior
+            ctx.beginPath();
+            ctx.arc(centerX, bumpY + bumpRadius * 0.3, bumpRadius * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Quitar sombra para el texto
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // Textura/detalles (opcional - pequeños círculos)
+            if (size >= 192) {
+                ctx.globalAlpha = 0.15;
+                ctx.fillStyle = 'white';
+
+                // Algunos puntitos para textura
+                const dots = [
+                    [centerX - mainRadius * 0.3, centerY - size * 0.08],
+                    [centerX + mainRadius * 0.25, centerY - size * 0.04],
+                    [centerX - mainRadius * 0.1, centerY],
+                    [centerX + mainRadius * 0.1, centerY + size * 0.02],
+                ];
+
+                dots.forEach(([x, y]) => {
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 0.015, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                ctx.globalAlpha = 1;
+            }
+
+            // Texto "CS" más elegante (solo en iconos grandes)
+            if (size >= 192) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.font = `bold ${size * 0.15}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('CS', centerX, centerY + size * 0.32);
+            }
+
+            return canvas;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png', 1.0); // Calidad máxima
+        }
+
+        function generateAndDownload() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '<p style="color: #13ec5b; font-weight: bold;">⚙️ Generando iconos...</p>';
+
+            setTimeout(() => {
+                preview.innerHTML = '';
+
+                // 192x192
+                const icon192 = createIcon(192);
+                const preview192 = document.createElement('div');
+                preview192.className = 'preview-item';
+                const canvas192 = createIcon(192);
+                canvas192.style.width = '96px';
+                canvas192.style.height = '96px';
+                preview192.appendChild(canvas192);
+                const label192 = document.createElement('div');
+                label192.className = 'preview-label';
+                label192.textContent = '192x192';
+                preview192.appendChild(label192);
+                preview.appendChild(preview192);
+                downloadCanvas(icon192, 'pwa-192x192.png');
+
+                setTimeout(() => {
+                    // 512x512
+                    const icon512 = createIcon(512);
+                    const preview512 = document.createElement('div');
+                    preview512.className = 'preview-item';
+                    const canvas512 = createIcon(512);
+                    canvas512.style.width = '128px';
+                    canvas512.style.height = '128px';
+                    preview512.appendChild(canvas512);
+                    const label512 = document.createElement('div');
+                    label512.className = 'preview-label';
+                    label512.textContent = '512x512';
+                    preview512.appendChild(label512);
+                    preview.appendChild(preview512);
+                    downloadCanvas(icon512, 'pwa-512x512.png');
+
+                    setTimeout(() => {
+                        // Apple touch icon 180x180
+                        const iconApple = createIcon(180);
+                        const previewApple = document.createElement('div');
+                        previewApple.className = 'preview-item';
+                        const canvasApple = createIcon(180);
+                        canvasApple.style.width = '90px';
+                        canvasApple.style.height = '90px';
+                        previewApple.appendChild(canvasApple);
+                        const labelApple = document.createElement('div');
+                        labelApple.className = 'preview-label';
+                        labelApple.textContent = 'Apple Touch (180x180)';
+                        previewApple.appendChild(labelApple);
+                        preview.appendChild(previewApple);
+                        downloadCanvas(iconApple, 'apple-touch-icon.png');
+
+                        alert('✅ ¡Iconos generados!\n\n📥 Se descargaron 3 archivos:\n• pwa-192x192.png\n• pwa-512x512.png\n• apple-touch-icon.png\n\n📂 Muévelos a la carpeta public/ de tu proyecto\n\n🚀 Luego haz commit, push y redeploy en Vercel');
+                    }, 300);
+                }, 300);
+            }, 100);
+        }
+    </script>
+</body>
+</html>

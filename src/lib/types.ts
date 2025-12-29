@@ -31,6 +31,7 @@ export interface Producto {
   name: string;
   price_sale: number;
   margin_goal: number | null;
+  finished_stock: number; // Stock de productos terminados
   created_at: string;
   updated_at: string;
   // Relations
