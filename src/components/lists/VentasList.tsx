@@ -10,9 +10,10 @@ import { useDeleteVenta } from '../../hooks/useVentas';
 interface VentasListProps {
   ventas: Venta[];
   onFilterChange?: (filters: { startDate?: string; endDate?: string }) => void;
+  onEdit?: (venta: Venta) => void;
 }
 
-export function VentasList({ ventas, onFilterChange }: VentasListProps) {
+export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) {
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -213,14 +214,26 @@ export function VentasList({ ventas, onFilterChange }: VentasListProps) {
                   </div>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon="delete"
-                  onClick={() => handleDelete(venta.id, venta.producto_name)}
-                  disabled={deleteMutation.isPending}
-                  className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                />
+                <div className="flex items-center gap-2">
+                  {onEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon="edit"
+                      onClick={() => onEdit(venta)}
+                      aria-label="Editar venta"
+                    />
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon="delete"
+                    onClick={() => handleDelete(venta.id, venta.producto_name)}
+                    disabled={deleteMutation.isPending}
+                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    aria-label="Eliminar venta"
+                  />
+                </div>
               </div>
 
               {/* Quantity and Price */}

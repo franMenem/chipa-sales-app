@@ -176,6 +176,34 @@ export function useCreateVenta() {
   });
 }
 
+// Update venta
+export function useUpdateVenta() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, quantity, price_sold }: { id: string; quantity: number; price_sold: number }) => {
+      const { data, error } = await supabase
+        .from('ventas')
+        .update({ quantity, price_sold })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Venta;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ventas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast.success('Venta actualizada', 'La venta se actualizó correctamente');
+    },
+    onError: (error: Error) => {
+      toast.error('Error al actualizar venta', error.message);
+    },
+  });
+}
+
 // Delete venta
 export function useDeleteVenta() {
   const queryClient = useQueryClient();

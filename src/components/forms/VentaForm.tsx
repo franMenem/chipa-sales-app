@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
@@ -7,18 +7,23 @@ import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/useProductos';
 import { useInsumos } from '../../hooks/useInsumos';
-import { useCreateVenta } from '../../hooks/useVentas';
+import { useCreateVenta, useUpdateVenta } from '../../hooks/useVentas';
 import { formatCurrency } from '../../utils/formatters';
+import type { Venta } from '../../lib/types';
 
 interface VentaFormProps {
   isOpen: boolean;
   onClose: () => void;
+  editData?: Venta;
 }
 
-export function VentaForm({ isOpen, onClose }: VentaFormProps) {
+export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const { data: productos = [] } = useProductos();
   const { data: insumos = [] } = useInsumos();
   const createMutation = useCreateVenta();
+  const updateMutation = useUpdateVenta();
+
+  const isEdit = !!editData;
 
   const [selectedProductoId, setSelectedProductoId] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -26,6 +31,22 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
   const [saleDate, setSaleDate] = useState(
     new Date().toISOString().split('T')[0]
   );
+
+  // Cargar datos de edición
+  useEffect(() => {
+    if (isOpen && editData) {
+      setSelectedProductoId(editData.producto_id || '');
+      setQuantity(editData.quantity);
+      setCustomPrice(editData.price_sold);
+      setSaleDate(new Date(editData.sale_date).toISOString().split('T')[0]);
+    } else if (isOpen && !editData) {
+      // Reset para nueva venta
+      setSelectedProductoId('');
+      setQuantity(1);
+      setCustomPrice(null);
+      setSaleDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen, editData]);
 
   const selectedProducto = useMemo(() => {
     return productos.find((p) => p.id === selectedProductoId);
@@ -97,26 +118,35 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
       return;
     }
 
-    // Validar stock disponible
-    if (quantity > availableStock) {
-      alert(`Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`);
-      return;
-    }
-
-    if (availableStock === 0) {
-      alert('No hay stock disponible de este producto. Por favor, agrega más insumos.');
-      return;
-    }
-
     try {
-      await createMutation.mutateAsync({
-        producto_id: selectedProducto.id,
-        producto_name: selectedProducto.name,
-        quantity,
-        price_sold: priceToUse,
-        cost_unit: selectedProducto.cost_unit, // SNAPSHOT
-        sale_date: new Date(saleDate).toISOString(),
-      });
+      if (isEdit && editData) {
+        // Modo edición: solo actualizar cantidad y precio
+        await updateMutation.mutateAsync({
+          id: editData.id,
+          quantity,
+          price_sold: priceToUse,
+        });
+      } else {
+        // Modo creación: validar stock y crear nueva venta
+        if (quantity > availableStock) {
+          alert(`Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`);
+          return;
+        }
+
+        if (availableStock === 0) {
+          alert('No hay stock disponible de este producto. Por favor, agrega más insumos.');
+          return;
+        }
+
+        await createMutation.mutateAsync({
+          producto_id: selectedProducto.id,
+          producto_name: selectedProducto.name,
+          quantity,
+          price_sold: priceToUse,
+          cost_unit: selectedProducto.cost_unit, // SNAPSHOT
+          sale_date: new Date(saleDate).toISOString(),
+        });
+      }
 
       // Reset form
       setSelectedProductoId('');
@@ -130,7 +160,7 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
   };
 
   const handleClose = () => {
-    if (!createMutation.isPending) {
+    if (!createMutation.isPending && !updateMutation.isPending) {
       onClose();
     }
   };
@@ -140,116 +170,133 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
     setCustomPrice(null); // Reset custom price when changing product
   };
 
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Registrar Venta"
+      title={isEdit ? 'Editar Venta' : 'Registrar Venta'}
       size="md"
       footer={
         <>
           <Button
             variant="ghost"
             onClick={handleClose}
-            disabled={createMutation.isPending}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createMutation.isPending || !selectedProducto}
-            icon="add"
+            disabled={isSubmitting || !selectedProducto}
+            icon={isEdit ? 'save' : 'add'}
           >
-            {createMutation.isPending ? 'Guardando...' : 'Registrar Venta'}
+            {isSubmitting ? 'Guardando...' : isEdit ? 'Guardar' : 'Registrar Venta'}
           </Button>
         </>
       }
     >
       <div className="space-y-6">
         {/* Product Selection */}
-        <Select
-          label="Producto"
-          options={[
-            { value: '', label: 'Seleccionar producto...' },
-            ...productos.map((p) => ({
-              value: p.id,
-              label: `${p.name} - ${formatCurrency(p.price_sale)}`,
-            })),
-          ]}
-          value={selectedProductoId}
-          onChange={(e) => handleProductoChange(e.target.value)}
-        />
+        {isEdit ? (
+          <Card className="bg-slate-50 dark:bg-slate-900/50">
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">Producto</p>
+              <p className="font-semibold text-slate-900 dark:text-white">
+                {editData?.producto_name}
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <Select
+            label="Producto"
+            options={[
+              { value: '', label: 'Seleccionar producto...' },
+              ...productos.map((p) => ({
+                value: p.id,
+                label: `${p.name} - ${formatCurrency(p.price_sale)}`,
+              })),
+            ]}
+            value={selectedProductoId}
+            onChange={(e) => handleProductoChange(e.target.value)}
+          />
+        )}
 
         {selectedProducto && (
           <>
             {/* Product Info */}
-            <Card className="bg-slate-50 dark:bg-slate-900/50">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Precio sugerido:
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {formatCurrency(selectedProducto.price_sale)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Costo unitario:
-                  </span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {formatCurrency(selectedProducto.cost_unit)}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Stock Info */}
-            <Card className={`${
-              availableStock === 0
-                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                : availableStock <= 5
-                ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-            }`}>
-              <div className="flex items-center gap-3">
-                <span className={`material-symbols-outlined text-3xl ${
-                  availableStock === 0
-                    ? 'text-red-500'
-                    : availableStock <= 5
-                    ? 'text-yellow-600'
-                    : 'text-green-600'
-                }`}>
-                  {availableStock === 0 ? 'error' : availableStock <= 5 ? 'warning' : 'check_circle'}
-                </span>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                      Stock disponible
+            {!isEdit && (
+              <Card className="bg-slate-50 dark:bg-slate-900/50">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Precio sugerido:
                     </span>
-                    <span className={`font-bold text-lg ${
-                      availableStock === 0
-                        ? 'text-red-600 dark:text-red-400'
-                        : availableStock <= 5
-                        ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {availableStock} unidades
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(selectedProducto.price_sale)}
                     </span>
                   </div>
-                  {availableStock === 0 && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      No hay stock disponible. Agrega más insumos para poder vender.
-                    </p>
-                  )}
-                  {availableStock > 0 && availableStock <= 5 && (
-                    <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-                      Stock bajo. Considera agregar más insumos.
-                    </p>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Costo unitario:
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(selectedProducto.cost_unit)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
+
+            {/* Stock Info - Solo en modo creación */}
+            {!isEdit && (
+              <Card className={`${
+                availableStock === 0
+                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  : availableStock <= 5
+                  ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className={`material-symbols-outlined text-3xl ${
+                    availableStock === 0
+                      ? 'text-red-500'
+                      : availableStock <= 5
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                  }`}>
+                    {availableStock === 0 ? 'error' : availableStock <= 5 ? 'warning' : 'check_circle'}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        Stock disponible
+                      </span>
+                      <span className={`font-bold text-lg ${
+                        availableStock === 0
+                          ? 'text-red-600 dark:text-red-400'
+                          : availableStock <= 5
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-green-600 dark:text-green-400'
+                      }`}>
+                        {availableStock} unidades
+                      </span>
+                    </div>
+                    {availableStock === 0 && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        No hay stock disponible. Agrega más insumos para poder vender.
+                      </p>
+                    )}
+                    {availableStock > 0 && availableStock <= 5 && (
+                      <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+                        Stock bajo. Considera agregar más insumos.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
 
             {/* Quantity */}
             <div>
@@ -261,11 +308,11 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
                   value={quantity}
                   onChange={setQuantity}
                   min={1}
-                  max={availableStock}
+                  max={isEdit ? 9999 : availableStock}
                   step={1}
                 />
               </div>
-              {quantity > availableStock && (
+              {!isEdit && quantity > availableStock && (
                 <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2">
                   La cantidad excede el stock disponible
                 </p>
@@ -274,7 +321,7 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
 
             {/* Custom Price (Optional) */}
             <Input
-              label="Precio de venta (opcional)"
+              label={isEdit ? "Precio de venta" : "Precio de venta (opcional)"}
               type="number"
               step="1"
               min="0"
@@ -284,18 +331,20 @@ export function VentaForm({ isOpen, onClose }: VentaFormProps) {
                 const val = e.target.value;
                 setCustomPrice(val === '' ? null : parseFloat(val));
               }}
-              helperText="Deja vacío para usar el precio sugerido"
+              helperText={isEdit ? undefined : "Deja vacío para usar el precio sugerido"}
               icon="payments"
             />
 
             {/* Sale Date */}
-            <Input
-              label="Fecha de venta"
-              type="date"
-              value={saleDate}
-              onChange={(e) => setSaleDate(e.target.value)}
-              icon="calendar_today"
-            />
+            {!isEdit && (
+              <Input
+                label="Fecha de venta"
+                type="date"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                icon="calendar_today"
+              />
+            )}
 
             {/* Calculations Summary */}
             <Card className="bg-primary/5 dark:bg-primary/10 border-primary/20">

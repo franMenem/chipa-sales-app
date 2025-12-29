@@ -4,18 +4,27 @@ import { Button } from '../components/ui/Button';
 import { VentaForm } from '../components/forms/VentaForm';
 import { VentasList } from '../components/lists/VentasList';
 import { useVentas } from '../hooks/useVentas';
+import type { Venta } from '../lib/types';
 
 export function Ventas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVenta, setEditingVenta] = useState<Venta | null>(null);
   const [filters, setFilters] = useState<{ startDate?: string; endDate?: string }>({});
   const { data: ventas, isLoading, error } = useVentas(filters);
 
   const handleAdd = () => {
+    setEditingVenta(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (venta: Venta) => {
+    setEditingVenta(venta);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setEditingVenta(null);
   };
 
   return (
@@ -47,11 +56,11 @@ export function Ventas() {
             </p>
           </div>
         ) : (
-          <VentasList ventas={ventas || []} onFilterChange={setFilters} />
+          <VentasList ventas={ventas || []} onFilterChange={setFilters} onEdit={handleEdit} />
         )}
       </div>
 
-      <VentaForm isOpen={isModalOpen} onClose={handleCloseModal} />
+      <VentaForm isOpen={isModalOpen} onClose={handleCloseModal} editData={editingVenta || undefined} />
     </Layout>
   );
 }
