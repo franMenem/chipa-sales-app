@@ -9,7 +9,17 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon, helperText, className = '', ...props }, ref) => {
+  ({ label, error, icon, helperText, className = '', onFocus, value, ...props }, ref) => {
+    // Para inputs numéricos, mostrar vacío si el valor es 0
+    const displayValue = props.type === 'number' && (value === 0 || value === '0') ? '' : value;
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      // Seleccionar todo el texto al hacer focus
+      e.target.select();
+      // Llamar al onFocus original si existe
+      onFocus?.(e);
+    };
+
     return (
       <div className="w-full">
         {label && (
@@ -38,6 +48,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${error ? 'border-red-500 focus:ring-red-500/50 focus:border-red-500' : ''}
               ${className}
             `}
+            value={displayValue}
+            onFocus={handleFocus}
             {...props}
           />
         </div>
