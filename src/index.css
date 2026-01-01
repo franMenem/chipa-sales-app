@@ -4,14 +4,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #13ec5b;
-  --color-background-light: #f6f8f6;
-  --color-background-dark: #102216;
+  --color-primary: #3b82f6;
+  --color-background-light: #f8fafc;
+  --color-background-dark: #0f172a;
   --color-surface-light: #ffffff;
-  --color-surface-dark: #1c2e24;
-  
+  --color-surface-dark: #1e293b;
+
   --font-family-display: "Inter", sans-serif;
-  
+
   --radius: 0.25rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;

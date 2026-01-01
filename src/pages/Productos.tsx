@@ -4,10 +4,12 @@ import { Button } from '../components/ui/Button';
 import { ProductoForm } from '../components/forms/ProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/useProductos';
+import { useToast } from '../hooks/useToast';
 import type { ProductoWithCost } from '../lib/types';
 import { supabase } from '../lib/supabase';
 
 export function Productos() {
+  const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProducto, setEditingProducto] = useState<{
     id: string;
@@ -52,7 +54,7 @@ export function Productos() {
       setIsModalOpen(true);
     } catch (err) {
       console.error('Error loading recipe:', err);
-      alert('Error al cargar la receta del producto');
+      toast.error('Error al cargar', 'No se pudo cargar la receta del producto');
     } finally {
       setIsLoadingRecipe(false);
     }
@@ -77,7 +79,7 @@ export function Productos() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-500 dark:text-slate-400">Cargando productos...</p>
+            <p className="text-slate-700 dark:text-slate-300">Cargando productos...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -87,7 +89,7 @@ export function Productos() {
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
               Error al cargar productos
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-center">
+            <p className="text-slate-700 dark:text-slate-300 text-center">
               {error instanceof Error ? error.message : 'Ocurrió un error inesperado'}
             </p>
           </div>

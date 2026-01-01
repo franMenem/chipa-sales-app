@@ -27,15 +27,15 @@ export function AppBar({ title, subtitle, action }: AppBarProps) {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800/50">
-      <div className="flex items-center p-4 pb-2 justify-between">
+    <div className="sticky top-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700">
+      <div className="flex items-center px-4 md:px-6 lg:px-8 py-4 pb-2 justify-between max-w-7xl mx-auto w-full">
         <div className="flex flex-col flex-1 min-w-0">
           {subtitle && (
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {subtitle}
             </p>
           )}
-          <h2 className="text-xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-xl md:text-2xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
             {title}
           </h2>
         </div>

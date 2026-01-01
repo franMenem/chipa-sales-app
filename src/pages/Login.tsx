@@ -26,7 +26,7 @@ export function Login() {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
             Chipa Sales
           </h1>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-700 dark:text-slate-300">
             Gestiona tu negocio de manera profesional
           </p>
         </div>
@@ -66,7 +66,7 @@ export function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+        <p className="text-center text-sm text-slate-700 dark:text-slate-300 mt-6">
           Gestión inteligente de costos y ventas
         </p>
       </div>

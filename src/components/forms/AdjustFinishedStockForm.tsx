@@ -124,7 +124,7 @@ export function AdjustFinishedStockForm({ isOpen, onClose, producto }: AdjustFin
               </span>
               {quantity !== 0 && (
                 <>
-                  <span className="text-xl text-slate-500 dark:text-slate-400">→</span>
+                  <span className="text-xl text-slate-700 dark:text-slate-300">→</span>
                   <span className={`text-2xl font-bold ${
                     newStock < 0
                       ? 'text-red-600 dark:text-red-400'

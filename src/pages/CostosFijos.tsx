@@ -130,7 +130,7 @@ export function CostosFijos() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-500 dark:text-slate-400">Cargando costos fijos...</p>
+            <p className="text-slate-700 dark:text-slate-300">Cargando costos fijos...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -140,7 +140,7 @@ export function CostosFijos() {
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
               Error al cargar costos fijos
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-center">
+            <p className="text-slate-700 dark:text-slate-300 text-center">
               {error instanceof Error ? error.message : 'Ocurrió un error inesperado'}
             </p>
           </div>
@@ -176,7 +176,7 @@ export function CostosFijos() {
                 <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
                   No hay costos fijos
                 </h3>
-                <p className="text-slate-500 dark:text-slate-400">
+                <p className="text-slate-700 dark:text-slate-300">
                   Agrega tus gastos fijos mensuales
                 </p>
               </div>
@@ -203,7 +203,7 @@ export function CostosFijos() {
                             <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                               {costo.name}
                             </h3>
-                            <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                               <span>
                                 {formatCurrency(costo.amount)} /{' '}
                                 {frequencyLabels[costo.frequency]}

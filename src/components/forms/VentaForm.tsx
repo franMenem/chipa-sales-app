@@ -8,6 +8,7 @@ import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/useProductos';
 import { useInsumos } from '../../hooks/useInsumos';
 import { useCreateVenta, useUpdateVenta } from '../../hooks/useVentas';
+import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
 import type { Venta } from '../../lib/types';
 
@@ -22,6 +23,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const { data: insumos = [] } = useInsumos();
   const createMutation = useCreateVenta();
   const updateMutation = useUpdateVenta();
+  const toast = useToast();
 
   const isEdit = !!editData;
 
@@ -109,12 +111,12 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
 
   const handleSubmit = async () => {
     if (!selectedProducto) {
-      alert('Debes seleccionar un producto');
+      toast.error('Producto requerido', 'Debes seleccionar un producto');
       return;
     }
 
     if (quantity <= 0) {
-      alert('La cantidad debe ser mayor a 0');
+      toast.error('Cantidad inválida', 'La cantidad debe ser mayor a 0');
       return;
     }
 
@@ -129,12 +131,18 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       } else {
         // Modo creación: validar stock y crear nueva venta
         if (quantity > availableStock) {
-          alert(`Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`);
+          toast.error(
+            'Stock insuficiente',
+            `Solo hay ${availableStock} unidades disponibles`
+          );
           return;
         }
 
         if (availableStock === 0) {
-          alert('No hay stock disponible de este producto. Por favor, agrega más insumos.');
+          toast.error(
+            'Sin stock',
+            'No hay stock disponible de este producto. Por favor, agrega más insumos.'
+          );
           return;
         }
 
@@ -202,7 +210,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
         {isEdit ? (
           <Card className="bg-slate-50 dark:bg-slate-900/50">
             <div className="space-y-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Producto</p>
+              <p className="text-xs text-slate-700 dark:text-slate-300">Producto</p>
               <p className="font-semibold text-slate-900 dark:text-white">
                 {editData?.producto_name}
               </p>

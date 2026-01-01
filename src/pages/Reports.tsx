@@ -6,9 +6,11 @@ import { Button } from '../components/ui/Button';
 import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
 import { useInsumos } from '../hooks/useInsumos';
+import { useToast } from '../hooks/useToast';
 import { formatCurrency } from '../utils/formatters';
 
 export function Reports() {
+  const toast = useToast();
   const [startDate, setStartDate] = useState(
     new Date(new Date().setDate(new Date().getDate() - 30))
       .toISOString()
@@ -24,7 +26,7 @@ export function Reports() {
 
   const handleExportCSV = () => {
     if (!topProducts || !profitTrend) {
-      alert('No hay datos para exportar');
+      toast.warning('Sin datos', 'No hay datos para exportar');
       return;
     }
 
@@ -77,13 +79,13 @@ export function Reports() {
         </Button>
       }
     >
-      <div className="p-4 space-y-6">
+      <div className="space-y-6">
         {/* Date Range Filter */}
         <Card>
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
             Filtrar por rango de fechas
           </h3>
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <Input
               label="Desde"
               type="date"
@@ -100,7 +102,7 @@ export function Reports() {
         </Card>
 
         {/* Summary Metrics */}
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
           <Card className="bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-900">
             <div className="flex items-center gap-2 mb-1">
               <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-lg">
@@ -237,7 +239,7 @@ export function Reports() {
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 No hay datos para el reporte
               </h3>
-              <p className="text-slate-500 dark:text-slate-400">
+              <p className="text-slate-700 dark:text-slate-300">
                 Registra ventas para generar reportes y estadísticas
               </p>
             </Card>

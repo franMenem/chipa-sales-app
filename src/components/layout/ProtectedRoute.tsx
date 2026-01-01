@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
               refresh
             </span>
           </div>
-          <p className="text-slate-500 dark:text-slate-400">Cargando...</p>
+          <p className="text-slate-700 dark:text-slate-300">Cargando...</p>
         </div>
       </div>
     );

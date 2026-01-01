@@ -118,7 +118,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
           <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
             No hay ventas
           </h3>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-700 dark:text-slate-300">
             Registra tu primera venta para comenzar
           </p>
         </div>
@@ -165,7 +165,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
       )}
 
       {/* Summary Cards */}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <Card className="bg-blue-50 dark:bg-blue-950/30">
           <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
             Ingresos
@@ -191,7 +191,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
       </div>
 
       {/* Sales List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {ventas.map((venta) => (
           <Card key={venta.id}>
             <div className="space-y-3">
@@ -207,7 +207,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
                     <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                       {venta.producto_name}
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-slate-700 dark:text-slate-300">
                       {formatDate(venta.sale_date)} •{' '}
                       {formatRelativeTime(venta.sale_date)}
                     </p>

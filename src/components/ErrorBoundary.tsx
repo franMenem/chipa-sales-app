@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 Algo salió mal
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
+              <p className="text-slate-700 dark:text-slate-300 mb-6">
                 Ocurrió un error inesperado. Por favor intenta nuevamente.
               </p>
 

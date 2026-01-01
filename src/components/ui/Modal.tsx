@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 interface ModalProps {
@@ -11,6 +11,10 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -21,6 +25,68 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  // Focus trap implementation
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    // Save currently focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Get all focusable elements inside modal
+    const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    // Focus first element
+    firstElement.focus();
+
+    // Handle tab key to trap focus
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+
+    // Cleanup: restore focus when modal closes
+    return () => {
+      document.removeEventListener('keydown', handleTab);
+      previousFocusRef.current?.focus();
+    };
+  }, [isOpen]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -36,22 +102,29 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className={`relative w-full ${sizeStyles[size]} animate-in zoom-in-95 slide-in-from-bottom-4 duration-200`}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className={`relative w-full ${sizeStyles[size]} animate-in zoom-in-95 slide-in-from-bottom-4 duration-200`}
+      >
         <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <h2 id="modal-title" className="text-xl font-bold text-slate-900 dark:text-white">
               {title}
             </h2>
             <button
               onClick={onClose}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Cerrar"
+              aria-label="Cerrar modal"
             >
-              <span className="material-symbols-outlined text-slate-500 dark:text-slate-400">
+              <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">
                 close
               </span>
             </button>

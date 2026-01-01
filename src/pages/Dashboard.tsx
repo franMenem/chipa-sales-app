@@ -1,6 +1,7 @@
 import { Layout } from '../components/layout/Layout';
 import { KpiCard } from '../components/ui/KpiCard';
 import { Card } from '../components/ui/Card';
+import { Skeleton } from '../components/ui/Skeleton';
 import { ProfitLineChart } from '../components/charts/ProfitLineChart';
 import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useDashboardStats, useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
@@ -16,9 +17,30 @@ export function Dashboard() {
   if (isLoading) {
     return (
       <Layout title="Dashboard" subtitle="Vista general">
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-          <p className="text-slate-500 dark:text-slate-400">Cargando dashboard...</p>
+        <div className="space-y-6">
+          {/* KPIs Skeletons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Charts Skeletons */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <Card>
+              <Skeleton className="h-6 w-48 mb-4" />
+              <Skeleton className="h-64 w-full" />
+            </Card>
+            <Card>
+              <Skeleton className="h-6 w-48 mb-4" />
+              <Skeleton className="h-64 w-full" />
+            </Card>
+          </div>
         </div>
       </Layout>
     );
@@ -26,9 +48,9 @@ export function Dashboard() {
 
   return (
     <Layout title="Dashboard" subtitle="Vista general">
-      <div className="p-4 space-y-6">
-        {/* KPIs - Vertical Stack */}
-        <div className="flex flex-col gap-3">
+      <div className="space-y-6">
+        {/* KPIs - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
           <KpiCard
             label="Ventas hoy"
             value={formatCurrency(stats?.salesToday || 0)}
@@ -61,9 +83,9 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Charts */}
+        {/* Charts - Responsive Grid */}
         {profitTrend && profitTrend.length > 0 && (
-          <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <Card>
               <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
                 Tendencia de Ganancia (últimos 30 días)
@@ -77,7 +99,7 @@ export function Dashboard() {
               </h3>
               <IncomeVsCostChart data={profitTrend} />
             </Card>
-          </>
+          </div>
         )}
 
         {/* Top Products */}
@@ -102,7 +124,7 @@ export function Dashboard() {
                       <h4 className="font-medium text-slate-900 dark:text-white truncate">
                         {product.producto_name}
                       </h4>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-sm text-slate-700 dark:text-slate-300">
                         {product.total_quantity} unidades vendidas
                       </p>
                     </div>
@@ -131,7 +153,7 @@ export function Dashboard() {
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 No hay datos aún
               </h3>
-              <p className="text-slate-500 dark:text-slate-400">
+              <p className="text-slate-700 dark:text-slate-300">
                 Comienza registrando ventas para ver estadísticas
               </p>
             </Card>

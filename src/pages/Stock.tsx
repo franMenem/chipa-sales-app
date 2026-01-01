@@ -74,7 +74,7 @@ export function Stock() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-500 dark:text-slate-400">Cargando inventario...</p>
+            <p className="text-slate-700 dark:text-slate-300">Cargando inventario...</p>
           </div>
         ) : productosSorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -84,7 +84,7 @@ export function Stock() {
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
               No hay productos
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-center">
+            <p className="text-slate-700 dark:text-slate-300 text-center">
               Agrega productos con recetas para ver el stock disponible
             </p>
           </div>
@@ -137,7 +137,7 @@ export function Stock() {
                       </div>
                       {producto.recipe_items && producto.recipe_items.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                          <p className="text-xs text-slate-700 dark:text-slate-300 mb-2">
                             Insumos necesarios (por unidad):
                           </p>
                           <div className="space-y-1">

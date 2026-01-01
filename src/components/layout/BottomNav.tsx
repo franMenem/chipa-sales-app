@@ -39,8 +39,8 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-surface-light dark:bg-[#16221a] border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 px-6 z-40">
-      <div className="flex justify-between items-end h-16 pb-2 max-w-md mx-auto">
+    <div className="md:hidden fixed bottom-0 left-0 w-full bg-surface-light dark:bg-surface-dark border-t border-slate-200 dark:border-slate-700 pb-safe pt-2 px-6 z-40">
+      <div className="flex justify-between items-end h-16 pb-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (

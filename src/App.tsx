@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { PageErrorBoundary } from './components/layout/PageErrorBoundary';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -21,7 +22,7 @@ function PageLoader() {
     <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
-        <p className="text-slate-500 dark:text-slate-400 font-medium">Cargando...</p>
+        <p className="text-slate-700 dark:text-slate-300 font-medium">Cargando...</p>
       </div>
     </div>
   );
@@ -61,7 +62,9 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <PageErrorBoundary pageName="Dashboard">
+                      <Dashboard />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -69,7 +72,9 @@ function App() {
                 path="/insumos"
                 element={
                   <ProtectedRoute>
-                    <Insumos />
+                    <PageErrorBoundary pageName="Insumos">
+                      <Insumos />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -77,7 +82,9 @@ function App() {
                 path="/productos"
                 element={
                   <ProtectedRoute>
-                    <Productos />
+                    <PageErrorBoundary pageName="Productos">
+                      <Productos />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -85,7 +92,9 @@ function App() {
                 path="/stock"
                 element={
                   <ProtectedRoute>
-                    <Stock />
+                    <PageErrorBoundary pageName="Stock">
+                      <Stock />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -93,7 +102,9 @@ function App() {
                 path="/ventas"
                 element={
                   <ProtectedRoute>
-                    <Ventas />
+                    <PageErrorBoundary pageName="Ventas">
+                      <Ventas />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -101,7 +112,9 @@ function App() {
                 path="/costos-fijos"
                 element={
                   <ProtectedRoute>
-                    <CostosFijos />
+                    <PageErrorBoundary pageName="Costos Fijos">
+                      <CostosFijos />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />
@@ -109,7 +122,9 @@ function App() {
                 path="/reports"
                 element={
                   <ProtectedRoute>
-                    <Reports />
+                    <PageErrorBoundary pageName="Reportes">
+                      <Reports />
+                    </PageErrorBoundary>
                   </ProtectedRoute>
                 }
               />

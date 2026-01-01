@@ -8,14 +8,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#13ec5b',
-        'background-light': '#f6f8f6',
-        'background-dark': '#102216',
+        primary: '#3b82f6',
+        'background-light': '#f8fafc',
+        'background-dark': '#0f172a',
         'surface-light': '#ffffff',
-        'surface-dark': '#1c2e24',
+        'surface-dark': '#1e293b',
       },
       spacing: {
         'safe': 'env(safe-area-inset-bottom)',
+      },
+      screens: {
+        'xs': '475px',
       },
     },
   },

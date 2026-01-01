@@ -11,6 +11,7 @@ import { Card } from '../ui/Card';
 import { QuantityStepper } from '../ui/QuantityStepper';
 import { useCreateProducto, useUpdateProducto } from '../../hooks/useProductos';
 import { useInsumos } from '../../hooks/useInsumos';
+import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateSuggestedPrice } from '../../utils/calculations';
 
@@ -50,6 +51,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
   const createMutation = useCreateProducto();
   const updateMutation = useUpdateProducto();
   const { data: insumos = [] } = useInsumos();
+  const toast = useToast();
 
   const [recipeItems, setRecipeItems] = useState<RecipeItemInput[]>(
     editData?.recipe_items || []
@@ -138,7 +140,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     // Check if insumo already exists in recipe
     const exists = recipeItems.some((item) => item.insumo_id === selectedInsumoId);
     if (exists) {
-      alert('Este insumo ya está en la receta');
+      toast.warning('Insumo duplicado', 'Este insumo ya está en la receta');
       return;
     }
 
@@ -172,7 +174,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
 
   const onSubmit = async (data: ProductoFormData) => {
     if (recipeItems.length === 0) {
-      alert('Debes agregar al menos un ingrediente a la receta');
+      toast.error('Receta vacía', 'Debes agregar al menos un ingrediente a la receta');
       return;
     }
 
@@ -282,7 +284,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                 <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-4xl mb-2">
                   recipe_long
                 </span>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-700 dark:text-slate-300">
                   Agrega ingredientes a la receta
                 </p>
               </div>
@@ -302,7 +304,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                         <h4 className="font-medium text-slate-900 dark:text-white">
                           {insumo.name}
                         </h4>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
                           Costo: {formatCurrency(itemCost)} ({formatCurrency(insumo.base_unit_cost)}/
                           {unitLabels[insumo.unit_type] === 'kg' ||
                           unitLabels[insumo.unit_type] === 'L'

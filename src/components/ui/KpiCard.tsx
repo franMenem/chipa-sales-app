@@ -33,7 +33,7 @@ export function KpiCard({
     <Card className={`min-w-[200px] ${className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 mb-1">{label}</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
             {value}
           </p>
@@ -57,7 +57,7 @@ export function KpiCard({
               >
                 {trend.value}%
               </span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
+              <span className="text-xs text-slate-600 dark:text-slate-400">
                 {trend.label}
               </span>
             </div>

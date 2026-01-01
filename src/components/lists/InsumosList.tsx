@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Insumo } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { SearchBar } from '../ui/SearchBar';
 import { useDeleteInsumo } from '../../hooks/useInsumos';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface InsumosListProps {
   insumos: Insumo[];
@@ -21,10 +22,14 @@ const unitLabels = {
 
 export function InsumosList({ insumos, onEdit }: InsumosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const deleteMutation = useDeleteInsumo();
 
-  const filteredInsumos = insumos.filter((insumo) =>
-    insumo.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInsumos = useMemo(
+    () => insumos.filter((insumo) =>
+      insumo.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    ),
+    [insumos, debouncedSearchTerm]
   );
 
   const handleDelete = async (id: string, name: string) => {
@@ -42,7 +47,7 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
         <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
           No hay insumos
         </h3>
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className="text-slate-700 dark:text-slate-300">
           Agrega tu primer insumo para comenzar
         </p>
       </div>
@@ -63,12 +68,12 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
           <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-5xl mb-3">
             search_off
           </span>
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-700 dark:text-slate-300">
             No se encontraron insumos con "{searchTerm}"
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {filteredInsumos.map((insumo) => (
             <Card key={insumo.id}>
               <div className="flex items-center justify-between gap-4">
