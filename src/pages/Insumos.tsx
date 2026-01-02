@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
@@ -6,6 +7,7 @@ import { InsumosList } from '../components/lists/InsumosList';
 import { useInsumos } from '../hooks/useInsumos';
 
 export function Insumos() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInsumoId, setSelectedInsumoId] = useState<string | undefined>(undefined);
   const { data: insumos, isLoading, error } = useInsumos();
@@ -25,9 +27,19 @@ export function Insumos() {
       title="Insumos"
       subtitle="Gestión de ingredientes - Sistema LIFO"
       headerAction={
-        <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()}>
-          Registrar Compra
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            icon="receipt_long"
+            size="sm"
+            onClick={() => navigate('/insumos/historial')}
+          >
+            Historial
+          </Button>
+          <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()}>
+            Registrar Compra
+          </Button>
+        </div>
       }
     >
       <div className="p-4">
