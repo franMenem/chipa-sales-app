@@ -10,6 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Insumos = lazy(() => import('./pages/Insumos').then(m => ({ default: m.Insumos })));
+const InsumoHistory = lazy(() => import('./pages/InsumoHistory').then(m => ({ default: m.InsumoHistory })));
 const Productos = lazy(() => import('./pages/Productos').then(m => ({ default: m.Productos })));
 const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock })));
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
@@ -74,6 +75,16 @@ function App() {
                   <ProtectedRoute>
                     <PageErrorBoundary pageName="Insumos">
                       <Insumos />
+                    </PageErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/insumos/historial"
+                element={
+                  <ProtectedRoute>
+                    <PageErrorBoundary pageName="Historial de Compras">
+                      <InsumoHistory />
                     </PageErrorBoundary>
                   </ProtectedRoute>
                 }

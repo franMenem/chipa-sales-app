@@ -60,7 +60,7 @@ export function Reports() {
   // Calcular inversión total en insumos
   // Inversión = valor del stock actual + costos ya vendidos
   const currentStockValue = insumos.reduce((sum, insumo) => {
-    return sum + (insumo.price_per_unit * insumo.quantity);
+    return sum + (insumo.current_price_per_unit || 0 * insumo.total_stock);
   }, 0);
   const totalInvestment = currentStockValue + totalCost;
 

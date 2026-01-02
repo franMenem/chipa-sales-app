@@ -71,6 +71,7 @@ export function useVenta(id: string | undefined) {
 }
 
 // Create venta (with cost snapshot and automatic stock deduction)
+// Hybrid system: uses finished_stock first, auto-produces if needed
 export function useCreateVenta() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -89,65 +90,48 @@ export function useCreateVenta() {
 
       if (productoError) throw productoError;
 
-      let quantityToDeductFromInsumos = input.quantity;
       const finishedStock = producto.finished_stock || 0;
+      const needed = input.quantity;
 
-      // Descontar primero del stock terminado
-      if (finishedStock > 0) {
-        const quantityFromFinished = Math.min(finishedStock, input.quantity);
-        const newFinishedStock = finishedStock - quantityFromFinished;
+      // Si no hay suficiente finished_stock, auto-producir
+      if (finishedStock < needed) {
+        const quantityToProduce = needed - finishedStock;
 
-        // Actualizar finished_stock
-        const { error: updateFinishedError } = await supabase
-          .from('productos')
-          .update({ finished_stock: newFinishedStock })
-          .eq('id', input.producto_id);
-
-        if (updateFinishedError) throw updateFinishedError;
-
-        // Reducir la cantidad que necesitamos descontar de los insumos
-        quantityToDeductFromInsumos -= quantityFromFinished;
-      }
-
-      // Si aún necesitamos descontar más, descontar de los insumos
-      if (quantityToDeductFromInsumos > 0) {
-        // Obtener la receta del producto para descontar los insumos
-        const { data: recipeItems, error: recipeError } = await supabase
-          .from('recipe_items')
-          .select('*, insumo:insumos(*)')
-          .eq('producto_id', input.producto_id);
-
-        if (recipeError) throw recipeError;
-
-        // Descontar insumos basado en la cantidad restante
-        if (recipeItems && recipeItems.length > 0) {
-          for (const item of recipeItems) {
-            const insumo = item.insumo;
-            if (!insumo) continue;
-
-            // Calcular cuánto descontar
-            const quantityToDeduct = item.quantity_in_base_units * quantityToDeductFromInsumos;
-
-            // Convertir a la unidad del insumo
-            let newQuantity = insumo.quantity;
-            if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-              // La receta está en unidades base (g o ml), convertir a kg o l
-              newQuantity = insumo.quantity - (quantityToDeduct / 1000);
-            } else {
-              // Unidades directas
-              newQuantity = insumo.quantity - quantityToDeduct;
-            }
-
-            // Actualizar el insumo
-            const { error: updateError } = await supabase
-              .from('insumos')
-              .update({ quantity: Math.max(0, newQuantity) })
-              .eq('id', insumo.id);
-
-            if (updateError) throw updateError;
+        // Llamar a produce_producto para fabricar lo faltante
+        // Esta función automáticamente aumenta finished_stock
+        const { data: productionResult, error: productionError } = await supabase.rpc(
+          'produce_producto',
+          {
+            p_producto_id: input.producto_id,
+            p_quantity: quantityToProduce,
           }
+        );
+
+        if (productionError) throw productionError;
+
+        if (productionResult && !productionResult.success) {
+          throw new Error(
+            productionResult.error || 'No hay suficientes insumos para fabricar el producto'
+          );
         }
       }
+
+      // Obtener finished_stock actualizado (puede haber aumentado si se produjo)
+      const { data: updatedProducto } = await supabase
+        .from('productos')
+        .select('finished_stock')
+        .eq('id', input.producto_id)
+        .single();
+
+      const currentFinishedStock = updatedProducto?.finished_stock || 0;
+
+      // Descontar la cantidad vendida del finished_stock
+      const { error: updateError } = await supabase
+        .from('productos')
+        .update({ finished_stock: currentFinishedStock - needed })
+        .eq('id', input.producto_id);
+
+      if (updateError) throw updateError;
 
       // Crear la venta
       const { data, error } = await supabase
@@ -167,8 +151,10 @@ export function useCreateVenta() {
       queryClient.invalidateQueries({ queryKey: ['ventas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
       queryClient.invalidateQueries({ queryKey: ['productos'] });
-      toast.success('Venta registrada', 'La venta se registró correctamente y el stock se actualizó');
+      queryClient.invalidateQueries({ queryKey: ['production-history'] });
+      toast.success('Venta registrada', 'La venta se registró y el stock se actualizó');
     },
     onError: (error: Error) => {
       toast.error('Error al registrar venta', error.message);

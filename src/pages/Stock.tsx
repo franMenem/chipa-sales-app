@@ -1,219 +1,207 @@
 import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
+import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { useProductos } from '../hooks/useProductos';
 import { useInsumos } from '../hooks/useInsumos';
-import type { ProductoWithCost, Insumo } from '../lib/types';
+import { formatCurrency } from '../utils/formatters';
 
 export function Stock() {
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
-  const [selectedProducto, setSelectedProducto] = useState<ProductoWithCost | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
+  const [selectedProductoId, setSelectedProductoId] = useState<string | undefined>(undefined);
 
   const isLoading = loadingProductos || loadingInsumos;
 
-  const handleAddStock = (producto: ProductoWithCost) => {
-    setSelectedProducto(producto);
-    setIsModalOpen(true);
+  const handleProduce = (productoId?: string) => {
+    setSelectedProductoId(productoId);
+    setIsProduceModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedProducto(null);
+    setIsProduceModalOpen(false);
+    setSelectedProductoId(undefined);
   };
 
-  // Calcular stock disponible para cada producto
-  const calculateAvailableStock = (producto: ProductoWithCost, insumosData: Insumo[]) => {
-    if (!producto.recipe_items || producto.recipe_items.length === 0) {
-      return 0;
-    }
+  // Ordenar productos por stock terminado (menor a mayor)
+  const productosSorted = [...(productos || [])].sort(
+    (a, b) => a.finished_stock - b.finished_stock
+  );
 
-    // Calcular cuántas unidades podemos hacer con cada insumo
-    const possibleUnitsPerInsumo = producto.recipe_items.map((item) => {
-      const insumo = insumosData.find((i) => i.id === item.insumo_id);
-      if (!insumo) return 0;
-
-      // Convertir quantity del insumo a unidades base
-      let availableInBaseUnits = insumo.quantity;
-      if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-        availableInBaseUnits = insumo.quantity * 1000; // convertir a g o ml
-      }
-
-      // Calcular cuántas unidades del producto podemos hacer
-      const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
-      return possibleUnits;
-    });
-
-    // El stock disponible es el mínimo entre todos los insumos
-    return Math.min(...possibleUnitsPerInsumo);
-  };
-
-  const productosConStock = (productos || []).map((producto) => {
-    const stockFromInsumos = calculateAvailableStock(producto, insumos || []);
-    const finishedStock = producto.finished_stock || 0;
-    const totalStock = stockFromInsumos + finishedStock;
-
-    return {
-      ...producto,
-      stockDisponible: stockFromInsumos,
-      stockTotal: totalStock,
-    };
-  });
-
-  // Ordenar por stock total (menor a mayor)
-  const productosSorted = [...productosConStock].sort((a, b) => a.stockTotal - b.stockTotal);
+  // Calcular totales
+  const totalProductosStock = productos?.reduce((sum, p) => p.finished_stock + sum, 0) || 0;
 
   return (
     <Layout
       title="Stock"
-      subtitle="Inventario de productos"
+      subtitle="Inventario de productos e insumos"
+      headerAction={
+        <Button icon="manufacturing" size="sm" onClick={() => handleProduce()}>
+          Fabricar
+        </Button>
+      }
     >
-      <div className="p-4">
+      <div className="p-4 space-y-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
             <p className="text-slate-700 dark:text-slate-300">Cargando inventario...</p>
           </div>
-        ) : productosSorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-6xl mb-4">
-              inventory_2
-            </span>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              No hay productos
-            </h3>
-            <p className="text-slate-700 dark:text-slate-300 text-center">
-              Agrega productos con recetas para ver el stock disponible
-            </p>
-          </div>
         ) : (
-          <div className="space-y-3">
-            {productosSorted.map((producto) => {
-              const isLowStock = producto.stockTotal <= 5;
-              const isOutOfStock = producto.stockTotal === 0;
-
-              return (
-                <div
-                  key={producto.id}
-                  className={`bg-white dark:bg-surface-dark rounded-lg p-4 shadow-sm border-l-4 ${
-                    isOutOfStock
-                      ? 'border-red-500'
-                      : isLowStock
-                      ? 'border-yellow-500'
-                      : 'border-primary'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-slate-800 dark:text-slate-200">
-                          {producto.name}
-                        </h3>
-                        <Button
-                          size="sm"
-                          icon="add"
-                          onClick={() => handleAddStock(producto)}
-                          className="shrink-0"
-                        >
-                          Agregar
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-base font-semibold text-slate-800 dark:text-slate-200">
-                          <span className="material-symbols-outlined text-xl text-primary">
-                            inventory
-                          </span>
-                          <span>
-                            Stock total disponible: <strong className="text-primary">{producto.stockTotal}</strong> unidades
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500 ml-7">
-                          <span>→ Terminados: <strong>{producto.finished_stock || 0}</strong></span>
-                          <span>•</span>
-                          <span>Por insumos: <strong>{producto.stockDisponible}</strong></span>
-                        </div>
-                      </div>
-                      {producto.recipe_items && producto.recipe_items.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                          <p className="text-xs text-slate-700 dark:text-slate-300 mb-2">
-                            Insumos necesarios (por unidad):
-                          </p>
-                          <div className="space-y-1">
-                            {producto.recipe_items.map((item) => {
-                              const insumo = insumos?.find((i) => i.id === item.insumo_id);
-                              if (!insumo) return null;
-
-                              let availableInBaseUnits = insumo.quantity;
-                              if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-                                availableInBaseUnits = insumo.quantity * 1000;
-                              }
-
-                              const displayUnit = insumo.unit_type === 'kg' || insumo.unit_type === 'l'
-                                ? (insumo.unit_type === 'kg' ? 'g' : 'ml')
-                                : insumo.unit_type;
-
-                              return (
-                                <div
-                                  key={item.id}
-                                  className="flex items-center justify-between text-xs"
-                                >
-                                  <span className="text-slate-600 dark:text-slate-400">
-                                    {insumo.name}: {item.quantity_in_base_units} {displayUnit}
-                                  </span>
-                                  <span className="text-slate-500 dark:text-slate-500">
-                                    Disponible: {availableInBaseUnits.toFixed(2)} {displayUnit}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-4">
-                      {isOutOfStock ? (
-                        <div className="flex flex-col items-center">
-                          <span className="material-symbols-outlined text-red-500 text-4xl">
-                            error
-                          </span>
-                          <span className="text-xs text-red-500 font-medium mt-1">
-                            Sin stock
-                          </span>
-                        </div>
-                      ) : isLowStock ? (
-                        <div className="flex flex-col items-center">
-                          <span className="material-symbols-outlined text-yellow-500 text-4xl">
-                            warning
-                          </span>
-                          <span className="text-xs text-yellow-600 dark:text-yellow-500 font-medium mt-1">
-                            Bajo stock
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <span className="material-symbols-outlined text-primary text-4xl">
-                            check_circle
-                          </span>
-                          <span className="text-xs text-primary font-medium mt-1">
-                            Disponible
-                          </span>
-                        </div>
-                      )}
-                    </div>
+          <>
+            {/* Resumen de stock */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Productos terminados */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-900">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
+                      Productos Terminados
+                    </p>
+                    <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                      {totalProductosStock}
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      unidades listas para vender
+                    </p>
                   </div>
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-5xl">
+                    bakery_dining
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+
+              {/* Insumos disponibles */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20 rounded-xl p-6 border border-green-200 dark:border-green-900">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-700 dark:text-green-300 mb-1">
+                      Tipos de Insumos con Stock
+                    </p>
+                    <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                      {insumos?.length || 0}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      ingredientes disponibles
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-5xl">
+                    inventory
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de productos terminados */}
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                Stock de Productos Terminados
+              </h2>
+
+              {productosSorted.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-6xl mb-4">
+                    inventory_2
+                  </span>
+                  <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    No hay productos
+                  </h3>
+                  <p className="text-slate-700 dark:text-slate-300 text-center">
+                    Agrega productos para comenzar a fabricar
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {productosSorted.map((producto) => {
+                    const isLowStock = producto.finished_stock <= 5;
+                    const isOutOfStock = producto.finished_stock === 0;
+                    const canProduce = producto.has_sufficient_ingredients;
+
+                    return (
+                      <div
+                        key={producto.id}
+                        className={`bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border-l-4 ${
+                          isOutOfStock
+                            ? 'border-red-500 dark:border-red-700'
+                            : isLowStock
+                            ? 'border-yellow-500 dark:border-yellow-700'
+                            : 'border-green-500 dark:border-green-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+                              {producto.name}
+                            </h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                              {formatCurrency(producto.cost_unit)} / ud
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon="manufacturing"
+                            onClick={() => handleProduce(producto.id)}
+                            disabled={!canProduce}
+                            aria-label={`Fabricar ${producto.name}`}
+                          />
+                        </div>
+
+                        {/* Stock */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              Stock terminado:
+                            </span>
+                            <span className={`text-lg font-bold ${
+                              isOutOfStock
+                                ? 'text-red-600 dark:text-red-400'
+                                : isLowStock
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-green-600 dark:text-green-400'
+                            }`}>
+                              {producto.finished_stock}
+                            </span>
+                          </div>
+
+                          {/* Estado de ingredientes */}
+                          {!canProduce && (
+                            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-2 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-[16px]">
+                                warning
+                              </span>
+                              <p className="text-xs text-red-700 dark:text-red-300">
+                                Insumos insuficientes
+                              </p>
+                            </div>
+                          )}
+
+                          {canProduce && isLowStock && (
+                            <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 rounded-lg p-2 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-[16px]">
+                                inventory_2
+                              </span>
+                              <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                                Stock bajo - Fabricar más
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
-      <AdjustFinishedStockForm
-        isOpen={isModalOpen}
+      <ProduceProductoForm
+        isOpen={isProduceModalOpen}
         onClose={handleCloseModal}
-        producto={selectedProducto}
+        preselectedProductoId={selectedProductoId}
       />
     </Layout>
   );

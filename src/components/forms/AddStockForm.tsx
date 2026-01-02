@@ -39,13 +39,13 @@ export function AddStockForm({ isOpen, onClose, producto }: AddStockFormProps) {
         const quantityToAdd = item.quantity_in_base_units * quantity;
 
         // Convertir a la unidad del insumo
-        let newQuantity = insumo.quantity;
+        let newQuantity = insumo.total_stock;
         if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
           // Convertir de g/ml a kg/l
-          newQuantity = insumo.quantity + (quantityToAdd / 1000);
+          newQuantity = insumo.total_stock + (quantityToAdd / 1000);
         } else {
           // Unidades directas
-          newQuantity = insumo.quantity + quantityToAdd;
+          newQuantity = insumo.total_stock + quantityToAdd;
         }
 
         // Actualizar el insumo

@@ -7,7 +7,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { useCreateInsumo, useUpdateInsumo } from '../../hooks/useInsumos';
+import { useCreateInsumo } from '../../hooks/useInsumos';
+// useUpdateInsumo removed - insumos no longer editable, use AddInsumoBatch instead
 import { formatCurrency } from '../../utils/formatters';
 
 interface InsumoFormProps {
@@ -48,7 +49,7 @@ const unitLabels: Record<UnitType, string> = {
 export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
   const isEdit = !!editData;
   const createMutation = useCreateInsumo();
-  const updateMutation = useUpdateInsumo();
+  // const updateMutation = useUpdateInsumo(); // Removed - use AddInsumoBatch for adding stock
   
   const [totalPrice, setTotalPrice] = useState<number>(0);
 
@@ -97,13 +98,12 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
   const onSubmit = async (data: InsumoFormData) => {
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({
-          id: editData.id,
-          ...data,
-        });
-      } else {
-        await createMutation.mutateAsync(data);
+        // Edit mode disabled - use AddInsumoBatch to add new purchase
+        console.warn('Edit mode is disabled. Use AddInsumoBatch instead');
+        onClose();
+        return;
       }
+      await createMutation.mutateAsync(data);
       onClose();
     } catch (error) {
       // Error handled by mutation

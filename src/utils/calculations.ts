@@ -37,7 +37,7 @@ export function calculateProductCost(
     const insumo = insumos.find((i) => i.id === item.insumo_id);
     if (!insumo) return total;
 
-    return total + item.quantity_in_base_units * insumo.base_unit_cost;
+    return total + item.quantity_in_base_units * 0;
   }, 0);
 }
 

@@ -1,38 +1,32 @@
 import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { InsumoForm } from '../components/forms/InsumoForm';
+import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
 import { InsumosList } from '../components/lists/InsumosList';
 import { useInsumos } from '../hooks/useInsumos';
-import type { Insumo } from '../lib/types';
 
 export function Insumos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
+  const [selectedInsumoId, setSelectedInsumoId] = useState<string | undefined>(undefined);
   const { data: insumos, isLoading, error } = useInsumos();
 
-  const handleAdd = () => {
-    setEditingInsumo(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (insumo: Insumo) => {
-    setEditingInsumo(insumo);
+  const handleAddBatch = (insumoId?: string) => {
+    setSelectedInsumoId(insumoId);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingInsumo(null);
+    setSelectedInsumoId(undefined);
   };
 
   return (
     <Layout
       title="Insumos"
-      subtitle="Gestión de ingredientes"
+      subtitle="Gestión de ingredientes - Sistema LIFO"
       headerAction={
-        <Button icon="add" size="sm" onClick={handleAdd}>
-          Agregar
+        <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()}>
+          Registrar Compra
         </Button>
       }
     >
@@ -55,20 +49,14 @@ export function Insumos() {
             </p>
           </div>
         ) : (
-          <InsumosList insumos={insumos || []} onEdit={handleEdit} />
+          <InsumosList insumos={insumos || []} onAddBatch={handleAddBatch} />
         )}
       </div>
 
-      <InsumoForm
+      <AddInsumoBatchForm
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        editData={editingInsumo ? {
-          id: editingInsumo.id,
-          name: editingInsumo.name,
-          price_per_unit: editingInsumo.price_per_unit,
-          unit_type: editingInsumo.unit_type,
-          quantity: editingInsumo.quantity,
-        } : undefined}
+        preselectedInsumoId={selectedInsumoId}
       />
     </Layout>
   );

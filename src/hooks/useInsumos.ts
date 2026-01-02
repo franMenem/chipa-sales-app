@@ -1,20 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Insumo, UnitType } from '../lib/types';
+import type { Insumo, InsumoWithStock, CreateInsumoFormData } from '../lib/types';
 import { useToast } from './useToast';
 
-interface CreateInsumoInput {
-  name: string;
-  price_per_unit: number;
-  unit_type: UnitType;
-  quantity: number;
-}
-
-interface UpdateInsumoInput extends CreateInsumoInput {
-  id: string;
-}
-
-// Fetch all insumos for current user
+// Fetch insumos with stock (from view) - only active with stock > 0
 export function useInsumos() {
   return useQuery({
     queryKey: ['insumos'],
@@ -23,13 +12,35 @@ export function useInsumos() {
       if (!user) throw new Error('No authenticated user');
 
       const { data, error } = await supabase
-        .from('insumos')
+        .from('insumos_with_stock')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .gt('total_stock', 0) // Only show insumos with stock
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data as InsumoWithStock[];
+    },
+  });
+}
+
+// Fetch ALL insumos (including those without stock, for history view)
+export function useAllInsumos() {
+  return useQuery({
+    queryKey: ['insumos', 'all'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data, error } = await supabase
+        .from('insumos_with_stock')
         .select('*')
         .eq('user_id', user.id)
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data as Insumo[];
+      return data as InsumoWithStock[];
     },
   });
 }
@@ -54,13 +65,13 @@ export function useInsumo(id: string | undefined) {
   });
 }
 
-// Create insumo
+// Create new insumo (base catalog entry only, no price/quantity)
 export function useCreateInsumo() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
   return useMutation({
-    mutationFn: async (input: CreateInsumoInput) => {
+    mutationFn: async (input: CreateInsumoFormData) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
@@ -69,6 +80,7 @@ export function useCreateInsumo() {
         .insert({
           ...input,
           user_id: user.id,
+          is_active: true,
         })
         .select()
         .single();
@@ -78,7 +90,7 @@ export function useCreateInsumo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      toast.success('Insumo creado', 'El insumo se agregó correctamente');
+      toast.success('Insumo creado', 'El insumo se agregó al catálogo');
     },
     onError: (error: Error) => {
       toast.error('Error al crear insumo', error.message);
@@ -86,18 +98,16 @@ export function useCreateInsumo() {
   });
 }
 
-// Update insumo
-export function useUpdateInsumo() {
+// Archive/unarchive insumo (soft delete)
+export function useArchiveInsumo() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
   return useMutation({
-    mutationFn: async (input: UpdateInsumoInput) => {
-      const { id, ...updateData } = input;
-
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { data, error } = await supabase
         .from('insumos')
-        .update(updateData)
+        .update({ is_active })
         .eq('id', id)
         .select()
         .single();
@@ -105,20 +115,22 @@ export function useUpdateInsumo() {
       if (error) throw error;
       return data as Insumo;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      // Also invalidate productos because costs may have changed
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      toast.success('Insumo actualizado', 'Los costos se recalcularon automáticamente');
+      toast.success(
+        variables.is_active ? 'Insumo activado' : 'Insumo archivado',
+        variables.is_active
+          ? 'El insumo está activo nuevamente'
+          : 'El insumo fue archivado (no se eliminó)'
+      );
     },
     onError: (error: Error) => {
-      toast.error('Error al actualizar insumo', error.message);
+      toast.error('Error', error.message);
     },
   });
 }
 
-// Delete insumo
+// Delete insumo (hard delete - only if no lotes exist)
 export function useDeleteInsumo() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -135,7 +147,7 @@ export function useDeleteInsumo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       queryClient.invalidateQueries({ queryKey: ['productos'] });
-      toast.success('Insumo eliminado', 'El insumo se eliminó correctamente');
+      toast.success('Insumo eliminado', 'El insumo se eliminó permanentemente');
     },
     onError: (error: Error) => {
       toast.error('Error al eliminar insumo', error.message);

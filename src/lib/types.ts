@@ -7,12 +7,32 @@ export interface Insumo {
   id: string;
   user_id: string;
   name: string;
+  unit_type: UnitType;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InsumoLote {
+  id: string;
+  user_id: string;
+  insumo_id: string;
+  purchase_date: string;
+  quantity_purchased: number;
+  quantity_remaining: number;
   price_per_unit: number;
   unit_type: UnitType;
-  quantity: number; // Cantidad comprada
   base_unit_cost: number; // Calculated field
   created_at: string;
   updated_at: string;
+}
+
+export interface InsumoWithStock extends Insumo {
+  total_stock: number; // Sum of all lotes
+  current_price_per_unit: number | null; // LIFO price (most recent lote)
+  current_base_unit_cost: number | null; // LIFO base cost
+  active_batches: number; // Number of lotes with stock > 0
 }
 
 export interface RecipeItem {
@@ -39,7 +59,8 @@ export interface Producto {
 }
 
 export interface ProductoWithCost extends Producto {
-  cost_unit: number; // Calculated from view
+  cost_unit: number; // Calculated from view (LIFO pricing)
+  has_sufficient_ingredients: boolean; // True if all ingredients have enough stock
 }
 
 export interface Venta {
@@ -68,11 +89,39 @@ export interface CostoFijo {
   updated_at: string;
 }
 
+export interface ProductionRecord {
+  id: string;
+  user_id: string;
+  producto_id: string;
+  quantity_produced: number;
+  cost_unit_at_production: number;
+  production_date: string;
+  created_at: string;
+}
+
+export interface PriceHistoryPoint {
+  date: string;
+  price_per_unit: number;
+  quantity_purchased: number;
+}
+
 // Form types
-export interface InsumoFormData {
+export interface CreateInsumoFormData {
   name: string;
+  unit_type: UnitType;
+  description?: string;
+}
+
+export interface AddInsumoBatchFormData {
+  insumo_id: string; // Existing insumo or create new
+  purchase_date: string;
+  quantity_purchased: number;
   price_per_unit: number;
   unit_type: UnitType;
+}
+
+export interface ProduceProductoFormData {
+  producto_id: string;
   quantity: number;
 }
 
@@ -155,9 +204,37 @@ export interface Database {
       }
       insumos: {
         Row: Insumo
-        Insert: Omit<Insumo, 'id' | 'base_unit_cost' | 'created_at' | 'updated_at'>
-        Update: Partial<Omit<Insumo, 'id' | 'base_unit_cost' | 'created_at' | 'updated_at'>>
+        Insert: Omit<Insumo, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Insumo, 'id' | 'created_at' | 'updated_at'>>
         Relationships: []
+      }
+      insumo_lotes: {
+        Row: InsumoLote
+        Insert: Omit<InsumoLote, 'id' | 'base_unit_cost' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<InsumoLote, 'id' | 'base_unit_cost' | 'created_at' | 'updated_at'>>
+        Relationships: [
+          {
+            foreignKeyName: "insumo_lotes_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      production_history: {
+        Row: ProductionRecord
+        Insert: Omit<ProductionRecord, 'id' | 'created_at'>
+        Update: Partial<Omit<ProductionRecord, 'id' | 'created_at'>>
+        Relationships: [
+          {
+            foreignKeyName: "production_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       productos: {
         Row: Omit<Producto, 'recipe_items'>

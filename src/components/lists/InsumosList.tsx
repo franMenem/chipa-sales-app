@@ -1,18 +1,18 @@
 import { useState, useMemo, memo, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Insumo } from '../../lib/types';
+import type { InsumoWithStock } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { SearchBar } from '../ui/SearchBar';
-import { useDeleteInsumo } from '../../hooks/useInsumos';
+import { useArchiveInsumo } from '../../hooks/useInsumos';
 import { useDebounce } from '../../hooks/useDebounce';
 
 const VIRTUALIZATION_THRESHOLD = 50;
 
 interface InsumosListProps {
-  insumos: Insumo[];
-  onEdit: (insumo: Insumo) => void;
+  insumos: InsumoWithStock[];
+  onAddBatch: (insumoId: string) => void;
 }
 
 const unitLabels = {
@@ -25,13 +25,13 @@ const unitLabels = {
 
 // Memoized InsumoCard component
 interface InsumoCardProps {
-  insumo: Insumo;
-  onEdit: (insumo: Insumo) => void;
-  onDelete: (id: string, name: string) => void;
-  isDeleting: boolean;
+  insumo: InsumoWithStock;
+  onAddBatch: (insumoId: string) => void;
+  onArchive: (id: string, name: string) => void;
+  isArchiving: boolean;
 }
 
-const InsumoCard = memo(({ insumo, onEdit, onDelete, isDeleting }: InsumoCardProps) => (
+const InsumoCard = memo(({ insumo, onAddBatch, onArchive, isArchiving }: InsumoCardProps) => (
   <Card>
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -46,11 +46,18 @@ const InsumoCard = memo(({ insumo, onEdit, onDelete, isDeleting }: InsumoCardPro
           </h3>
           <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
             <span className="font-medium">
-              {formatCurrency(insumo.price_per_unit)} / {unitLabels[insumo.unit_type]}
+              {insumo.current_price_per_unit
+                ? `${formatCurrency(insumo.current_price_per_unit)} / ${unitLabels[insumo.unit_type]}`
+                : 'Sin precio'
+              }
             </span>
             <span className="text-xs">•</span>
             <span>
-              Stock: {insumo.quantity} {unitLabels[insumo.unit_type]}
+              Stock: {insumo.total_stock} {unitLabels[insumo.unit_type]}
+            </span>
+            <span className="text-xs">•</span>
+            <span className="text-xs">
+              {insumo.active_batches} {insumo.active_batches === 1 ? 'lote' : 'lotes'}
             </span>
           </div>
         </div>
@@ -60,18 +67,18 @@ const InsumoCard = memo(({ insumo, onEdit, onDelete, isDeleting }: InsumoCardPro
         <Button
           variant="ghost"
           size="sm"
-          icon="edit"
-          onClick={() => onEdit(insumo)}
-          aria-label={`Editar ${insumo.name}`}
+          icon="add_shopping_cart"
+          onClick={() => onAddBatch(insumo.id)}
+          aria-label={`Agregar compra de ${insumo.name}`}
         />
         <Button
           variant="ghost"
           size="sm"
-          icon="delete"
-          onClick={() => onDelete(insumo.id, insumo.name)}
-          disabled={isDeleting}
-          aria-label={`Eliminar ${insumo.name}`}
-          className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+          icon="archive"
+          onClick={() => onArchive(insumo.id, insumo.name)}
+          disabled={isArchiving}
+          aria-label={`Archivar ${insumo.name}`}
+          className="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
         />
       </div>
     </div>
@@ -80,10 +87,10 @@ const InsumoCard = memo(({ insumo, onEdit, onDelete, isDeleting }: InsumoCardPro
 
 InsumoCard.displayName = 'InsumoCard';
 
-export function InsumosList({ insumos, onEdit }: InsumosListProps) {
+export function InsumosList({ insumos, onAddBatch }: InsumosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const deleteMutation = useDeleteInsumo();
+  const archiveMutation = useArchiveInsumo();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const filteredInsumos = useMemo(
@@ -105,11 +112,11 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
     enabled: useVirtualization,
   });
 
-  const handleDelete = useCallback(async (id: string, name: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar "${name}"?`)) {
-      await deleteMutation.mutateAsync(id);
+  const handleArchive = useCallback(async (id: string, name: string) => {
+    if (window.confirm(`¿Archivar "${name}"? Podrás reactivarlo después.`)) {
+      await archiveMutation.mutateAsync({ id, is_active: false });
     }
-  }, [deleteMutation]);
+  }, [archiveMutation]);
 
   if (insumos.length === 0) {
     return (
@@ -179,9 +186,9 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
                   <div className="pb-4">
                     <InsumoCard
                       insumo={insumo}
-                      onEdit={onEdit}
-                      onDelete={handleDelete}
-                      isDeleting={deleteMutation.isPending}
+                      onAddBatch={onAddBatch}
+                      onArchive={handleArchive}
+                      isArchiving={archiveMutation.isPending}
                     />
                   </div>
                 </div>
@@ -195,9 +202,9 @@ export function InsumosList({ insumos, onEdit }: InsumosListProps) {
             <InsumoCard
               key={insumo.id}
               insumo={insumo}
-              onEdit={onEdit}
-              onDelete={handleDelete}
-              isDeleting={deleteMutation.isPending}
+              onAddBatch={onAddBatch}
+              onArchive={handleArchive}
+              isArchiving={archiveMutation.isPending}
             />
           ))}
         </div>

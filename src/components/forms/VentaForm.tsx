@@ -67,9 +67,9 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
         const insumo = insumos.find((i) => i.id === item.insumo_id);
         if (!insumo) return 0;
 
-        let availableInBaseUnits = insumo.quantity;
+        let availableInBaseUnits = insumo.total_stock;
         if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-          availableInBaseUnits = insumo.quantity * 1000;
+          availableInBaseUnits = insumo.total_stock * 1000;
         }
 
         const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
@@ -150,7 +150,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
           producto_name: selectedProducto.name,
           quantity,
           price_sold: priceToUse,
-          cost_unit: selectedProducto.cost_unit, // SNAPSHOT
+          cost_unit: selectedProducto.cost_unit || 0, // SNAPSHOT - default to 0 if null
           sale_date: new Date(saleDate).toISOString(),
         });
       }
