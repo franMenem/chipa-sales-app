@@ -8,17 +8,12 @@ import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
 import { useInsumos } from '../hooks/useInsumos';
 import { useToast } from '../hooks/useToast';
 import { formatCurrency } from '../utils/formatters';
+import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
 
 export function Reports() {
   const toast = useToast();
-  const [startDate, setStartDate] = useState(
-    new Date(new Date().setDate(new Date().getDate() - 30))
-      .toISOString()
-      .split('T')[0]
-  );
-  const [endDate, setEndDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [startDate, setStartDate] = useState(getDaysAgoForInput(30));
+  const [endDate, setEndDate] = useState(getTodayForInput());
 
   const { data: topProducts } = useTopProducts(10);
   const { data: profitTrend } = useDailyProfitTrend(30);

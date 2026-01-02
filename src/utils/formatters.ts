@@ -38,6 +38,7 @@ export function formatNumber(value: number, decimals: number = 0): string {
 
 /**
  * Formats a date as a relative time string (e.g., "hace 2 horas", "ayer")
+ * Uses Intl API for native relative time formatting
  * @param date - Date to format (string or Date object)
  * @returns Relative time string
  */
@@ -106,38 +107,4 @@ export function formatDateTime(date: string | Date): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(d);
-}
-
-/**
- * Gets the start and end dates for a date filter
- * @param filter - Filter type ('today', 'week', 'month')
- * @returns Object with startDate and endDate
- */
-export function getDateRange(
-  filter: 'today' | 'week' | 'month'
-): { startDate: Date; endDate: Date } {
-  const now = new Date();
-  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-  let startDate: Date;
-
-  switch (filter) {
-    case 'today':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      break;
-    case 'week': {
-      const dayOfWeek = now.getDay();
-      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      startDate = new Date(now.getTime() - diffToMonday * 24 * 60 * 60 * 1000);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-    }
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-      break;
-    default:
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  }
-
-  return { startDate, endDate };
 }

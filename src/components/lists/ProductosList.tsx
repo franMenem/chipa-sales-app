@@ -1,4 +1,5 @@
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProductoWithCost } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
 import { Card } from '../ui/Card';
@@ -6,6 +7,8 @@ import { Button } from '../ui/Button';
 import { SearchBar } from '../ui/SearchBar';
 import { useDeleteProducto } from '../../hooks/useProductos';
 import { useDebounce } from '../../hooks/useDebounce';
+
+const VIRTUALIZATION_THRESHOLD = 50;
 
 interface ProductosListProps {
   productos: ProductoWithCost[];
@@ -146,6 +149,7 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const deleteMutation = useDeleteProducto();
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // Memoize filtered results with debounced search
   const filteredProductos = useMemo(
@@ -154,6 +158,18 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
     ),
     [productos, debouncedSearchTerm]
   );
+
+  // Use virtualization only for large lists
+  const useVirtualization = filteredProductos.length >= VIRTUALIZATION_THRESHOLD;
+
+  // Setup virtualizer for large lists
+  const rowVirtualizer = useVirtualizer({
+    count: filteredProductos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 200, // Estimated height of each product card
+    overscan: 5,
+    enabled: useVirtualization,
+  });
 
   // Memoize delete handler
   const handleDelete = useCallback(async (id: string, name: string) => {
@@ -180,6 +196,11 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
 
   return (
     <div className="space-y-4">
+      {/* ARIA live region for search results announcements */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {searchTerm && `Se ${filteredProductos.length === 1 ? 'encontró' : 'encontraron'} ${filteredProductos.length} ${filteredProductos.length === 1 ? 'producto' : 'productos'}`}
+      </div>
+
       <SearchBar
         placeholder="Buscar producto..."
         value={searchTerm}
@@ -195,6 +216,45 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
           <p className="text-slate-700 dark:text-slate-300">
             No se encontraron productos con "{searchTerm}"
           </p>
+        </div>
+      ) : useVirtualization ? (
+        <div
+          ref={parentRef}
+          className="h-[600px] overflow-auto"
+          style={{ contain: 'strict' }}
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const producto = filteredProductos[virtualRow.index];
+              return (
+                <div
+                  key={producto.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="pb-4">
+                    <ProductoCard
+                      producto={producto}
+                      onEdit={onEdit}
+                      onDelete={handleDelete}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">

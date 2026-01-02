@@ -7,7 +7,13 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-auto min-w-[300px] max-w-[90%] space-y-2">
+    <div
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-auto min-w-[300px] max-w-[90%] space-y-2"
+      aria-live="polite"
+      aria-atomic="false"
+      role="region"
+      aria-label="Notificaciones"
+    >
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
@@ -65,10 +71,13 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
 
   return (
     <div
+      role="status"
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
       className={`flex items-center gap-3 ${style.bg} text-white px-4 py-3 rounded-full shadow-lg border ${style.borderColor} backdrop-blur-md animate-in slide-in-from-bottom duration-300`}
     >
       <div
         className={`flex shrink-0 items-center justify-center w-6 h-6 rounded-full ${style.iconBg} ${style.iconColor}`}
+        aria-hidden="true"
       >
         <span className="material-symbols-outlined text-[16px] font-bold">
           {style.icon}
@@ -85,7 +94,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         className="flex shrink-0 items-center justify-center w-5 h-5 rounded-full hover:bg-white/10 transition-colors"
         aria-label="Cerrar notificación"
       >
-        <span className="material-symbols-outlined text-[14px]">close</span>
+        <span className="material-symbols-outlined text-[14px]" aria-hidden="true">close</span>
       </button>
     </div>
   );

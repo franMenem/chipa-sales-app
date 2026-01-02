@@ -27,7 +27,7 @@ export function Layout({
       <div className="md:ml-64 min-h-screen flex flex-col">
         <AppBar title={title} subtitle={subtitle} action={headerAction} />
 
-        <main className="flex-1 pb-24 md:pb-6 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 pt-6 pb-24 md:pb-6 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
 

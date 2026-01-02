@@ -4,6 +4,9 @@
 @import "tailwindcss";
 
 @theme {
+  /* Dark mode configuration */
+  --dark-mode-selector: .dark;
+
   --color-primary: #3b82f6;
   --color-background-light: #f8fafc;
   --color-background-dark: #0f172a;

@@ -10,6 +10,7 @@ import { useInsumos } from '../../hooks/useInsumos';
 import { useCreateVenta, useUpdateVenta } from '../../hooks/useVentas';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
+import { getTodayForInput, isoToInputDate } from '../../utils/dates';
 import type { Venta } from '../../lib/types';
 
 interface VentaFormProps {
@@ -30,9 +31,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const [selectedProductoId, setSelectedProductoId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [customPrice, setCustomPrice] = useState<number | null>(null);
-  const [saleDate, setSaleDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [saleDate, setSaleDate] = useState(getTodayForInput());
 
   // Cargar datos de edición
   useEffect(() => {
@@ -40,13 +39,13 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setSelectedProductoId(editData.producto_id || '');
       setQuantity(editData.quantity);
       setCustomPrice(editData.price_sold);
-      setSaleDate(new Date(editData.sale_date).toISOString().split('T')[0]);
+      setSaleDate(isoToInputDate(editData.sale_date));
     } else if (isOpen && !editData) {
       // Reset para nueva venta
       setSelectedProductoId('');
       setQuantity(1);
       setCustomPrice(null);
-      setSaleDate(new Date().toISOString().split('T')[0]);
+      setSaleDate(getTodayForInput());
     }
   }, [isOpen, editData]);
 
@@ -160,7 +159,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setSelectedProductoId('');
       setQuantity(1);
       setCustomPrice(null);
-      setSaleDate(new Date().toISOString().split('T')[0]);
+      setSaleDate(getTodayForInput());
       onClose();
     } catch (error) {
       console.error(error);

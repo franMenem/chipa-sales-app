@@ -9,7 +9,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon, helperText, className = '', onFocus, value, ...props }, ref) => {
+  ({ label, error, icon, helperText, className = '', onFocus, onKeyDown, value, ...props }, ref) => {
     // Para inputs numéricos, mostrar vacío si el valor es 0
     const displayValue = props.type === 'number' && (value === 0 || value === '0') ? '' : value;
 
@@ -18,6 +18,28 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       e.target.select();
       // Llamar al onFocus original si existe
       onFocus?.(e);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Para inputs numéricos con min >= 0, prevenir entrada de caracteres inválidos
+      if (props.type === 'number') {
+        const min = props.min !== undefined ? Number(props.min) : -Infinity;
+
+        // Si min >= 0, no permitir signo negativo
+        if (min >= 0 && (e.key === '-' || e.key === 'e' || e.key === 'E')) {
+          e.preventDefault();
+          return;
+        }
+
+        // Prevenir 'e' y '+' en todos los inputs numéricos
+        if (e.key === 'e' || e.key === 'E' || e.key === '+') {
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // Llamar al onKeyDown original si existe
+      onKeyDown?.(e);
     };
 
     return (
@@ -50,6 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             `}
             value={displayValue}
             onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
             {...props}
           />
         </div>
