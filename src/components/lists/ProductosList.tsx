@@ -43,24 +43,21 @@ const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoC
     <Card>
       <div className="space-y-3">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              <span className="material-symbols-outlined text-primary text-[20px]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 shrink-0">
+              <span className="material-symbols-outlined text-primary text-[18px]">
                 bakery_dining
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+              <h3 className="font-semibold text-slate-900 dark:text-white">
                 {producto.name}
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                Precio: {formatCurrency(producto.price_sale)}
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
               size="sm"
@@ -80,35 +77,45 @@ const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoC
           </div>
         </div>
 
+        {/* Price */}
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            Precio de venta
+          </p>
+          <p className="text-base font-semibold text-primary">
+            {formatCurrency(producto.price_sale)}
+          </p>
+        </div>
+
         {/* Metrics */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-2">
           {/* Cost */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-            <p className="text-xs text-slate-700 dark:text-slate-300 mb-0.5">
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
               Costo
             </p>
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <p className="text-base font-semibold text-slate-900 dark:text-white">
               {formatCurrency(producto.cost_unit)}
             </p>
           </div>
 
           {/* Profit */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-            <p className="text-xs text-slate-700 dark:text-slate-300 mb-0.5">
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
               Ganancia
             </p>
-            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+            <p className="text-base font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(profit)}
             </p>
           </div>
 
           {/* Margin */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-            <p className="text-xs text-slate-700 dark:text-slate-300 mb-0.5">
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
               Margen
             </p>
             <p
-              className={`text-sm font-semibold ${
+              className={`text-base font-semibold ${
                 isLowMargin
                   ? 'text-red-600 dark:text-red-400'
                   : isGoodMargin

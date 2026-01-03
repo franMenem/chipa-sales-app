@@ -41,7 +41,7 @@ export function useProductos() {
             .from('recipe_items')
             .select(`
               *,
-              insumo:insumos(*)
+              insumo:insumos_with_stock(*)
             `)
             .eq('producto_id', producto.id);
 
@@ -50,7 +50,7 @@ export function useProductos() {
           // Calculate cost_unit
           const cost_unit = (recipeItems || []).reduce((total, item) => {
             if (!item.insumo) return total;
-            return total + (item.quantity_in_base_units * item.insumo.base_unit_cost);
+            return total + (item.quantity_in_base_units * (item.insumo.current_base_unit_cost || 0));
           }, 0);
 
           return {
@@ -85,7 +85,7 @@ export function useProducto(id: string | undefined) {
         .from('recipe_items')
         .select(`
           *,
-          insumo:insumos(*)
+          insumo:insumos_with_stock(*)
         `)
         .eq('producto_id', id);
 
@@ -94,7 +94,7 @@ export function useProducto(id: string | undefined) {
       // Calculate cost_unit
       const cost_unit = (recipeItems || []).reduce((total, item) => {
         if (!item.insumo) return total;
-        return total + (item.quantity_in_base_units * item.insumo.base_unit_cost);
+        return total + (item.quantity_in_base_units * (item.insumo.current_base_unit_cost || 0));
       }, 0);
 
       return {

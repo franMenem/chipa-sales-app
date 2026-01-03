@@ -25,20 +25,36 @@ export function Insumos() {
   return (
     <Layout
       title="Insumos"
-      subtitle="Gestión de ingredientes - Sistema LIFO"
+      subtitle="Ingredientes - LIFO"
       headerAction={
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           <Button
             variant="ghost"
             icon="receipt_long"
             size="sm"
             onClick={() => navigate('/insumos/historial')}
+            className="hidden sm:flex"
           >
             Historial
           </Button>
-          <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()}>
+          <Button
+            variant="ghost"
+            icon="receipt_long"
+            size="sm"
+            onClick={() => navigate('/insumos/historial')}
+            className="sm:hidden"
+            aria-label="Historial"
+          />
+          <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()} className="hidden sm:flex">
             Registrar Compra
           </Button>
+          <Button
+            icon="add_shopping_cart"
+            size="sm"
+            onClick={() => handleAddBatch()}
+            className="sm:hidden"
+            aria-label="Registrar Compra"
+          />
         </div>
       }
     >
