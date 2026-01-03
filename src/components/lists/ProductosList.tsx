@@ -77,44 +77,44 @@ const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoC
           </div>
         </div>
 
-        {/* Price */}
-        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-          <p className="text-sm text-slate-700 dark:text-slate-300">
-            Precio de venta
-          </p>
-          <p className="text-base font-semibold text-primary">
-            {formatCurrency(producto.price_sale)}
-          </p>
-        </div>
-
         {/* Metrics */}
         <div className="space-y-2">
+          {/* Price */}
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              Precio de venta
+            </span>
+            <span className="text-base font-semibold text-primary">
+              {formatCurrency(producto.price_sale)}
+            </span>
+          </div>
+
           {/* Cost */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               Costo
-            </p>
-            <p className="text-base font-semibold text-slate-900 dark:text-white">
+            </span>
+            <span className="text-base font-semibold text-slate-900 dark:text-white">
               {formatCurrency(producto.cost_unit)}
-            </p>
+            </span>
           </div>
 
           {/* Profit */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               Ganancia
-            </p>
-            <p className="text-base font-semibold text-green-600 dark:text-green-400">
+            </span>
+            <span className="text-base font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(profit)}
-            </p>
+            </span>
           </div>
 
           {/* Margin */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               Margen
-            </p>
-            <p
+            </span>
+            <span
               className={`text-base font-semibold ${
                 isLowMargin
                   ? 'text-red-600 dark:text-red-400'
@@ -124,7 +124,7 @@ const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoC
               }`}
             >
               {margin.toFixed(1)}%
-            </p>
+            </span>
           </div>
         </div>
 

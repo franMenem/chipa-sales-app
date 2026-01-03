@@ -91,3 +91,53 @@ export function useProduceProducto() {
     },
   });
 }
+
+// Produce products with custom lote order
+interface ProduceWithCustomOrderInput {
+  producto_id: string;
+  quantity: number;
+  lote_order?: Record<string, string[]>; // insumo_id -> array of lote_ids
+}
+
+export function useProduceProductoCustomOrder() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ producto_id, quantity, lote_order = {} }: ProduceWithCustomOrderInput) => {
+      const { data, error } = await supabase.rpc('produce_producto_custom_order', {
+        p_producto_id: producto_id,
+        p_quantity: quantity,
+        p_lote_order: lote_order,
+      });
+
+      if (error) throw error;
+
+      // Check if the function returned an error in the JSON
+      if (data && !data.success) {
+        throw new Error(data.error || 'Error desconocido al fabricar productos');
+      }
+
+      return data as {
+        success: boolean;
+        quantity_produced: number;
+        total_cost: number;
+        cost_per_unit: number;
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
+      queryClient.invalidateQueries({ queryKey: ['production-history'] });
+
+      toast.success(
+        'Producción completada',
+        `Se fabricaron ${data.quantity_produced} unidades. Costo total: ${formatCurrency(data.total_cost)}`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error('Error en producción', error.message);
+    },
+  });
+}

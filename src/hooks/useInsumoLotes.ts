@@ -28,6 +28,31 @@ export function useInsumoLotes(insumo_id: string | undefined) {
   });
 }
 
+// Fetch all lotes with stock > 0 for the user (with insumo info)
+export function useAllInsumoLotes() {
+  return useQuery({
+    queryKey: ['insumo-lotes', 'all-with-stock'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data, error } = await supabase
+        .from('insumo_lotes')
+        .select(`
+          *,
+          insumo:insumos(*)
+        `)
+        .eq('user_id', user.id)
+        .gt('quantity_remaining', 0)
+        .order('purchase_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as (InsumoLote & { insumo: any })[];
+    },
+  });
+}
+
 // Fetch price history for charts (all lotes, including consumed ones)
 export function useInsumoPriceHistory(insumo_id: string | undefined) {
   return useQuery({
@@ -86,7 +111,7 @@ export function useAddInsumoBatch() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes', variables.insumo_id] });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] }); // All lotes queries
       queryClient.invalidateQueries({ queryKey: ['productos'] }); // Costs may change
       toast.success('Compra registrada', 'El lote se agregó al inventario');
     },

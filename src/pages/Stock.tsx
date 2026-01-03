@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
+import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { useProductos } from '../hooks/useProductos';
 import { useInsumos } from '../hooks/useInsumos';
 import { formatCurrency } from '../utils/formatters';
+import type { ProductoWithCost } from '../lib/types';
 
 export function Stock() {
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [selectedProductoId, setSelectedProductoId] = useState<string | undefined>(undefined);
+  const [selectedProducto, setSelectedProducto] = useState<ProductoWithCost | null>(null);
 
   const isLoading = loadingProductos || loadingInsumos;
 
@@ -19,9 +23,19 @@ export function Stock() {
     setIsProduceModalOpen(true);
   };
 
+  const handleAdjustStock = (producto: ProductoWithCost) => {
+    setSelectedProducto(producto);
+    setIsAdjustModalOpen(true);
+  };
+
   const handleCloseModal = () => {
     setIsProduceModalOpen(false);
     setSelectedProductoId(undefined);
+  };
+
+  const handleCloseAdjustModal = () => {
+    setIsAdjustModalOpen(false);
+    setSelectedProducto(null);
   };
 
   // Ordenar productos por stock terminado (menor a mayor)
@@ -138,14 +152,24 @@ export function Stock() {
                               {formatCurrency(producto.cost_unit)} / ud
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon="manufacturing"
-                            onClick={() => handleProduce(producto.id)}
-                            disabled={!canProduce}
-                            aria-label={`Fabricar ${producto.name}`}
-                          />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon="edit"
+                              onClick={() => handleAdjustStock(producto)}
+                              aria-label={`Ajustar stock de ${producto.name}`}
+                              className="text-slate-600 dark:text-slate-400"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon="manufacturing"
+                              onClick={() => handleProduce(producto.id)}
+                              disabled={!canProduce}
+                              aria-label={`Fabricar ${producto.name}`}
+                            />
+                          </div>
                         </div>
 
                         {/* Stock */}
@@ -202,6 +226,12 @@ export function Stock() {
         isOpen={isProduceModalOpen}
         onClose={handleCloseModal}
         preselectedProductoId={selectedProductoId}
+      />
+
+      <AdjustFinishedStockForm
+        isOpen={isAdjustModalOpen}
+        onClose={handleCloseAdjustModal}
+        producto={selectedProducto}
       />
     </Layout>
   );

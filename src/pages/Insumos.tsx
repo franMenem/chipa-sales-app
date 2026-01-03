@@ -4,13 +4,13 @@ import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
 import { InsumosList } from '../components/lists/InsumosList';
-import { useInsumos } from '../hooks/useInsumos';
+import { useAllInsumoLotes } from '../hooks/useInsumoLotes';
 
 export function Insumos() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInsumoId, setSelectedInsumoId] = useState<string | undefined>(undefined);
-  const { data: insumos, isLoading, error } = useInsumos();
+  const { data: lotes, isLoading, error } = useAllInsumoLotes();
 
   const handleAddBatch = (insumoId?: string) => {
     setSelectedInsumoId(insumoId);
@@ -33,28 +33,18 @@ export function Insumos() {
             icon="receipt_long"
             size="sm"
             onClick={() => navigate('/insumos/historial')}
-            className="hidden sm:flex"
-          >
-            Historial
-          </Button>
-          <Button
-            variant="ghost"
-            icon="receipt_long"
-            size="sm"
-            onClick={() => navigate('/insumos/historial')}
-            className="sm:hidden"
             aria-label="Historial"
-          />
-          <Button icon="add_shopping_cart" size="sm" onClick={() => handleAddBatch()} className="hidden sm:flex">
-            Registrar Compra
+          >
+            <span className="hidden sm:inline">Historial</span>
           </Button>
           <Button
             icon="add_shopping_cart"
             size="sm"
             onClick={() => handleAddBatch()}
-            className="sm:hidden"
             aria-label="Registrar Compra"
-          />
+          >
+            <span className="hidden sm:inline">Registrar Compra</span>
+          </Button>
         </div>
       }
     >
@@ -62,7 +52,7 @@ export function Insumos() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-700 dark:text-slate-300">Cargando insumos...</p>
+            <p className="text-slate-700 dark:text-slate-300">Cargando lotes...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -70,14 +60,14 @@ export function Insumos() {
               error
             </span>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Error al cargar insumos
+              Error al cargar lotes
             </h3>
             <p className="text-slate-700 dark:text-slate-300 text-center">
               {error instanceof Error ? error.message : 'Ocurrió un error inesperado'}
             </p>
           </div>
         ) : (
-          <InsumosList insumos={insumos || []} onAddBatch={handleAddBatch} />
+          <InsumosList lotes={lotes || []} onAddBatch={handleAddBatch} />
         )}
       </div>
 
