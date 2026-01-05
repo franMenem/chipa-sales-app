@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
@@ -9,6 +10,7 @@ import { formatCurrency } from '../utils/formatters';
 import type { ProductoWithCost } from '../lib/types';
 
 export function Stock() {
+  const navigate = useNavigate();
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
@@ -51,9 +53,20 @@ export function Stock() {
       title="Stock"
       subtitle="Inventario de productos e insumos"
       headerAction={
-        <Button icon="manufacturing" size="sm" onClick={() => handleProduce()}>
-          Fabricar
-        </Button>
+        <div className="flex gap-1.5 sm:gap-2">
+          <Button
+            variant="ghost"
+            icon="history"
+            size="sm"
+            onClick={() => navigate('/productos/historial')}
+            aria-label="Historial de Producción"
+          >
+            <span className="hidden sm:inline">Historial</span>
+          </Button>
+          <Button icon="manufacturing" size="sm" onClick={() => handleProduce()}>
+            Fabricar
+          </Button>
+        </div>
       }
     >
       <div className="p-4 space-y-6">

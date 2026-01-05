@@ -266,9 +266,6 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
         });
 
         setLoteOrder(initialOrder);
-
-        console.log('Recipe with lotes loaded:', recipeWithLotesData);
-        console.log('Initial lote order:', initialOrder);
       } catch (error) {
         console.error('Error loading recipe and lotes:', error);
       } finally {

@@ -75,12 +75,14 @@ export function useProduceProducto() {
         cost_per_unit: number;
       };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate and refetch all related queries
-      queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+      ]);
 
       toast.success(
         'Producción completada',
@@ -89,6 +91,54 @@ export function useProduceProducto() {
     },
     onError: (error: Error) => {
       toast.error('Error en producción', error.message);
+    },
+  });
+}
+
+// Reverse a production (return consumed insumos and reduce finished stock)
+export function useReverseProduction() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ production_history_id, force = false }: { production_history_id: string; force?: boolean }) => {
+      const { data, error } = await supabase.rpc('reverse_production', {
+        p_production_history_id: production_history_id,
+        p_force: force,
+      });
+
+      if (error) throw error;
+
+      // Check if the function returned an error in the JSON
+      if (data && !data.success) {
+        throw new Error(data.error || 'Error desconocido al revertir producción');
+      }
+
+      return data as {
+        success: boolean;
+        quantity_reversed: number;
+        total_cost_reversed: number;
+        new_stock: number;
+        was_forced: boolean;
+      };
+    },
+    onSuccess: async (data) => {
+      // Invalidate and refetch all related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+      ]);
+
+      const message = data.was_forced
+        ? `Se revirtieron ${data.quantity_reversed} unidades. Stock actual: ${data.new_stock} ${data.new_stock < 0 ? '(negativo)' : ''}`
+        : `Se revirtieron ${data.quantity_reversed} unidades y se restauraron los insumos consumidos`;
+
+      toast.success('Producción revertida', message);
+    },
+    onError: (error: Error) => {
+      toast.error('Error al revertir', error.message);
     },
   });
 }
@@ -128,12 +178,14 @@ export function useProduceProductoCustomOrder() {
         cost_per_unit: number;
       };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate and refetch all related queries
-      queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+      ]);
 
       toast.success(
         'Producción completada',

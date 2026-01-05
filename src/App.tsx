@@ -13,6 +13,7 @@ const Insumos = lazy(() => import('./pages/Insumos').then(m => ({ default: m.Ins
 const InsumoHistory = lazy(() => import('./pages/InsumoHistory').then(m => ({ default: m.InsumoHistory })));
 const Categorias = lazy(() => import('./pages/Categorias').then(m => ({ default: m.Categorias })));
 const Productos = lazy(() => import('./pages/Productos').then(m => ({ default: m.Productos })));
+const ProductionHistory = lazy(() => import('./pages/ProductionHistory').then(m => ({ default: m.ProductionHistory })));
 const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock })));
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
 const CostosFijos = lazy(() => import('./pages/CostosFijos').then(m => ({ default: m.CostosFijos })));
@@ -106,6 +107,16 @@ function App() {
                   <ProtectedRoute>
                     <PageErrorBoundary pageName="Productos">
                       <Productos />
+                    </PageErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/productos/historial"
+                element={
+                  <ProtectedRoute>
+                    <PageErrorBoundary pageName="Historial de Producción">
+                      <ProductionHistory />
                     </PageErrorBoundary>
                   </ProtectedRoute>
                 }
