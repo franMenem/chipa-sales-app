@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { UnitType } from '../../lib/types';
+import type { UnitType, Insumo, InsumoLote } from '../../lib/types';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { useAllInsumos, useCreateInsumo } from '../../hooks/useInsumos';
-import { useAddInsumoBatch } from '../../hooks/useInsumoLotes';
+import { useAllInsumos, useCreateInsumo, useUpdateInsumo } from '../../hooks/useInsumos';
+import { useAddInsumoBatch, useUpdateInsumoBatch } from '../../hooks/useInsumoLotes';
+import { useCategorias } from '../../hooks/useCategorias';
 import { formatCurrency } from '../../utils/formatters';
+import { useToast } from '../../hooks/useToast';
 
 interface AddInsumoBatchFormProps {
   isOpen: boolean;
   onClose: () => void;
   preselectedInsumoId?: string;
+  editingLote?: (InsumoLote & { insumo?: Insumo }) | null;
 }
 
 interface FormData {
@@ -22,6 +25,7 @@ interface FormData {
   purchase_date: string;
   quantity_purchased: number;
   price_per_unit: number;
+  categoria_ids?: string[];
 }
 
 const unitOptions = [
@@ -40,13 +44,33 @@ const unitLabels: Record<UnitType, string> = {
   unit: 'ud',
 };
 
-export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: AddInsumoBatchFormProps) {
+export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId, editingLote }: AddInsumoBatchFormProps) {
   const { data: insumos = [] } = useAllInsumos();
+  const { data: categorias = [] } = useCategorias();
   const createInsumoMutation = useCreateInsumo();
+  const updateInsumoMutation = useUpdateInsumo();
   const addBatchMutation = useAddInsumoBatch();
+  const updateBatchMutation = useUpdateInsumoBatch();
+  const toast = useToast();
+
+  const isEditMode = Boolean(editingLote);
+  const consumedQuantity = editingLote
+    ? editingLote.quantity_purchased - editingLote.quantity_remaining
+    : 0;
+  const editingPurchaseDate = useMemo(() => {
+    if (!editingLote) return undefined;
+    return new Date(editingLote.purchase_date).toISOString().split('T')[0];
+  }, [editingLote]);
+  const formattedConsumedQuantity = useMemo(() => {
+    return consumedQuantity.toLocaleString('es-PY', {
+      minimumFractionDigits: consumedQuantity % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
+  }, [consumedQuantity]);
 
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [selectedCategorias, setSelectedCategorias] = useState<string[]>([]);
 
   const {
     register,
@@ -69,14 +93,25 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
   const quantity = watch('quantity_purchased');
   const unitType = watch('unit_type');
   const pricePerUnit = watch('price_per_unit');
+  const isBusy =
+    isSubmitting ||
+    addBatchMutation.isPending ||
+    updateBatchMutation.isPending ||
+    createInsumoMutation.isPending ||
+    updateInsumoMutation.isPending;
 
-  // Auto-detect unit type from selected insumo
+  // Auto-detect unit type and load categories from selected insumo
   useEffect(() => {
     if (insumoId && insumoId !== 'new') {
       const selectedInsumo = insumos.find(i => i.id === insumoId);
       if (selectedInsumo) {
         setValue('unit_type', selectedInsumo.unit_type);
+        // Load existing categories
+        setSelectedCategorias(selectedInsumo.categoria_ids || []);
       }
+    } else if (insumoId === 'new') {
+      // Clear categories when creating new
+      setSelectedCategorias([]);
     }
   }, [insumoId, insumos, setValue]);
 
@@ -90,23 +125,46 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
 
   // Reset form when modal opens/closes
   useEffect(() => {
+    const defaultValues = {
+      insumo_id: preselectedInsumoId || '',
+      unit_type: 'kg' as UnitType,
+      purchase_date: new Date().toISOString().split('T')[0],
+      quantity_purchased: 1,
+      price_per_unit: 0,
+    };
+
     if (isOpen) {
-      reset({
-        insumo_id: preselectedInsumoId || '',
-        unit_type: 'kg',
-        purchase_date: new Date().toISOString().split('T')[0],
-        quantity_purchased: 1,
-        price_per_unit: 0,
-      });
+      if (isEditMode && editingLote) {
+        reset({
+          insumo_id: editingLote.insumo_id,
+          unit_type: editingLote.unit_type,
+          purchase_date: editingPurchaseDate || defaultValues.purchase_date,
+          quantity_purchased: editingLote.quantity_purchased,
+          price_per_unit: editingLote.price_per_unit,
+        });
+        setSelectedCategorias(editingLote.insumo?.categoria_ids || []);
+      } else {
+        reset(defaultValues);
+        setSelectedCategorias([]);
+      }
       setTotalPrice(0);
       setIsCreatingNew(false);
+    } else {
+      reset(defaultValues);
+      setTotalPrice(0);
+      setIsCreatingNew(false);
+      setSelectedCategorias([]);
     }
-  }, [isOpen, preselectedInsumoId, reset]);
+  }, [editingLote, editingPurchaseDate, isEditMode, isOpen, preselectedInsumoId, reset]);
 
   // Handle insumo selection change
   useEffect(() => {
-    setIsCreatingNew(insumoId === 'new');
-  }, [insumoId]);
+    if (isEditMode) {
+      setIsCreatingNew(false);
+    } else {
+      setIsCreatingNew(insumoId === 'new');
+    }
+  }, [insumoId, isEditMode]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -117,18 +175,62 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
         const newInsumo = await createInsumoMutation.mutateAsync({
           name: data.new_insumo_name,
           unit_type: data.unit_type,
+          categoria_ids: selectedCategorias,
         });
         finalInsumoId = newInsumo.id;
       }
 
-      // Agregar el lote
-      await addBatchMutation.mutateAsync({
-        insumo_id: finalInsumoId,
-        purchase_date: data.purchase_date,
-        quantity_purchased: data.quantity_purchased,
-        price_per_unit: data.price_per_unit,
-        unit_type: data.unit_type,
-      });
+      if (!finalInsumoId && editingLote) {
+        finalInsumoId = editingLote.insumo_id;
+      }
+
+      if (!finalInsumoId) {
+        toast.error('Insumo requerido', 'Selecciona un insumo válido antes de continuar');
+        return;
+      }
+
+      if (!isCreatingNew && finalInsumoId) {
+        await updateInsumoMutation.mutateAsync({
+          id: finalInsumoId,
+          data: {
+            categoria_ids: selectedCategorias,
+          },
+        });
+      }
+
+      if (isEditMode && editingLote) {
+        const newQuantity = data.quantity_purchased;
+        if (newQuantity < consumedQuantity) {
+          toast.error(
+            'Cantidad inválida',
+            `Ya consumiste ${formattedConsumedQuantity} ${unitLabels[unitType]} de este lote. La cantidad comprada debe ser mayor o igual.`
+          );
+          return;
+        }
+
+        const updatedRemaining = newQuantity - consumedQuantity;
+
+        await updateBatchMutation.mutateAsync({
+          id: editingLote.id,
+          data: {
+            insumo_id: finalInsumoId,
+            purchase_date: data.purchase_date,
+            quantity_purchased: newQuantity,
+            quantity_remaining: updatedRemaining,
+            price_per_unit: data.price_per_unit,
+            unit_type: data.unit_type,
+          },
+        });
+      } else {
+        // Agregar el lote
+        await addBatchMutation.mutateAsync({
+          insumo_id: finalInsumoId,
+          purchase_date: data.purchase_date,
+          quantity_purchased: data.quantity_purchased,
+          price_per_unit: data.price_per_unit,
+          unit_type: data.unit_type,
+        });
+      }
 
       onClose();
     } catch (error) {
@@ -137,38 +239,67 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isBusy) {
       onClose();
     }
   };
 
+  const editingInsumo = useMemo(() => {
+    if (!editingLote) return null;
+    return editingLote.insumo || insumos.find(i => i.id === editingLote.insumo_id) || null;
+  }, [editingLote, insumos]);
+
   // Prepare insumo options
-  const insumoOptions = [
-    { value: '', label: 'Seleccionar insumo...' },
-    ...insumos.map(i => ({
-      value: i.id,
-      label: `${i.name} (${i.total_stock} ${unitLabels[i.unit_type]} disponibles)`,
-    })),
-    { value: 'new', label: '+ Crear nuevo insumo' },
-  ];
+  const insumoOptions = useMemo(() => {
+    if (isEditMode && editingInsumo) {
+      return [
+        {
+          value: editingInsumo.id,
+          label: editingInsumo.name,
+        },
+      ];
+    }
+
+    return [
+      { value: '', label: 'Seleccionar insumo...' },
+      ...insumos.map(i => ({
+        value: i.id,
+        label: `${i.name} (${i.total_stock} ${unitLabels[i.unit_type]} disponibles)`,
+      })),
+      { value: 'new', label: '+ Crear nuevo insumo' },
+    ];
+  }, [editingInsumo, insumos, isEditMode]);
+
+  const modalTitle = isEditMode
+    ? `Editar compra${editingInsumo ? ` de ${editingInsumo.name}` : ''}`
+    : 'Registrar Compra de Insumo';
+
+  const primaryButtonIcon = isEditMode ? 'save' : 'add_shopping_cart';
+  const primaryButtonLabel = isBusy
+    ? isEditMode
+      ? 'Guardando...'
+      : 'Registrando...'
+    : isEditMode
+    ? 'Guardar Cambios'
+    : 'Registrar Compra';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Registrar Compra de Insumo"
+      title={modalTitle}
       size="md"
       footer={
         <>
-          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={handleClose} disabled={isBusy}>
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-            icon="add_shopping_cart"
+            disabled={isBusy}
+            icon={primaryButtonIcon}
           >
-            {isSubmitting ? 'Registrando...' : 'Registrar Compra'}
+            {primaryButtonLabel}
           </Button>
         </>
       }
@@ -180,6 +311,11 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
           options={insumoOptions}
           {...register('insumo_id', { required: 'Selecciona un insumo' })}
         />
+        {isEditMode && editingInsumo && (
+          <p className="text-xs text-slate-500 mt-1.5">
+            Este lote pertenece a {editingInsumo.name}. Si necesitas moverlo a otro insumo, elimina y vuelve a registrar la compra.
+          </p>
+        )}
 
         {/* Si es nuevo insumo, mostrar campo de nombre */}
         {isCreatingNew && (
@@ -200,6 +336,52 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
             options={unitOptions}
             {...register('unit_type')}
           />
+        )}
+
+        {/* Categorías */}
+        {categorias.length > 0 && insumoId && insumoId !== '' && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Categorías (opcional)
+            </label>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+              {isCreatingNew
+                ? 'Asigna una o más categorías para organizar este insumo'
+                : 'Actualiza las categorías de este insumo'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {categorias.map((categoria) => {
+                const isSelected = selectedCategorias.includes(categoria.id);
+                return (
+                  <button
+                    key={categoria.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedCategorias(prev => prev.filter(id => id !== categoria.id));
+                      } else {
+                        setSelectedCategorias(prev => [...prev, categoria.id]);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'bg-primary/20 text-primary border-2 border-primary'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: categoria.color }}
+                    />
+                    <span>{categoria.name}</span>
+                    {isSelected && (
+                      <span className="material-symbols-outlined text-[16px]">check</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Fecha de compra */}
@@ -225,6 +407,11 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId }: Add
             min: { value: 0.01, message: 'Debe ser mayor a 0' }
           })}
         />
+        {isEditMode && consumedQuantity > 0 && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-300">
+            Ya consumiste {formattedConsumedQuantity} {unitLabels[unitType]} de este lote. La cantidad comprada debe ser mayor o igual a ese valor.
+          </div>
+        )}
 
         {/* Calculadora de precio */}
         <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">

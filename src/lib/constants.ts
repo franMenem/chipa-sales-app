@@ -35,6 +35,7 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   INSUMOS: '/insumos',
+  CATEGORIAS: '/categorias',
   PRODUCTOS: '/productos',
   STOCK: '/stock',
   VENTAS: '/ventas',

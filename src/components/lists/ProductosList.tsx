@@ -1,11 +1,10 @@
-import { useState, useMemo, memo, useCallback, useRef } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProductoWithCost } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { SearchBar } from '../ui/SearchBar';
-import { useDeleteProducto } from '../../hooks/useProductos';
 import { useDebounce } from '../../hooks/useDebounce';
 
 const VIRTUALIZATION_THRESHOLD = 50;
@@ -29,11 +28,9 @@ const calculateProfit = (price: number, cost: number): number => {
 interface ProductoCardProps {
   producto: ProductoWithCost;
   onEdit: (producto: ProductoWithCost) => void;
-  onDelete: (id: string, name: string) => void;
-  isDeleting: boolean;
 }
 
-const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoCardProps) => {
+const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
   const margin = calculateMargin(producto.price_sale, producto.cost_unit);
   const profit = calculateProfit(producto.price_sale, producto.cost_unit);
   const isLowMargin = margin < 20;
@@ -64,15 +61,6 @@ const ProductoCard = memo(({ producto, onEdit, onDelete, isDeleting }: ProductoC
               icon="edit"
               onClick={() => onEdit(producto)}
               aria-label={`Editar ${producto.name}`}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              icon="delete"
-              onClick={() => onDelete(producto.id, producto.name)}
-              disabled={isDeleting}
-              aria-label={`Eliminar ${producto.name}`}
-              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
             />
           </div>
         </div>
@@ -155,7 +143,6 @@ ProductoCard.displayName = 'ProductoCard';
 export function ProductosList({ productos, onEdit }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const deleteMutation = useDeleteProducto();
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Memoize filtered results with debounced search
@@ -177,13 +164,6 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
     overscan: 5,
     enabled: useVirtualization,
   });
-
-  // Memoize delete handler
-  const handleDelete = useCallback(async (id: string, name: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar "${name}"?`)) {
-      await deleteMutation.mutateAsync(id);
-    }
-  }, [deleteMutation]);
 
   if (productos.length === 0) {
     return (
@@ -254,8 +234,6 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
                     <ProductoCard
                       producto={producto}
                       onEdit={onEdit}
-                      onDelete={handleDelete}
-                      isDeleting={deleteMutation.isPending}
                     />
                   </div>
                 </div>
@@ -270,8 +248,6 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
               key={producto.id}
               producto={producto}
               onEdit={onEdit}
-              onDelete={handleDelete}
-              isDeleting={deleteMutation.isPending}
             />
           ))}
         </div>

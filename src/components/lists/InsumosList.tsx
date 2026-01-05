@@ -1,6 +1,6 @@
-import { useState, useMemo, memo, useCallback, useRef } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { InsumoLote } from '../../lib/types';
+import type { InsumoLote, Insumo } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -12,8 +12,8 @@ import { es } from 'date-fns/locale';
 const VIRTUALIZATION_THRESHOLD = 50;
 
 interface InsumosListProps {
-  lotes: (InsumoLote & { insumo: any })[];
-  onAddBatch: (insumoId: string) => void;
+  lotes: (InsumoLote & { insumo: Insumo })[];
+  onEditLote: (lote: InsumoLote & { insumo: Insumo }) => void;
 }
 
 const unitLabels = {
@@ -26,13 +26,12 @@ const unitLabels = {
 
 // Memoized LoteCard component
 interface LoteCardProps {
-  lote: InsumoLote & { insumo: any };
-  onAddBatch: (insumoId: string) => void;
+  lote: InsumoLote & { insumo: Insumo };
+  onEditLote: (lote: InsumoLote & { insumo: Insumo }) => void;
 }
 
-const LoteCard = memo(({ lote, onAddBatch }: LoteCardProps) => {
+const LoteCard = memo(({ lote, onEditLote }: LoteCardProps) => {
   const consumedPercentage = ((lote.quantity_purchased - lote.quantity_remaining) / lote.quantity_purchased) * 100;
-  const isPartiallyConsumed = lote.quantity_remaining < lote.quantity_purchased && lote.quantity_remaining > 0;
 
   return (
     <Card>
@@ -51,9 +50,9 @@ const LoteCard = memo(({ lote, onAddBatch }: LoteCardProps) => {
           <Button
             variant="ghost"
             size="sm"
-            icon="add_shopping_cart"
-            onClick={() => onAddBatch(lote.insumo_id)}
-            aria-label={`Agregar compra de ${lote.insumo.name}`}
+            icon="edit"
+            onClick={() => onEditLote(lote)}
+            aria-label={`Editar lote de ${lote.insumo.name}`}
           />
         </div>
 
@@ -128,7 +127,7 @@ const LoteCard = memo(({ lote, onAddBatch }: LoteCardProps) => {
 
 LoteCard.displayName = 'LoteCard';
 
-export function InsumosList({ lotes, onAddBatch }: InsumosListProps) {
+export function InsumosList({ lotes, onEditLote }: InsumosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -220,7 +219,7 @@ export function InsumosList({ lotes, onAddBatch }: InsumosListProps) {
                   <div className="pb-4">
                     <LoteCard
                       lote={lote}
-                      onAddBatch={onAddBatch}
+                      onEditLote={onEditLote}
                     />
                   </div>
                 </div>
@@ -234,7 +233,7 @@ export function InsumosList({ lotes, onAddBatch }: InsumosListProps) {
             <LoteCard
               key={lote.id}
               lote={lote}
-              onAddBatch={onAddBatch}
+              onEditLote={onEditLote}
             />
           ))}
         </div>

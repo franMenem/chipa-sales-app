@@ -11,6 +11,7 @@ const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login }
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Insumos = lazy(() => import('./pages/Insumos').then(m => ({ default: m.Insumos })));
 const InsumoHistory = lazy(() => import('./pages/InsumoHistory').then(m => ({ default: m.InsumoHistory })));
+const Categorias = lazy(() => import('./pages/Categorias').then(m => ({ default: m.Categorias })));
 const Productos = lazy(() => import('./pages/Productos').then(m => ({ default: m.Productos })));
 const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock })));
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
@@ -33,8 +34,8 @@ function PageLoader() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 30, // 30 seconds (reduced from 5 minutes for better reactivity)
+      refetchOnWindowFocus: true, // Refetch when window regains focus
       retry: 1,
     },
   },
@@ -85,6 +86,16 @@ function App() {
                   <ProtectedRoute>
                     <PageErrorBoundary pageName="Historial de Compras">
                       <InsumoHistory />
+                    </PageErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/categorias"
+                element={
+                  <ProtectedRoute>
+                    <PageErrorBoundary pageName="Categorías">
+                      <Categorias />
                     </PageErrorBoundary>
                   </ProtectedRoute>
                 }

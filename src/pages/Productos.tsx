@@ -5,7 +5,7 @@ import { ProductoForm } from '../components/forms/ProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/useProductos';
 import { useToast } from '../hooks/useToast';
-import type { ProductoWithCost } from '../lib/types';
+import type { ProductoWithCost, RecipeItemFormData } from '../lib/types';
 import { supabase } from '../lib/supabase';
 
 export function Productos() {
@@ -16,10 +16,7 @@ export function Productos() {
     name: string;
     price_sale: number;
     margin_goal?: number | null;
-    recipe_items: Array<{
-      insumo_id: string;
-      quantity_in_base_units: number;
-    }>;
+    recipe_items: RecipeItemFormData[];
   } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const { data: productos, isLoading, error } = useProductos();
@@ -49,6 +46,8 @@ export function Productos() {
         recipe_items: (recipeItems || []).map((item) => ({
           insumo_id: item.insumo_id,
           quantity_in_base_units: item.quantity_in_base_units,
+          use_categorias: item.use_categorias,
+          required_categoria_ids: item.required_categoria_ids || [],
         })),
       });
       setIsModalOpen(true);

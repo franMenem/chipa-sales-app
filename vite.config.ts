@@ -9,6 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      minify: false, // Avoid terser SW minify step that fails in restricted envs
       manifest: {
         name: 'Chipa Sales App',
         short_name: 'Chipa Sales',
@@ -39,6 +40,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        mode: 'development', // Avoid rollup-plugin-terser failures when bundling SW
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

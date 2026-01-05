@@ -132,6 +132,10 @@ export function Stock() {
                     const isOutOfStock = producto.finished_stock === 0;
                     const canProduce = producto.has_sufficient_ingredients;
 
+                    // Calcular margen y ganancia
+                    const margin = producto.price_sale === 0 ? 0 : ((producto.price_sale - producto.cost_unit) / producto.price_sale) * 100;
+                    const profit = producto.price_sale - producto.cost_unit;
+
                     return (
                       <div
                         key={producto.id}
@@ -148,9 +152,14 @@ export function Stock() {
                             <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                               {producto.name}
                             </h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                              {formatCurrency(producto.cost_unit)} / ud
-                            </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Costo: {formatCurrency(producto.cost_unit)}
+                              </p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Venta: {formatCurrency(producto.price_sale)}
+                              </p>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <Button
@@ -169,6 +178,28 @@ export function Stock() {
                               disabled={!canProduce}
                               aria-label={`Fabricar ${producto.name}`}
                             />
+                          </div>
+                        </div>
+
+                        {/* Margen y Ganancia */}
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Ganancia</p>
+                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              {formatCurrency(profit)}
+                            </p>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Margen</p>
+                            <p className={`text-sm font-semibold ${
+                              margin < 20
+                                ? 'text-red-600 dark:text-red-400'
+                                : margin >= 40
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-yellow-600 dark:text-yellow-400'
+                            }`}>
+                              {margin.toFixed(1)}%
+                            </p>
                           </div>
                         </div>
 

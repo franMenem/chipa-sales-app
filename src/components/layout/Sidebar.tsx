@@ -17,6 +17,11 @@ export function Sidebar() {
       label: 'Insumos',
     },
     {
+      path: ROUTES.CATEGORIAS,
+      icon: 'category',
+      label: 'Categorías',
+    },
+    {
       path: ROUTES.PRODUCTOS,
       icon: 'bakery_dining',
       label: 'Productos',

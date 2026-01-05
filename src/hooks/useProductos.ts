@@ -8,8 +8,10 @@ interface CreateProductoInput {
   price_sale: number;
   margin_goal?: number | null;
   recipe_items: {
-    insumo_id: string;
+    insumo_id?: string | null;
     quantity_in_base_units: number;
+    use_categorias?: boolean;
+    required_categoria_ids?: string[];
   }[];
 }
 
@@ -25,42 +27,14 @@ export function useProductos() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // First get productos
-      const { data: productos, error: productosError } = await supabase
-        .from('productos')
+      const { data, error } = await supabase
+        .from('productos_with_cost')
         .select('*')
         .eq('user_id', user.id)
         .order('name', { ascending: true });
 
-      if (productosError) throw productosError;
-
-      // Then get recipe items and insumos for each producto
-      const productosWithCosts = await Promise.all(
-        (productos || []).map(async (producto) => {
-          const { data: recipeItems, error: recipeError } = await supabase
-            .from('recipe_items')
-            .select(`
-              *,
-              insumo:insumos_with_stock(*)
-            `)
-            .eq('producto_id', producto.id);
-
-          if (recipeError) throw recipeError;
-
-          // Calculate cost_unit
-          const cost_unit = (recipeItems || []).reduce((total, item) => {
-            if (!item.insumo) return total;
-            return total + (item.quantity_in_base_units * (item.insumo.current_base_unit_cost || 0));
-          }, 0);
-
-          return {
-            ...producto,
-            cost_unit,
-          } as ProductoWithCost;
-        })
-      );
-
-      return productosWithCosts;
+      if (error) throw error;
+      return data as ProductoWithCost[];
     },
   });
 }
@@ -73,7 +47,7 @@ export function useProducto(id: string | undefined) {
       if (!id) throw new Error('ID is required');
 
       const { data: producto, error: productoError } = await supabase
-        .from('productos')
+        .from('productos_with_cost')
         .select('*')
         .eq('id', id)
         .single();
@@ -140,8 +114,10 @@ export function useCreateProducto() {
           .insert(
             recipe_items.map((item) => ({
               producto_id: producto.id,
-              insumo_id: item.insumo_id,
+              insumo_id: item.use_categorias ? null : item.insumo_id,
               quantity_in_base_units: item.quantity_in_base_units,
+              use_categorias: item.use_categorias || false,
+              required_categoria_ids: item.use_categorias ? item.required_categoria_ids || [] : [],
             }))
           );
 
@@ -194,8 +170,10 @@ export function useUpdateProducto() {
           .insert(
             recipe_items.map((item) => ({
               producto_id: id,
-              insumo_id: item.insumo_id,
+              insumo_id: item.use_categorias ? null : item.insumo_id,
               quantity_in_base_units: item.quantity_in_base_units,
+              use_categorias: item.use_categorias || false,
+              required_categoria_ids: item.use_categorias ? item.required_categoria_ids || [] : [],
             }))
           );
 

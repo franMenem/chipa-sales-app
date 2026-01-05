@@ -3,6 +3,17 @@ export type UnitType = 'kg' | 'l' | 'unit' | 'g' | 'ml';
 export type Frequency = 'monthly' | 'weekly' | 'annual';
 
 // Entity types
+export interface Categoria {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  unit_type: UnitType;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Insumo {
   id: string;
   user_id: string;
@@ -10,6 +21,7 @@ export interface Insumo {
   unit_type: UnitType;
   description?: string;
   is_active: boolean;
+  categoria_ids: string[]; // Array of categoria UUIDs
   created_at: string;
   updated_at: string;
 }
@@ -35,14 +47,21 @@ export interface InsumoWithStock extends Insumo {
   active_batches: number; // Number of lotes with stock > 0
 }
 
+export interface InsumoWithCategorias extends InsumoWithStock {
+  categorias: Categoria[]; // Populated from categoria_ids
+}
+
 export interface RecipeItem {
   id: string;
   producto_id: string;
-  insumo_id: string;
+  insumo_id: string | null; // Nullable when use_categorias = true
   quantity_in_base_units: number;
+  use_categorias: boolean; // True = usa categorías, false = usa insumo_id
+  required_categoria_ids: string[]; // Array of categoria UUIDs
   created_at: string;
   // Joined data
   insumo?: Insumo;
+  required_categorias?: Categoria[]; // Populated from required_categoria_ids
 }
 
 export interface Producto {
@@ -106,10 +125,17 @@ export interface PriceHistoryPoint {
 }
 
 // Form types
+export interface CreateCategoriaFormData {
+  name: string;
+  color?: string;
+  unit_type?: UnitType;
+}
+
 export interface CreateInsumoFormData {
   name: string;
   unit_type: UnitType;
   description?: string;
+  categoria_ids?: string[]; // IDs de categorías a asignar
 }
 
 export interface AddInsumoBatchFormData {
@@ -125,8 +151,21 @@ export interface ProduceProductoFormData {
   quantity: number;
 }
 
+export interface LotSelectionPayload {
+  recipe_item_id: string;
+  ingredient_id: string;
+  lots: {
+    lot_id: string;
+    quantity: number;
+  }[];
+}
+
 export interface RecipeItemFormData {
-  insumo_id: string;
+  // Modo específico
+  insumo_id?: string | null;
+  // Modo categorías
+  use_categorias?: boolean;
+  required_categoria_ids?: string[];
   quantity_in_base_units: number;
 }
 
@@ -364,4 +403,3 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
   ? Database["public"]["Enums"][PublicEnumNameOrOptions]
   : never
-

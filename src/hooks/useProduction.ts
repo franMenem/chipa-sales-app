@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { ProductionRecord, ProduceProductoFormData } from '../lib/types';
+import type { ProductionRecord, ProduceProductoFormData, LotSelectionPayload } from '../lib/types';
 import { useToast } from './useToast';
 import { formatCurrency } from '../utils/formatters';
 
@@ -76,10 +76,11 @@ export function useProduceProducto() {
       };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
-      queryClient.invalidateQueries({ queryKey: ['production-history'] });
+      // Invalidate and refetch all related queries
+      queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' });
 
       toast.success(
         'Producción completada',
@@ -97,6 +98,7 @@ interface ProduceWithCustomOrderInput {
   producto_id: string;
   quantity: number;
   lote_order?: Record<string, string[]>; // insumo_id -> array of lote_ids
+  lot_selections?: LotSelectionPayload[];
 }
 
 export function useProduceProductoCustomOrder() {
@@ -104,11 +106,12 @@ export function useProduceProductoCustomOrder() {
   const toast = useToast();
 
   return useMutation({
-    mutationFn: async ({ producto_id, quantity, lote_order = {} }: ProduceWithCustomOrderInput) => {
+    mutationFn: async ({ producto_id, quantity, lote_order = {}, lot_selections = [] }: ProduceWithCustomOrderInput) => {
       const { data, error } = await supabase.rpc('produce_producto_custom_order', {
         p_producto_id: producto_id,
         p_quantity: quantity,
         p_lote_order: lote_order,
+        p_lot_selections: lot_selections,
       });
 
       if (error) throw error;
@@ -126,10 +129,11 @@ export function useProduceProductoCustomOrder() {
       };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
-      queryClient.invalidateQueries({ queryKey: ['production-history'] });
+      // Invalidate and refetch all related queries
+      queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' });
 
       toast.success(
         'Producción completada',

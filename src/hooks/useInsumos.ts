@@ -98,6 +98,31 @@ export function useCreateInsumo() {
   });
 }
 
+// Update insumo
+export function useUpdateInsumo() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateInsumoFormData> }) => {
+      const { error } = await supabase
+        .from('insumos')
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      toast.success('Insumo actualizado', 'Los cambios se guardaron correctamente');
+    },
+    onError: (error: Error) => {
+      toast.error('Error al actualizar insumo', error.message);
+    },
+  });
+}
+
 // Archive/unarchive insumo (soft delete)
 export function useArchiveInsumo() {
   const queryClient = useQueryClient();

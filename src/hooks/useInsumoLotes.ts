@@ -109,7 +109,7 @@ export function useAddInsumoBatch() {
       if (error) throw error;
       return data as InsumoLote;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] }); // All lotes queries
       queryClient.invalidateQueries({ queryKey: ['productos'] }); // Costs may change
@@ -117,6 +117,35 @@ export function useAddInsumoBatch() {
     },
     onError: (error: Error) => {
       toast.error('Error al registrar compra', error.message);
+    },
+  });
+}
+
+// Update existing lote (purchase)
+export function useUpdateInsumoBatch() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsumoLote> }) => {
+      const { data: updated, error } = await supabase
+        .from('insumo_lotes')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updated as InsumoLote;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      toast.success('Compra actualizada', 'Los cambios del lote se guardaron correctamente');
+    },
+    onError: (error: Error) => {
+      toast.error('Error al actualizar lote', error.message);
     },
   });
 }
