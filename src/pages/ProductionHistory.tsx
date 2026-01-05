@@ -83,14 +83,16 @@ export function ProductionHistory() {
                 </p>
               </div>
             </Card>
+            {/* TODO: Show prices from stock_fabricado batches
             <Card>
               <div className="space-y-1">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Precio de Venta</p>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(selectedProducto.price_sale)}
+                  Variable (por lote fabricado)
                 </p>
               </div>
             </Card>
+            */}
           </div>
         )}
 

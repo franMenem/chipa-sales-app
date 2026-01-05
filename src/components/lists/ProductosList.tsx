@@ -14,16 +14,6 @@ interface ProductosListProps {
   onEdit: (producto: ProductoWithCost) => void;
 }
 
-// Helper functions outside component to prevent recreation
-const calculateMargin = (price: number, cost: number): number => {
-  if (price === 0) return 0;
-  return ((price - cost) / price) * 100;
-};
-
-const calculateProfit = (price: number, cost: number): number => {
-  return price - cost;
-};
-
 // Memoized ProductoCard component
 interface ProductoCardProps {
   producto: ProductoWithCost;
@@ -31,10 +21,8 @@ interface ProductoCardProps {
 }
 
 const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
-  const margin = calculateMargin(producto.price_sale, producto.cost_unit);
-  const profit = calculateProfit(producto.price_sale, producto.cost_unit);
-  const isLowMargin = margin < 20;
-  const isGoodMargin = margin >= 40;
+  const hasLowStock = producto.finished_stock < 10;
+  const hasNoStock = producto.finished_stock === 0;
 
   return (
     <Card>
@@ -48,7 +36,7 @@ const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                 {producto.name}
               </h3>
             </div>
@@ -67,72 +55,82 @@ const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
 
         {/* Metrics */}
         <div className="space-y-2">
-          {/* Price */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <span className="text-sm text-slate-700 dark:text-slate-300">
-              Precio de venta
+          {/* Stock */}
+          <div className={`rounded-lg p-3 flex items-center justify-between ${
+            hasNoStock
+              ? 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900'
+              : hasLowStock
+              ? 'bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900'
+              : 'bg-slate-50 dark:bg-slate-900/50'
+          }`}>
+            <span className={`text-sm font-medium ${
+              hasNoStock
+                ? 'text-red-700 dark:text-red-300'
+                : hasLowStock
+                ? 'text-yellow-700 dark:text-yellow-300'
+                : 'text-slate-700 dark:text-slate-300'
+            }`}>
+              Stock disponible
             </span>
-            <span className="text-base font-semibold text-primary">
-              {formatCurrency(producto.price_sale)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-base font-semibold ${
+                hasNoStock
+                  ? 'text-red-700 dark:text-red-300'
+                  : hasLowStock
+                  ? 'text-yellow-700 dark:text-yellow-300'
+                  : 'text-primary'
+              }`}>
+                {producto.finished_stock}
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-slate-400">
+                inventory
+              </span>
+            </div>
           </div>
 
-          {/* Cost */}
+          {/* Cost estimate (reference only) */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
             <span className="text-sm text-slate-700 dark:text-slate-300">
-              Costo
+              Costo estimado
             </span>
             <span className="text-base font-semibold text-slate-900 dark:text-white">
               {formatCurrency(producto.cost_unit)}
             </span>
           </div>
-
-          {/* Profit */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <span className="text-sm text-slate-700 dark:text-slate-300">
-              Ganancia
-            </span>
-            <span className="text-base font-semibold text-green-600 dark:text-green-400">
-              {formatCurrency(profit)}
-            </span>
-          </div>
-
-          {/* Margin */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 flex items-center justify-between">
-            <span className="text-sm text-slate-700 dark:text-slate-300">
-              Margen
-            </span>
-            <span
-              className={`text-base font-semibold ${
-                isLowMargin
-                  ? 'text-red-600 dark:text-red-400'
-                  : isGoodMargin
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-yellow-600 dark:text-yellow-400'
-              }`}
-            >
-              {margin.toFixed(1)}%
-            </span>
-          </div>
         </div>
 
-        {/* Margin Warning */}
-        {isLowMargin && (
+        {/* Stock warnings */}
+        {hasNoStock && (
           <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-2">
             <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-[18px] mt-0.5">
-              warning
+              error
             </span>
             <p className="text-xs text-red-700 dark:text-red-300">
-              Margen bajo. Considera aumentar el precio de venta.
+              Sin stock. Fabrica más unidades para poder vender.
             </p>
           </div>
         )}
 
-        {producto.margin_goal && (
-          <div className="text-xs text-slate-700 dark:text-slate-300">
-            Margen objetivo: {producto.margin_goal}%
+        {hasLowStock && !hasNoStock && (
+          <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 rounded-lg p-2">
+            <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-[18px] mt-0.5">
+              warning
+            </span>
+            <p className="text-xs text-yellow-700 dark:text-yellow-300">
+              Stock bajo. Considera fabricar más unidades.
+            </p>
           </div>
         )}
+
+        {/* Info note */}
+        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+          <span className="material-symbols-outlined text-[14px]">
+            info
+          </span>
+          <span>
+            El precio y margen se configuran al fabricar stock
+          </span>
+        </div>
       </div>
     </Card>
   );

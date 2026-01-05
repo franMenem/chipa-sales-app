@@ -24,6 +24,8 @@ interface ProduceProductoFormProps {
 interface FormData {
   producto_id: string;
   quantity: number;
+  margin_percentage: number;
+  price_sale: number;
 }
 
 interface RecipeItemWithLotes {
@@ -41,6 +43,13 @@ interface RecipeItemWithLotes {
     name: string;
     unit_type: string;
     total_stock: number;
+  }>;
+  // For multiple insumos in category-based items
+  selected_insumos?: Array<{
+    insumo_id: string;
+    insumo_name: string;
+    unit_type: string;
+    lotes: InsumoLote[];
   }>;
 }
 
@@ -65,22 +74,29 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [lotSelections, setLotSelections] = useState<Record<string, Record<string, number>>>({});
+  // Track selected insumos for category-based ingredients (allows multiple insumos per ingredient)
+  const [selectedCategoryInsumos, setSelectedCategoryInsumos] = useState<Record<string, string[]>>({});
 
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
       producto_id: preselectedProductoId || '',
       quantity: 1,
+      margin_percentage: 50,  // Default 50% margin
+      price_sale: 0,           // Will be calculated automatically
     },
   });
 
   const productoId = watch('producto_id');
   const quantity = watch('quantity');
+  const marginPercentage = watch('margin_percentage');
+  const priceSale = watch('price_sale');
 
   const getOrderedLotesFromMap = (
     recipeItem: RecipeItemWithLotes,
@@ -185,12 +201,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                 return requiredCategories.some((reqCat: string) => insumoCategories.includes(reqCat));
               });
 
-              // Use the first compatible insumo by default (or previously selected one)
-              const defaultInsumoId = compatibleInsumos && compatibleInsumos.length > 0
-                ? compatibleInsumos[0].id
-                : null;
-
-              if (!defaultInsumoId) {
+              if (compatibleInsumos.length === 0) {
                 // No compatible insumos found
                 return {
                   recipe_item_id: item.id,
@@ -202,32 +213,23 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                   lotes: [],
                   required_categoria_ids: item.required_categoria_ids,
                   compatible_insumos: [],
+                  selected_insumos: [],
                 };
               }
 
-              // Fetch lotes for the default insumo
-              const { data: lotes, error: lotesError } = await supabase
-                .from('insumo_lotes')
-                .select('*')
-                .eq('insumo_id', defaultInsumoId)
-                .gt('quantity_remaining', 0)
-                .order('purchase_date', { ascending: false })
-                .order('created_at', { ascending: false });
-
-              if (lotesError) throw lotesError;
-
-              const selectedInsumo = compatibleInsumos.find(i => i.id === defaultInsumoId);
-
+              // Don't select any insumo by default - user will select via checkboxes
+              // This allows multiple insumos to be selected
               return {
                 recipe_item_id: item.id,
                 use_categorias: true,
-                insumo_id: defaultInsumoId,
-                insumo_name: selectedInsumo?.name || '',
-                unit_type: selectedInsumo?.unit_type || 'kg',
+                insumo_id: null,
+                insumo_name: '',
+                unit_type: compatibleInsumos[0]?.unit_type || 'kg',
                 quantity_needed: item.quantity_in_base_units,
-                lotes: lotes || [],
+                lotes: [],
                 required_categoria_ids: item.required_categoria_ids,
                 compatible_insumos: compatibleInsumos || [],
+                selected_insumos: [], // Will be populated when user selects insumos
               };
             } else {
               // Regular recipe item with specific insumo
@@ -285,6 +287,19 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
     setLotSelections(buildDefaultSelections(recipeWithLotes, quantity));
   }, [recipeWithLotes, quantity, buildDefaultSelections]);
 
+  // Auto-calculate suggested price when margin or cost changes
+  useEffect(() => {
+    if (!selectedProducto || marginPercentage < 0 || marginPercentage > 100) return;
+
+    const costUnit = selectedProducto.cost_unit || 0;
+    if (costUnit <= 0) return;
+
+    // Formula: price = cost / (1 - margin/100)
+    // Example: if cost=100 and margin=50%, then price = 100 / (1 - 0.5) = 200
+    const suggestedPrice = costUnit / (1 - marginPercentage / 100);
+    setValue('price_sale', Number(suggestedPrice.toFixed(2)));
+  }, [selectedProducto, marginPercentage, setValue]);
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -305,12 +320,24 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
       return;
     }
 
+    if (data.margin_percentage < 0 || data.margin_percentage > 100) {
+      toast.error('Margen inválido', 'El margen debe estar entre 0 y 100%');
+      return;
+    }
+
+    if (data.price_sale <= 0) {
+      toast.error('Precio inválido', 'El precio de venta debe ser mayor a 0');
+      return;
+    }
+
     try {
       const lotSelectionsPayload = buildLotSelectionsPayload();
 
       await produceMutation.mutateAsync({
         producto_id: data.producto_id,
         quantity: data.quantity,
+        margin_percentage: data.margin_percentage,
+        price_sale: data.price_sale,
         lote_order: loteOrder,
         lot_selections: lotSelectionsPayload,
       });
@@ -327,54 +354,105 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
   };
 
   // Handle changing the selected insumo for a category-based recipe item
-  const handleCategoryInsumoChange = async (recipeItemId: string, newInsumoId: string) => {
+  // Toggle selection of an insumo for category-based ingredients (allows multiple selections)
+  const handleCategoryInsumoToggle = async (recipeItemId: string, insumoId: string) => {
     const recipeItem = recipeWithLotes.find(r => r.recipe_item_id === recipeItemId);
     if (!recipeItem || !recipeItem.use_categorias) return;
 
     try {
-      // Fetch lotes for the new insumo
-      const { data: lotes, error: lotesError } = await supabase
-        .from('insumo_lotes')
-        .select('*')
-        .eq('insumo_id', newInsumoId)
-        .gt('quantity_remaining', 0)
-        .order('purchase_date', { ascending: false })
-        .order('created_at', { ascending: false });
+      const currentlySelected = selectedCategoryInsumos[recipeItemId] || [];
+      const isSelected = currentlySelected.includes(insumoId);
 
-      if (lotesError) throw lotesError;
+      if (isSelected) {
+        // Deselect: Remove insumo from selected list
+        const newSelected = currentlySelected.filter(id => id !== insumoId);
+        setSelectedCategoryInsumos(prev => ({
+          ...prev,
+          [recipeItemId]: newSelected,
+        }));
 
-      // Find the selected insumo details
-      const selectedInsumo = recipeItem.compatible_insumos?.find(i => i.id === newInsumoId);
+        // Remove lotes of this insumo from selected_insumos
+        const updatedSelectedInsumos = (recipeItem.selected_insumos || []).filter(
+          si => si.insumo_id !== insumoId
+        );
 
-      const updatedItem: RecipeItemWithLotes = {
-        ...recipeItem,
-        insumo_id: newInsumoId,
-        insumo_name: selectedInsumo?.name || '',
-        unit_type: selectedInsumo?.unit_type || recipeItem.unit_type,
-        lotes: lotes || [],
-      };
+        // Update recipe item
+        setRecipeWithLotes(prev => prev.map(item =>
+          item.recipe_item_id === recipeItemId
+            ? { ...item, selected_insumos: updatedSelectedInsumos }
+            : item
+        ));
 
-      // Update recipeWithLotes with new lotes and insumo info
-      setRecipeWithLotes(prev => prev.map(item => (
-        item.recipe_item_id === recipeItemId ? updatedItem : item
-      )));
+        // Clear lot selections for this insumo
+        setLotSelections(prev => {
+          const newSelections = { ...prev };
+          if (newSelections[recipeItemId]) {
+            // Remove selections for lotes of this insumo
+            const lotesToRemove = recipeItem.selected_insumos
+              ?.find(si => si.insumo_id === insumoId)
+              ?.lotes.map(l => l.id) || [];
 
-      // Build updated order map for this insumo
-      const updatedOrderMap: Record<string, string[]> = { ...loteOrder };
-      if (recipeItem.insumo_id && recipeItem.insumo_id !== newInsumoId) {
-        delete updatedOrderMap[recipeItem.insumo_id];
+            lotesToRemove.forEach(loteId => {
+              delete newSelections[recipeItemId][loteId];
+            });
+          }
+          return newSelections;
+        });
+
+        // Clean up lote order
+        setLoteOrder(prev => {
+          const newOrder = { ...prev };
+          delete newOrder[insumoId];
+          return newOrder;
+        });
+      } else {
+        // Select: Add insumo to selected list
+        const newSelected = [...currentlySelected, insumoId];
+        setSelectedCategoryInsumos(prev => ({
+          ...prev,
+          [recipeItemId]: newSelected,
+        }));
+
+        // Fetch lotes for the new insumo
+        const { data: lotes, error: lotesError } = await supabase
+          .from('insumo_lotes')
+          .select('*')
+          .eq('insumo_id', insumoId)
+          .gt('quantity_remaining', 0)
+          .order('purchase_date', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (lotesError) throw lotesError;
+
+        // Find the insumo details
+        const insumoDetails = recipeItem.compatible_insumos?.find(i => i.id === insumoId);
+
+        // Add to selected_insumos
+        const newInsumoEntry = {
+          insumo_id: insumoId,
+          insumo_name: insumoDetails?.name || '',
+          unit_type: insumoDetails?.unit_type || 'kg',
+          lotes: lotes || [],
+        };
+
+        const updatedSelectedInsumos = [...(recipeItem.selected_insumos || []), newInsumoEntry];
+
+        // Update recipe item
+        setRecipeWithLotes(prev => prev.map(item =>
+          item.recipe_item_id === recipeItemId
+            ? { ...item, selected_insumos: updatedSelectedInsumos }
+            : item
+        ));
+
+        // Add lote order for this insumo
+        setLoteOrder(prev => ({
+          ...prev,
+          [insumoId]: (lotes || []).map(l => l.id),
+        }));
       }
-      updatedOrderMap[newInsumoId] = (lotes || []).map(l => l.id);
-      setLoteOrder(updatedOrderMap);
-
-      // Reset selections for this recipe item using new lotes
-      const selectionForItem = buildDefaultSelections([updatedItem], quantity, updatedOrderMap);
-      setLotSelections(prev => ({
-        ...prev,
-        ...selectionForItem,
-      }));
     } catch (error) {
-      console.error('Error changing category insumo:', error);
+      console.error('Error toggling category insumo:', error);
+      toast.error('Error', 'No se pudo cargar los lotes del insumo');
     }
   };
 
@@ -450,8 +528,23 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
         }
       }
 
+      // Validate lot quantities - check both regular lotes and category-based selected_insumos lotes
       Object.entries(lotMap || {}).forEach(([lotId, qty]) => {
-        const lote = item.lotes.find(l => l.id === lotId);
+        let lote: InsumoLote | undefined;
+
+        // First try to find in regular lotes
+        if (item.lotes && item.lotes.length > 0) {
+          lote = item.lotes.find(l => l.id === lotId);
+        }
+
+        // If not found and this is a category-based ingredient, search in selected_insumos
+        if (!lote && item.use_categorias && item.selected_insumos) {
+          for (const selectedInsumo of item.selected_insumos) {
+            lote = selectedInsumo.lotes.find(l => l.id === lotId);
+            if (lote) break;
+          }
+        }
+
         if (lote && qty > lote.quantity_remaining + PRECISION) {
           hasError = true;
           message = `El lote del ${format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })} no tiene suficiente stock`;
@@ -482,10 +575,37 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
   }, [recipeWithLotes, selectionStatus, quantity]);
 
   const buildLotSelectionsPayload = () => {
-    return recipeWithLotes
-      .filter(item => item.insumo_id)
-      .map(item => {
-        const lotMap = lotSelections[item.recipe_item_id] || {};
+    const payload: Array<{
+      recipe_item_id: string;
+      ingredient_id: string;
+      lots: Array<{ lot_id: string; quantity: number }>;
+    }> = [];
+
+    recipeWithLotes.forEach(item => {
+      const lotMap = lotSelections[item.recipe_item_id] || {};
+
+      if (item.use_categorias && item.selected_insumos && item.selected_insumos.length > 0) {
+        // Category-based ingredient with multiple possible insumos
+        // Group lots by insumo and create one entry per insumo
+        item.selected_insumos.forEach(selectedInsumo => {
+          const insumoLotIds = selectedInsumo.lotes.map(l => l.id);
+          const lots = Object.entries(lotMap)
+            .filter(([lotId, qty]) => insumoLotIds.includes(lotId) && qty > 0)
+            .map(([lotId, qty]) => ({
+              lot_id: lotId,
+              quantity: Number(qty.toFixed(4)),
+            }));
+
+          if (lots.length > 0) {
+            payload.push({
+              recipe_item_id: item.recipe_item_id,
+              ingredient_id: selectedInsumo.insumo_id,
+              lots,
+            });
+          }
+        });
+      } else if (item.insumo_id) {
+        // Regular ingredient with single insumo
         const lots = Object.entries(lotMap)
           .filter(([, qty]) => qty > 0)
           .map(([lotId, qty]) => ({
@@ -493,13 +613,17 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
             quantity: Number(qty.toFixed(4)),
           }));
 
-        return {
-          recipe_item_id: item.recipe_item_id,
-          ingredient_id: item.insumo_id as string,
-          lots,
-        };
-      })
-      .filter(entry => entry.lots.length > 0);
+        if (lots.length > 0) {
+          payload.push({
+            recipe_item_id: item.recipe_item_id,
+            ingredient_id: item.insumo_id,
+            lots,
+          });
+        }
+      }
+    });
+
+    return payload;
   };
 
   // Prepare producto options
@@ -572,6 +696,43 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
           })}
         />
 
+        {/* Margin and price configuration */}
+        {selectedProducto && !isLoadingRecipe && (
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Margen de ganancia (%)"
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              placeholder="50"
+              icon="trending_up"
+              helperText="Margen objetivo de ganancia"
+              {...register('margin_percentage', {
+                valueAsNumber: true,
+                required: 'Ingresa el margen',
+                min: { value: 0, message: 'Mínimo 0%' },
+                max: { value: 100, message: 'Máximo 100%' }
+              })}
+            />
+
+            <Input
+              label="Precio de venta ($/ud)"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              icon="sell"
+              helperText="Precio de venta sugerido"
+              {...register('price_sale', {
+                valueAsNumber: true,
+                required: 'Ingresa el precio',
+                min: { value: 0, message: 'Debe ser mayor a 0' }
+              })}
+            />
+          </div>
+        )}
+
         {/* Información del producto seleccionado */}
         {selectedProducto && !isLoadingRecipe && (
           <div className="space-y-3">
@@ -611,6 +772,27 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                     {formatCurrency(estimatedTotalCost)}
                   </span>
                 </div>
+                {priceSale > 0 && (
+                  <>
+                    <div className="border-t border-primary-200 dark:border-primary-900 my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        Ganancia por unidad:
+                      </span>
+                      <span className="font-semibold text-green-700 dark:text-green-300">
+                        {formatCurrency(priceSale - selectedProducto.cost_unit)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        Ganancia total estimada:
+                      </span>
+                      <span className="text-lg font-bold text-green-700 dark:text-green-300">
+                        {formatCurrency((priceSale - selectedProducto.cost_unit) * quantity)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -655,53 +837,109 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                         Ingredientes por categoría
                       </h4>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                      Selecciona qué insumo usar para cada ingrediente de la receta
-                    </p>
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
+                      <div className="flex gap-2">
+                        <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">
+                          lightbulb
+                        </span>
+                        <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                          <p className="font-medium">Ingredientes flexibles - Selección múltiple</p>
+                          <p>1. <strong>Selecciona uno o más insumos</strong> que quieras combinar (checkboxes)</p>
+                          <p>2. Abajo verás los lotes de cada insumo seleccionado <strong>agrupados</strong></p>
+                          <p>3. Ajusta las cantidades de cada lote para completar lo necesario</p>
+                          <p className="font-medium mt-1">Ejemplo: Si necesitas 62.5g de queso, puedes usar:</p>
+                          <p className="ml-3">✓ 37.5g de Parmeggiano + 25g de Mar del Plata</p>
+                        </div>
+                      </div>
+                    </div>
 
                     {recipeWithLotes
                       .filter(item => item.use_categorias && item.compatible_insumos && item.compatible_insumos.length > 0)
-                      .map((recipeItem) => (
-                        <Card key={recipeItem.recipe_item_id}>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
+                      .map((recipeItem) => {
+                        const selectedInsumos = selectedCategoryInsumos[recipeItem.recipe_item_id] || [];
+                        return (
+                          <Card key={recipeItem.recipe_item_id}>
+                            <div className="space-y-3">
                               <div>
-                                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
                                   Ingrediente basado en categoría
                                 </p>
                                 <p className="text-xs text-slate-600 dark:text-slate-400">
                                   Necesario: {recipeItem.quantity_needed * quantity} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
                                 </p>
                               </div>
-                            </div>
 
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                Seleccionar insumo:
-                              </label>
-                              <select
-                                value={recipeItem.insumo_id || ''}
-                                onChange={(e) => handleCategoryInsumoChange(recipeItem.recipe_item_id, e.target.value)}
-                                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                              >
-                                {(recipeItem.compatible_insumos || []).map((insumo) => (
-                                  <option key={insumo.id} value={insumo.id}>
-                                    {insumo.name} ({insumo.total_stock} {unitLabels[insumo.unit_type as keyof typeof unitLabels]} disponibles)
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {recipeItem.lotes.length > 0 && (
-                              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2">
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                  ✓ {recipeItem.lotes.length} lote{recipeItem.lotes.length !== 1 ? 's' : ''} disponible{recipeItem.lotes.length !== 1 ? 's' : ''}
-                                </p>
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                  Seleccionar insumos (puedes elegir varios):
+                                </label>
+                                <div className="space-y-1.5">
+                                  {(recipeItem.compatible_insumos || []).map((insumo) => {
+                                    const isChecked = selectedInsumos.includes(insumo.id);
+                                    return (
+                                      <label
+                                        key={insumo.id}
+                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                          isChecked
+                                            ? 'bg-primary-50 dark:bg-primary-950/30 border-primary-300 dark:border-primary-700'
+                                            : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-primary-200 dark:hover:border-primary-800'
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={() => handleCategoryInsumoToggle(recipeItem.recipe_item_id, insumo.id)}
+                                          className="w-4 h-4 text-primary-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary-500"
+                                        />
+                                        <div className="flex-1">
+                                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                            {insumo.name}
+                                          </p>
+                                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                                            {insumo.total_stock} {unitLabels[insumo.unit_type as keyof typeof unitLabels]} disponibles
+                                          </p>
+                                        </div>
+                                        {isChecked && (
+                                          <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
+                                            check_circle
+                                          </span>
+                                        )}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        </Card>
-                    ))}
+
+                              {selectedInsumos.length === 0 && (
+                                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[16px]">
+                                      info
+                                    </span>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                                      Selecciona al menos un insumo para continuar
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedInsumos.length > 0 && (
+                                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[16px]">
+                                      check_circle
+                                    </span>
+                                    <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                                      {selectedInsumos.length} insumo{selectedInsumos.length !== 1 ? 's' : ''} seleccionado{selectedInsumos.length !== 1 ? 's' : ''}
+                                      {selectedInsumos.length > 1 && ' - Puedes combinarlos para completar la cantidad necesaria'}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
                   </div>
                 )}
 
@@ -715,88 +953,275 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                       Selección de lotes por ingrediente
                     </h4>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Asigna cuánto consumir de cada lote para cubrir la receta.
-                  </p>
-                  {recipeWithLotes.map((recipeItem) => {
-                    if (!recipeItem.insumo_id) return null;
-                    const orderedLotes = getOrderedLotes(recipeItem);
-                    const status = selectionStatus[recipeItem.recipe_item_id];
-                    const stepValue = recipeItem.unit_type === 'unit' ? 1 : 0.1;
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+                    <div className="flex gap-2">
+                      <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[18px]">
+                        info
+                      </span>
+                      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                        <p className="font-medium">Combinar múltiples lotes del mismo ingrediente</p>
+                        <ul className="list-disc list-inside space-y-0.5 ml-1">
+                          <li><strong>Botón "Auto":</strong> Llena automáticamente usando LIFO (lotes más recientes primero)</li>
+                          <li><strong>Manual:</strong> Ajusta cada lote individualmente. Si necesitas 500g:</li>
+                          <ul className="list-circle list-inside ml-3 space-y-0.5">
+                            <li>Lote 1 (compra reciente): 450g disponibles → selecciona 450g</li>
+                            <li>Lote 2 (compra anterior): 100g disponibles → selecciona 50g</li>
+                            <li><strong>Total: 450g + 50g = 500g ✓</strong></li>
+                          </ul>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
 
-                    return (
-                      <Card key={`lot-selection-${recipeItem.recipe_item_id}`}>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                {recipeItem.insumo_name}
-                              </p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Necesario: {(recipeItem.quantity_needed * quantity).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              icon="refresh"
-                              onClick={() => resetSelectionsForItem(recipeItem)}
-                            >
-                              Auto
-                            </Button>
-                          </div>
+                  {/* Regular ingredients (non-category) */}
+                  {recipeWithLotes
+                    .filter(item => !item.use_categorias && item.insumo_id)
+                    .map((recipeItem) => {
+                      const orderedLotes = getOrderedLotes(recipeItem);
+                      const status = selectionStatus[recipeItem.recipe_item_id];
+                      const stepValue = recipeItem.unit_type === 'unit' ? 1 : 0.1;
 
-                          {orderedLotes.length === 0 ? (
-                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-300">
-                              No hay lotes disponibles para este insumo.
+                      return (
+                        <Card key={`lot-selection-${recipeItem.recipe_item_id}`}>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                  {recipeItem.insumo_name}
+                                </p>
+                                <p className="text-xs text-slate-600 dark:text-slate-400">
+                                  Necesario: {(recipeItem.quantity_needed * quantity).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                icon="refresh"
+                                onClick={() => resetSelectionsForItem(recipeItem)}
+                              >
+                                Auto
+                              </Button>
                             </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {orderedLotes.map((lote) => {
-                                const currentValue = lotSelections[recipeItem.recipe_item_id]?.[lote.id] || 0;
-                                return (
-                                  <div
-                                    key={lote.id}
-                                    className="flex flex-col gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/40"
-                                  >
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div>
-                                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                          Lote del {format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })}
-                                        </p>
-                                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                                          Disponible: {lote.quantity_remaining.toFixed(3)} {unitLabels[lote.unit_type as keyof typeof unitLabels]} • {formatCurrency(lote.price_per_unit)}/{unitLabels[lote.unit_type as keyof typeof unitLabels]}
-                                        </p>
+
+                            {orderedLotes.length === 0 ? (
+                              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-300">
+                                No hay lotes disponibles para este insumo.
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {orderedLotes.map((lote) => {
+                                  const currentValue = lotSelections[recipeItem.recipe_item_id]?.[lote.id] || 0;
+                                  return (
+                                    <div
+                                      key={lote.id}
+                                      className="flex flex-col gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/40"
+                                    >
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                            Lote del {format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })}
+                                          </p>
+                                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                                            Disponible: {lote.quantity_remaining.toFixed(3)} {unitLabels[lote.unit_type as keyof typeof unitLabels]} • {formatCurrency(lote.price_per_unit)}/{unitLabels[lote.unit_type as keyof typeof unitLabels]}
+                                          </p>
+                                        </div>
+                                        <QuantityStepper
+                                          value={currentValue}
+                                          onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
+                                          min={0}
+                                          max={lote.quantity_remaining}
+                                          step={stepValue}
+                                        />
                                       </div>
-                                      <QuantityStepper
-                                        value={currentValue}
-                                        onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
-                                        min={0}
-                                        max={lote.quantity_remaining}
-                                        step={stepValue}
-                                      />
                                     </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Progress bar and status */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-600 dark:text-slate-400">
+                                  Seleccionado: {(status?.selected || 0).toFixed(3)} / {(status?.required || 0).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
+                                </span>
+                                {status?.message && (
+                                  <span className="text-red-600 dark:text-red-400 font-medium">
+                                    {status.message}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Visual progress bar */}
+                              {status && status.required > 0 && (
+                                <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                  <div
+                                    className={`absolute top-0 left-0 h-full transition-all duration-300 rounded-full ${
+                                      status.hasError
+                                        ? 'bg-red-500'
+                                        : Math.abs(status.selected - status.required) < 0.001
+                                        ? 'bg-green-500'
+                                        : 'bg-yellow-500'
+                                    }`}
+                                    style={{
+                                      width: `${Math.min((status.selected / status.required) * 100, 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Success indicator when using multiple lots */}
+                              {orderedLotes.length > 1 && status && !status.hasError && Math.abs(status.selected - status.required) < 0.001 && (
+                                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[14px]">
+                                      check_circle
+                                    </span>
+                                    <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                                      ✓ Usando {orderedLotes.filter(lote => (lotSelections[recipeItem.recipe_item_id]?.[lote.id] || 0) > 0).length} lotes combinados
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+
+                  {/* Category-based ingredients - Show selected insumos grouped */}
+                  {recipeWithLotes
+                    .filter(item => item.use_categorias && item.selected_insumos && item.selected_insumos.length > 0)
+                    .map((recipeItem) => {
+                      const status = selectionStatus[recipeItem.recipe_item_id];
+                      const stepValue = recipeItem.unit_type === 'unit' ? 1 : 0.1;
+
+                      return (
+                        <Card key={`category-lot-selection-${recipeItem.recipe_item_id}`}>
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[18px]">
+                                  category
+                                </span>
+                                Ingrediente por categoría
+                              </p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                Necesario total: {(recipeItem.quantity_needed * quantity).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
+                              </p>
+                            </div>
+
+                            {/* Show each selected insumo with its lotes */}
+                            <div className="space-y-3">
+                              {(recipeItem.selected_insumos || []).map((selectedInsumo) => {
+                                const insumoLotes = selectedInsumo.lotes || [];
+                                const orderedInsumoLotes = loteOrder[selectedInsumo.insumo_id]
+                                  ? loteOrder[selectedInsumo.insumo_id]
+                                      .map(loteId => insumoLotes.find(l => l.id === loteId))
+                                      .filter(Boolean) as InsumoLote[]
+                                  : insumoLotes;
+
+                                return (
+                                  <div key={selectedInsumo.insumo_id} className="border border-primary-200 dark:border-primary-800 rounded-lg p-3 bg-primary-50/50 dark:bg-primary-950/20">
+                                    <div className="mb-2">
+                                      <p className="text-sm font-semibold text-primary-900 dark:text-primary-100">
+                                        {selectedInsumo.insumo_name}
+                                      </p>
+                                      <p className="text-xs text-primary-700 dark:text-primary-300">
+                                        {orderedInsumoLotes.length} lote{orderedInsumoLotes.length !== 1 ? 's' : ''} disponible{orderedInsumoLotes.length !== 1 ? 's' : ''}
+                                      </p>
+                                    </div>
+
+                                    {orderedInsumoLotes.length === 0 ? (
+                                      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-2 text-xs text-amber-700 dark:text-amber-300">
+                                        No hay lotes disponibles para este insumo.
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        {orderedInsumoLotes.map((lote) => {
+                                          const currentValue = lotSelections[recipeItem.recipe_item_id]?.[lote.id] || 0;
+                                          return (
+                                            <div
+                                              key={lote.id}
+                                              className="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-800"
+                                            >
+                                              <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                    Lote del {format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })}
+                                                  </p>
+                                                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                    Disponible: {lote.quantity_remaining.toFixed(3)} {unitLabels[lote.unit_type as keyof typeof unitLabels]} • {formatCurrency(lote.price_per_unit)}/{unitLabels[lote.unit_type as keyof typeof unitLabels]}
+                                                  </p>
+                                                </div>
+                                                <QuantityStepper
+                                                  value={currentValue}
+                                                  onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
+                                                  min={0}
+                                                  max={lote.quantity_remaining}
+                                                  step={stepValue}
+                                                />
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
                             </div>
-                          )}
 
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-600 dark:text-slate-400">
-                              Seleccionado: {(status?.selected || 0).toFixed(3)} / {(status?.required || 0).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
-                            </span>
-                            {status?.message && (
-                              <span className="text-red-600 dark:text-red-400 font-medium">
-                                {status.message}
-                              </span>
-                            )}
+                            {/* Progress bar and status for the whole category-based ingredient */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-600 dark:text-slate-400">
+                                  Seleccionado: {(status?.selected || 0).toFixed(3)} / {(status?.required || 0).toFixed(3)} {unitLabels[recipeItem.unit_type as keyof typeof unitLabels]}
+                                </span>
+                                {status?.message && (
+                                  <span className="text-red-600 dark:text-red-400 font-medium">
+                                    {status.message}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Visual progress bar */}
+                              {status && status.required > 0 && (
+                                <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                  <div
+                                    className={`absolute top-0 left-0 h-full transition-all duration-300 rounded-full ${
+                                      status.hasError
+                                        ? 'bg-red-500'
+                                        : Math.abs(status.selected - status.required) < 0.001
+                                        ? 'bg-green-500'
+                                        : 'bg-yellow-500'
+                                    }`}
+                                    style={{
+                                      width: `${Math.min((status.selected / status.required) * 100, 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Success indicator when combining multiple insumos */}
+                              {(recipeItem.selected_insumos?.length || 0) > 1 && status && !status.hasError && Math.abs(status.selected - status.required) < 0.001 && (
+                                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg p-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[14px]">
+                                      check_circle
+                                    </span>
+                                    <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                                      ✓ Combinando {recipeItem.selected_insumos?.length || 0} insumos diferentes
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                        </Card>
+                      );
+                    })}
                 </div>
 
                 {/* Advanced: Reorder lotes */}
@@ -842,25 +1267,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                 </p>
                               </div>
 
-                              {/* Category insumo selector */}
-                              {recipeItem.use_categorias && recipeItem.compatible_insumos && recipeItem.compatible_insumos.length > 1 && (
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                    Seleccionar insumo:
-                                  </label>
-                                  <select
-                                    value={recipeItem.insumo_id || ''}
-                                    onChange={(e) => handleCategoryInsumoChange(recipeItem.recipe_item_id, e.target.value)}
-                                    className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                                  >
-                                    {recipeItem.compatible_insumos.map((insumo) => (
-                                      <option key={insumo.id} value={insumo.id}>
-                                        {insumo.name} ({insumo.total_stock} {unitLabels[insumo.unit_type as keyof typeof unitLabels]} disponibles)
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              )}
+                              {/* Note: Category insumo selection is now handled via checkboxes above */}
 
                               <div className="space-y-2">
                                 <p className="text-xs font-medium text-slate-700 dark:text-slate-300">

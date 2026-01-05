@@ -147,6 +147,8 @@ export function useReverseProduction() {
 interface ProduceWithCustomOrderInput {
   producto_id: string;
   quantity: number;
+  margin_percentage: number;  // NEW: Margin percentage (0-100)
+  price_sale: number;         // NEW: Sale price
   lote_order?: Record<string, string[]>; // insumo_id -> array of lote_ids
   lot_selections?: LotSelectionPayload[];
 }
@@ -156,10 +158,19 @@ export function useProduceProductoCustomOrder() {
   const toast = useToast();
 
   return useMutation({
-    mutationFn: async ({ producto_id, quantity, lote_order = {}, lot_selections = [] }: ProduceWithCustomOrderInput) => {
+    mutationFn: async ({
+      producto_id,
+      quantity,
+      margin_percentage,
+      price_sale,
+      lote_order = {},
+      lot_selections = []
+    }: ProduceWithCustomOrderInput) => {
       const { data, error } = await supabase.rpc('produce_producto_custom_order', {
         p_producto_id: producto_id,
         p_quantity: quantity,
+        p_margin_percentage: margin_percentage,
+        p_price_sale: price_sale,
         p_lote_order: lote_order,
         p_lot_selections: lot_selections,
       });
@@ -176,6 +187,10 @@ export function useProduceProductoCustomOrder() {
         quantity_produced: number;
         total_cost: number;
         cost_per_unit: number;
+        margin_percentage: number;
+        price_sale: number;
+        production_history_id: string;
+        stock_fabricado_id: string;
       };
     },
     onSuccess: async (data) => {
@@ -185,11 +200,12 @@ export function useProduceProductoCustomOrder() {
         queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['stock-fabricado'], refetchType: 'active' }),
       ]);
 
       toast.success(
         'Producción completada',
-        `Se fabricaron ${data.quantity_produced} unidades. Costo total: ${formatCurrency(data.total_cost)}`
+        `Se fabricaron ${data.quantity_produced} unidades. Costo: ${formatCurrency(data.cost_per_unit)}/ud | Precio venta: ${formatCurrency(data.price_sale)}/ud | Margen: ${data.margin_percentage}%`
       );
     },
     onError: (error: Error) => {

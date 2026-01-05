@@ -14,8 +14,6 @@ export function Productos() {
   const [editingProducto, setEditingProducto] = useState<{
     id: string;
     name: string;
-    price_sale: number;
-    margin_goal?: number | null;
     recipe_items: RecipeItemFormData[];
   } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
@@ -41,8 +39,6 @@ export function Productos() {
       setEditingProducto({
         id: producto.id,
         name: producto.name,
-        price_sale: producto.price_sale,
-        margin_goal: producto.margin_goal,
         recipe_items: (recipeItems || []).map((item) => ({
           insumo_id: item.insumo_id,
           quantity_in_base_units: item.quantity_in_base_units,

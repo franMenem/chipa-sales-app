@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { productoBaseSchema } from '../../utils/validators';
 import type { UnitType, RecipeItemFormData } from '../../lib/types';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -14,7 +12,6 @@ import { useInsumos } from '../../hooks/useInsumos';
 import { useCategorias } from '../../hooks/useCategorias';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
-import { calculateSuggestedPrice } from '../../utils/calculations';
 
 interface ProductoFormProps {
   isOpen: boolean;
@@ -22,16 +19,12 @@ interface ProductoFormProps {
   editData?: {
     id: string;
     name: string;
-    price_sale: number;
-    margin_goal?: number | null;
     recipe_items: RecipeItemFormData[];
   };
 }
 
 interface ProductoFormData {
   name: string;
-  price_sale: number;
-  margin_goal?: number | null;
 }
 
 const unitLabels: Record<UnitType, string> = {
@@ -62,28 +55,18 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     register,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductoFormData>({
-    resolver: zodResolver(productoBaseSchema),
     defaultValues: editData
       ? {
           name: editData.name,
-          price_sale: editData.price_sale,
-          margin_goal: editData.margin_goal || 0,
         }
       : {
           name: '',
-          price_sale: 0,
-          margin_goal: 50,
         },
   });
 
-  const marginGoal = watch('margin_goal');
-  const priceSale = watch('price_sale');
-
-  // Calculate current cost based on recipe (only for specific insumos, not categories)
+  // Calculate current cost based on recipe (only for reference/display)
   const calculatedCost = useMemo(() => {
     return recipeItems.reduce((total, item) => {
       // Skip category-based items (no cost until fabrication)
@@ -100,18 +83,6 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     return recipeItems.some(item => item.use_categorias);
   }, [recipeItems]);
 
-  // Calculate suggested price
-  const suggestedPrice = useMemo(() => {
-    if (calculatedCost === 0 || !marginGoal) return 0;
-    return calculateSuggestedPrice(calculatedCost, marginGoal);
-  }, [calculatedCost, marginGoal]);
-
-  // Calculate actual margin
-  const actualMargin = useMemo(() => {
-    if (priceSale === 0 || calculatedCost === 0) return 0;
-    return ((priceSale - calculatedCost) / priceSale) * 100;
-  }, [priceSale, calculatedCost]);
-
   // Reset form when modal opens/closes or edit data changes
   useEffect(() => {
     if (isOpen) {
@@ -119,13 +90,9 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
         editData
           ? {
               name: editData.name,
-              price_sale: editData.price_sale,
-              margin_goal: editData.margin_goal || 0,
             }
           : {
               name: '',
-              price_sale: 0,
-              margin_goal: 50,
             }
       );
       setRecipeItems(editData?.recipe_items || []);
@@ -136,8 +103,6 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
       // Reset when closing
       reset({
         name: '',
-        price_sale: 0,
-        margin_goal: 50,
       });
       setRecipeItems([]);
       setSelectedInsumoId('');
@@ -197,10 +162,6 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
           : item
       )
     );
-  };
-
-  const handleUseSuggestedPrice = () => {
-    setValue('price_sale', Math.round(suggestedPrice));
   };
 
   const onSubmit = async (data: ProductoFormData) => {
@@ -585,57 +546,24 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
           )}
         </div>
 
-        {/* Pricing */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-slate-900 dark:text-white">Precio</h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Margen objetivo (%)"
-              type="number"
-              step="1"
-              min="0"
-              max="100"
-              placeholder="50"
-              icon="percent"
-              error={errors.margin_goal?.message}
-              {...register('margin_goal', { valueAsNumber: true })}
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Precio sugerido
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-1 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 text-green-700 dark:text-green-300 font-semibold">
-                  {formatCurrency(suggestedPrice)}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  icon="check"
-                  onClick={handleUseSuggestedPrice}
-                  disabled={suggestedPrice === 0}
-                >
-                  Usar
-                </Button>
+        {/* Cost estimation */}
+        {calculatedCost > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-200 dark:border-blue-900">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[20px]">
+                info
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Costo estimado actual: {formatCurrency(calculatedCost)}/unidad
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Este es un costo de referencia. El costo real y precio de venta se configurarán al fabricar el stock.
+                </p>
               </div>
             </div>
           </div>
-
-          <Input
-            label="Precio de venta"
-            type="number"
-            step="1"
-            min="0"
-            placeholder="0"
-            icon="payments"
-            error={errors.price_sale?.message}
-            helperText={`Margen real: ${actualMargin.toFixed(1)}%`}
-            {...register('price_sale', { valueAsNumber: true })}
-          />
-        </div>
+        )}
       </form>
     </Modal>
   );

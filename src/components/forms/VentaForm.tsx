@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
-import { QuantityStepper } from '../ui/QuantityStepper';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/useProductos';
@@ -29,7 +28,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const isEdit = !!editData;
 
   const [selectedProductoId, setSelectedProductoId] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(1.0);
   const [customPrice, setCustomPrice] = useState<number | null>(null);
   const [saleDate, setSaleDate] = useState(getTodayForInput());
 
@@ -83,7 +82,8 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
     return finishedStock + stockFromInsumos;
   }, [selectedProducto, insumos]);
 
-  const priceToUse = customPrice ?? selectedProducto?.price_sale ?? 0;
+  // TODO: Get price from stock_fabricado (LIFO) instead of producto
+  const priceToUse = customPrice ?? 0;
 
   const calculations = useMemo(() => {
     if (!selectedProducto) {
@@ -114,8 +114,8 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       return;
     }
 
-    if (quantity <= 0) {
-      toast.error('Cantidad inválida', 'La cantidad debe ser mayor a 0');
+    if (quantity < 0.1) {
+      toast.error('Cantidad inválida', 'La cantidad debe ser al menos 0.1');
       return;
     }
 
@@ -222,7 +222,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
               { value: '', label: 'Seleccionar producto...' },
               ...productos.map((p) => ({
                 value: p.id,
-                label: `${p.name} - ${formatCurrency(p.price_sale)}`,
+                label: `${p.name}`,
               })),
             ]}
             value={selectedProductoId}
@@ -236,14 +236,16 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
             {!isEdit && (
               <Card className="bg-slate-50 dark:bg-slate-900/50">
                 <div className="space-y-2 text-sm">
+                  {/* TODO: Show price from stock_fabricado LIFO
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">
                       Precio sugerido:
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(selectedProducto.price_sale)}
+                      {formatCurrency(0)}
                     </span>
                   </div>
+                  */}
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">
                       Costo unitario:
@@ -306,25 +308,25 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
             )}
 
             {/* Quantity */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Cantidad
-              </label>
-              <div className="flex justify-center">
-                <QuantityStepper
-                  value={quantity}
-                  onChange={setQuantity}
-                  min={1}
-                  max={isEdit ? 9999 : availableStock}
-                  step={1}
-                />
-              </div>
-              {!isEdit && quantity > availableStock && (
-                <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2">
-                  La cantidad excede el stock disponible
-                </p>
-              )}
-            </div>
+            <Input
+              label="Cantidad"
+              type="number"
+              step="0.1"
+              min="0.1"
+              max={isEdit ? "9999" : availableStock.toString()}
+              placeholder="1"
+              value={quantity}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setQuantity(isNaN(val) ? 0.1 : val);
+              }}
+              icon="production_quantity_limits"
+              helperText={
+                !isEdit && quantity > availableStock
+                  ? "La cantidad excede el stock disponible"
+                  : "Puedes usar decimales (ej: 1.5, 2.75)"
+              }
+            />
 
             {/* Custom Price (Optional) */}
             <Input
@@ -332,7 +334,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
               type="number"
               step="1"
               min="0"
-              placeholder={selectedProducto.price_sale.toString()}
+              placeholder="0"
               value={customPrice ?? ''}
               onChange={(e) => {
                 const val = e.target.value;

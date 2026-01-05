@@ -5,8 +5,6 @@ import { useToast } from './useToast';
 
 interface CreateProductoInput {
   name: string;
-  price_sale: number;
-  margin_goal?: number | null;
   recipe_items: {
     insumo_id?: string | null;
     quantity_in_base_units: number;

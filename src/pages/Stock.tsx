@@ -145,9 +145,9 @@ export function Stock() {
                     const isOutOfStock = producto.finished_stock === 0;
                     const canProduce = producto.has_sufficient_ingredients;
 
-                    // Calcular margen y ganancia
-                    const margin = producto.price_sale === 0 ? 0 : ((producto.price_sale - producto.cost_unit) / producto.price_sale) * 100;
-                    const profit = producto.price_sale - producto.cost_unit;
+                    // TODO: Calculate margin and profit from stock_fabricado batches
+                    const margin = 0; // Will be calculated from stock_fabricado
+                    const profit = 0; // Will be calculated from stock_fabricado
 
                     return (
                       <div
@@ -167,11 +167,9 @@ export function Stock() {
                             </h3>
                             <div className="flex items-center gap-3 mt-1">
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Costo: {formatCurrency(producto.cost_unit)}
+                                Costo estimado: {formatCurrency(producto.cost_unit)}
                               </p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Venta: {formatCurrency(producto.price_sale)}
-                              </p>
+                              {/* TODO: Show price from stock_fabricado batches */}
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">

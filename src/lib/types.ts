@@ -68,9 +68,7 @@ export interface Producto {
   id: string;
   user_id: string;
   name: string;
-  price_sale: number;
-  margin_goal: number | null;
-  finished_stock: number; // Stock de productos terminados
+  finished_stock: number; // Total stock (sum of all stock_fabricado batches)
   created_at: string;
   updated_at: string;
   // Relations
@@ -78,8 +76,52 @@ export interface Producto {
 }
 
 export interface ProductoWithCost extends Producto {
-  cost_unit: number; // Calculated from view (LIFO pricing)
+  cost_unit: number; // Estimated cost from view (LIFO pricing) - for reference only
   has_sufficient_ingredients: boolean; // True if all ingredients have enough stock
+}
+
+// Stock Fabricado: Manufactured product batches with specific cost, margin, and price
+export interface StockFabricado {
+  id: string;
+  user_id: string;
+  production_history_id: string;
+  producto_id: string;
+  quantity_fabricated: number;  // Total quantity produced in this batch
+  quantity_remaining: number;   // Remaining quantity available for sale
+  cost_unit: number;             // Unit cost captured at production time
+  margin_percentage: number;     // Profit margin (0-100%)
+  price_sale: number;            // Sale price configured at production time
+  production_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockFabricadoWithDetails extends StockFabricado {
+  producto_name: string;
+  quantity_sold: number;          // Calculated: quantity_fabricated - quantity_remaining
+  profit_per_unit: number;        // Calculated: price_sale - cost_unit
+  actual_margin_percentage: number; // Calculated: (profit / price_sale) * 100
+  total_cost_remaining: number;   // Calculated: cost_unit * quantity_remaining
+  total_value_remaining: number;  // Calculated: price_sale * quantity_remaining
+  total_profit_potential: number; // Calculated: profit_per_unit * quantity_remaining
+  stock_status: 'available' | 'low_stock' | 'sold_out';
+}
+
+export interface StockFabricadoTotals {
+  producto_id: string;
+  user_id: string;
+  producto_name: string;
+  total_quantity_available: number;   // Sum of all quantity_remaining
+  total_quantity_fabricated: number;  // Sum of all quantity_fabricated
+  total_batches: number;              // Total number of batches
+  active_batches: number;             // Batches with quantity_remaining > 0
+  avg_cost_unit: number;              // Weighted average by quantity_remaining
+  avg_price_sale: number;             // Weighted average by quantity_remaining
+  avg_margin_percentage: number;      // Weighted average by quantity_remaining
+  lifo_cost_unit: number | null;      // Cost of most recent batch
+  lifo_price_sale: number | null;     // Price of most recent batch
+  lifo_margin_percentage: number | null; // Margin of most recent batch
+  latest_production_date: string;
 }
 
 export interface Venta {

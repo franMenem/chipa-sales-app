@@ -11,3 +11,5 @@ COMMENT ON COLUMN insumos.quantity IS 'Cantidad de unidades compradas (ej: 5 kg,
 
 
 
+
+
