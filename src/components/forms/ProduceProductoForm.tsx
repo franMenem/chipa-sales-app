@@ -294,9 +294,11 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
     const costUnit = selectedProducto.cost_unit || 0;
     if (costUnit <= 0) return;
 
-    // Formula: price = cost / (1 - margin/100)
-    // Example: if cost=100 and margin=50%, then price = 100 / (1 - 0.5) = 200
-    const suggestedPrice = costUnit / (1 - marginPercentage / 100);
+    // Formula: price = cost * (1 + margin/100)
+    // This calculates margin ON TOP of cost (markup)
+    // Example: if cost=8000 and margin=50%, then price = 8000 * 1.5 = 12000
+    // Ganancia = 4000 (50% del costo)
+    const suggestedPrice = costUnit * (1 + marginPercentage / 100);
     setValue('price_sale', Number(suggestedPrice.toFixed(2)));
   }, [selectedProducto, marginPercentage, setValue]);
 
@@ -635,10 +637,52 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
     })),
   ];
 
-  // Calculate estimated cost
-  const estimatedTotalCost = selectedProducto && quantity > 0
-    ? selectedProducto.cost_unit * quantity
-    : 0;
+  // Calculate dynamic cost based on selected lots
+  const dynamicCostCalculation = useMemo(() => {
+    if (!selectedProducto || quantity <= 0 || recipeWithLotes.length === 0) {
+      return {
+        totalCost: 0,
+        costPerUnit: 0,
+      };
+    }
+
+    let totalCost = 0;
+
+    recipeWithLotes.forEach((item) => {
+      const lotMap = lotSelections[item.recipe_item_id] || {};
+
+      // Find the cost for each lot and multiply by quantity used
+      Object.entries(lotMap).forEach(([lotId, qtyUsed]) => {
+        if (qtyUsed <= 0) return;
+
+        let lote: InsumoLote | undefined;
+
+        // Find lote in regular lotes or in selected_insumos
+        if (item.lotes && item.lotes.length > 0) {
+          lote = item.lotes.find(l => l.id === lotId);
+        }
+
+        if (!lote && item.use_categorias && item.selected_insumos) {
+          for (const selectedInsumo of item.selected_insumos) {
+            lote = selectedInsumo.lotes.find(l => l.id === lotId);
+            if (lote) break;
+          }
+        }
+
+        if (lote) {
+          totalCost += qtyUsed * lote.base_unit_cost;
+        }
+      });
+    });
+
+    const costPerUnit = quantity > 0 ? totalCost / quantity : 0;
+
+    return {
+      totalCost,
+      costPerUnit,
+    };
+  }, [selectedProducto, quantity, recipeWithLotes, lotSelections]);
+
   const isSubmitDisabled =
     isSubmitting ||
     !selectedProducto?.has_sufficient_ingredients ||
@@ -753,42 +797,72 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
               </div>
             </div>
 
-            {/* Costo estimado */}
+            {/* Costo dinámico basado en lotes seleccionados */}
             <div className="bg-primary-50 dark:bg-primary-950/30 rounded-xl p-4 border border-primary-200 dark:border-primary-900">
               <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[18px]">
+                    calculate
+                  </span>
+                  <h4 className="text-sm font-semibold text-primary-700 dark:text-primary-300">
+                    Costos de Producción
+                  </h4>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-primary-600 dark:text-primary-400">
                     Costo por unidad:
                   </span>
                   <span className="font-semibold text-primary-700 dark:text-primary-300">
-                    {formatCurrency(selectedProducto.cost_unit)}
+                    {formatCurrency(dynamicCostCalculation.costPerUnit)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-primary-600 dark:text-primary-400">
-                    Costo total estimado:
+                    Costo total:
                   </span>
                   <span className="text-lg font-bold text-primary-700 dark:text-primary-300">
-                    {formatCurrency(estimatedTotalCost)}
+                    {formatCurrency(dynamicCostCalculation.totalCost)}
                   </span>
                 </div>
-                {priceSale > 0 && (
+                {dynamicCostCalculation.costPerUnit > 0 && (
+                  <p className="text-xs text-primary-600 dark:text-primary-400 italic">
+                    * Calculado en base a los lotes seleccionados
+                  </p>
+                )}
+                {priceSale > 0 && dynamicCostCalculation.costPerUnit > 0 && (
                   <>
                     <div className="border-t border-primary-200 dark:border-primary-900 my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        Precio de venta:
+                      </span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {formatCurrency(priceSale)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        Margen:
+                      </span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {marginPercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="border-t border-green-200 dark:border-green-900 my-2" />
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-green-600 dark:text-green-400">
                         Ganancia por unidad:
                       </span>
                       <span className="font-semibold text-green-700 dark:text-green-300">
-                        {formatCurrency(priceSale - selectedProducto.cost_unit)}
+                        {formatCurrency(priceSale - dynamicCostCalculation.costPerUnit)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-green-600 dark:text-green-400">
-                        Ganancia total estimada:
+                        Ganancia total:
                       </span>
                       <span className="text-lg font-bold text-green-700 dark:text-green-300">
-                        {formatCurrency((priceSale - selectedProducto.cost_unit) * quantity)}
+                        {formatCurrency((priceSale - dynamicCostCalculation.costPerUnit) * quantity)}
                       </span>
                     </div>
                   </>
