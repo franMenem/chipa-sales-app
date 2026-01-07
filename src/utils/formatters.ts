@@ -1,13 +1,13 @@
 /**
- * Formats a number as currency (Guaraníes)
+ * Formats a number as currency (Pesos)
  * @param amount - Number to format
  * @param decimals - Number of decimal places (default: 2)
  * @returns Formatted currency string
  */
 export function formatCurrency(amount: number, decimals: number = 2): string {
-  return new Intl.NumberFormat('es-PY', {
+  return new Intl.NumberFormat('es-AR', {
     style: 'currency',
-    currency: 'PYG',
+    currency: 'ARS',
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(amount);

@@ -6,6 +6,7 @@ import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/useProductos';
 import { useInsumos } from '../../hooks/useInsumos';
+import { useStockFabricadoTotals } from '../../hooks/useStockFabricado';
 import { useCreateVenta, useUpdateVenta } from '../../hooks/useVentas';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
@@ -21,6 +22,7 @@ interface VentaFormProps {
 export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const { data: productos = [] } = useProductos();
   const { data: insumos = [] } = useInsumos();
+  const { data: stockFabricadoTotals = [] } = useStockFabricadoTotals();
   const createMutation = useCreateVenta();
   const updateMutation = useUpdateVenta();
   const toast = useToast();
@@ -31,6 +33,10 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const [quantity, setQuantity] = useState(1.0);
   const [customPrice, setCustomPrice] = useState<number | null>(null);
   const [saleDate, setSaleDate] = useState(getTodayForInput());
+  const [customerName, setCustomerName] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'pagado' | 'debe'>('pagado');
+  const [paymentDestination, setPaymentDestination] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState<'entregado' | 'no_entregado'>('entregado');
 
   // Cargar datos de edición
   useEffect(() => {
@@ -39,18 +45,46 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setQuantity(editData.quantity);
       setCustomPrice(editData.price_sold);
       setSaleDate(isoToInputDate(editData.sale_date));
+      setCustomerName(editData.customer_name || '');
+      setPaymentStatus(editData.payment_status || 'pagado');
+      setPaymentDestination(editData.payment_destination || '');
+      setDeliveryStatus(editData.delivery_status || 'entregado');
     } else if (isOpen && !editData) {
       // Reset para nueva venta
       setSelectedProductoId('');
       setQuantity(1);
       setCustomPrice(null);
       setSaleDate(getTodayForInput());
+      setCustomerName('');
+      setPaymentStatus('pagado');
+      setPaymentDestination('');
+      setDeliveryStatus('entregado');
     }
   }, [isOpen, editData]);
 
   const selectedProducto = useMemo(() => {
     return productos.find((p) => p.id === selectedProductoId);
   }, [selectedProductoId, productos]);
+
+  const stockInfo = useMemo(() => {
+    if (!selectedProductoId) return undefined;
+    return stockFabricadoTotals.find((entry) => entry.producto_id === selectedProductoId);
+  }, [selectedProductoId, stockFabricadoTotals]);
+
+  const suggestedCostUnit =
+    stockInfo?.lifo_cost_unit ??
+    stockInfo?.avg_cost_unit ??
+    selectedProducto?.cost_unit ??
+    0;
+  const suggestedMargin =
+    stockInfo?.lifo_margin_percentage ??
+    stockInfo?.avg_margin_percentage ??
+    null;
+  const suggestedPrice =
+    stockInfo?.lifo_price_sale ??
+    (suggestedMargin !== null && suggestedCostUnit > 0
+      ? suggestedCostUnit * (1 + suggestedMargin / 100)
+      : 0);
 
   // Calcular stock disponible
   const availableStock = useMemo(() => {
@@ -82,8 +116,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
     return finishedStock + stockFromInsumos;
   }, [selectedProducto, insumos]);
 
-  // TODO: Get price from stock_fabricado (LIFO) instead of producto
-  const priceToUse = customPrice ?? 0;
+  const priceToUse = customPrice ?? suggestedPrice;
 
   const calculations = useMemo(() => {
     if (!selectedProducto) {
@@ -96,7 +129,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
     }
 
     const totalIncome = quantity * priceToUse;
-    const totalCost = quantity * selectedProducto.cost_unit;
+    const totalCost = quantity * suggestedCostUnit;
     const profit = totalIncome - totalCost;
     const profitMargin = totalIncome > 0 ? (profit / totalIncome) * 100 : 0;
 
@@ -119,6 +152,11 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       return;
     }
 
+    if (!isEdit && priceToUse <= 0) {
+      toast.error('Precio inválido', 'Ingresa un precio de venta válido');
+      return;
+    }
+
     try {
       if (isEdit && editData) {
         // Modo edición: solo actualizar cantidad y precio
@@ -126,6 +164,10 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
           id: editData.id,
           quantity,
           price_sold: priceToUse,
+          customer_name: customerName || null,
+          payment_status: paymentStatus,
+          payment_destination: paymentDestination || null,
+          delivery_status: deliveryStatus,
         });
       } else {
         // Modo creación: validar stock y crear nueva venta
@@ -150,7 +192,11 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
           producto_name: selectedProducto.name,
           quantity,
           price_sold: priceToUse,
-          cost_unit: selectedProducto.cost_unit || 0, // SNAPSHOT - default to 0 if null
+          cost_unit: suggestedCostUnit || 0, // Snapshot from latest batch cost
+          customer_name: customerName || null,
+          payment_status: paymentStatus,
+          payment_destination: paymentDestination || null,
+          delivery_status: deliveryStatus,
           sale_date: new Date(saleDate).toISOString(),
         });
       }
@@ -160,6 +206,10 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setQuantity(1);
       setCustomPrice(null);
       setSaleDate(getTodayForInput());
+      setCustomerName('');
+      setPaymentStatus('pagado');
+      setPaymentDestination('');
+      setDeliveryStatus('entregado');
       onClose();
     } catch (error) {
       console.error(error);
@@ -232,26 +282,69 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
 
         {selectedProducto && (
           <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Cliente"
+                type="text"
+                placeholder="Nombre del cliente"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                icon="person"
+              />
+              <Select
+                label="Estado de pago"
+                options={[
+                  { value: 'pagado', label: 'Pagado' },
+                  { value: 'debe', label: 'Debe' },
+                ]}
+                value={paymentStatus}
+                onChange={(e) => setPaymentStatus(e.target.value as 'pagado' | 'debe')}
+              />
+            </div>
+            <Select
+              label="Estado de entrega"
+              options={[
+                { value: 'entregado', label: 'Entregado' },
+                { value: 'no_entregado', label: 'No entregado' },
+              ]}
+              value={deliveryStatus}
+              onChange={(e) => setDeliveryStatus(e.target.value as 'entregado' | 'no_entregado')}
+            />
+            <Input
+              label="Pago a"
+              type="text"
+              placeholder="Efectivo, transferencia, QR, etc."
+              value={paymentDestination}
+              onChange={(e) => setPaymentDestination(e.target.value)}
+              icon="account_balance_wallet"
+            />
+
             {/* Product Info */}
             {!isEdit && (
               <Card className="bg-slate-50 dark:bg-slate-900/50">
                 <div className="space-y-2 text-sm">
-                  {/* TODO: Show price from stock_fabricado LIFO
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">
                       Precio sugerido:
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(0)}
+                      {formatCurrency(suggestedPrice)}
                     </span>
                   </div>
-                  */}
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">
                       Costo unitario:
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(selectedProducto.cost_unit)}
+                      {formatCurrency(suggestedCostUnit)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Margen:
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {suggestedMargin === null ? 'N/D' : `${suggestedMargin.toFixed(1)}%`}
                     </span>
                   </div>
                 </div>

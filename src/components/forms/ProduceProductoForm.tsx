@@ -287,21 +287,6 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
     setLotSelections(buildDefaultSelections(recipeWithLotes, quantity));
   }, [recipeWithLotes, quantity, buildDefaultSelections]);
 
-  // Auto-calculate suggested price when margin or cost changes
-  useEffect(() => {
-    if (!selectedProducto || marginPercentage < 0 || marginPercentage > 100) return;
-
-    const costUnit = selectedProducto.cost_unit || 0;
-    if (costUnit <= 0) return;
-
-    // Formula: price = cost * (1 + margin/100)
-    // This calculates margin ON TOP of cost (markup)
-    // Example: if cost=8000 and margin=50%, then price = 8000 * 1.5 = 12000
-    // Ganancia = 4000 (50% del costo)
-    const suggestedPrice = costUnit * (1 + marginPercentage / 100);
-    setValue('price_sale', Number(suggestedPrice.toFixed(2)));
-  }, [selectedProducto, marginPercentage, setValue]);
-
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -451,6 +436,24 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
           ...prev,
           [insumoId]: (lotes || []).map(l => l.id),
         }));
+
+        const availableLotes = (lotes || []).filter(lote => lote.quantity_remaining > 0);
+        const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
+        if (availableLotes.length === 1 && updatedSelectedInsumos.length === 1 && requiredQuantity > 0) {
+          setLotSelections(prev => {
+            const existing = prev[recipeItemId] || {};
+            if (Object.keys(existing).length > 0) return prev;
+
+            const lote = availableLotes[0];
+            const nextValue = Number(Math.min(lote.quantity_remaining, requiredQuantity).toFixed(4));
+            return {
+              ...prev,
+              [recipeItemId]: {
+                [lote.id]: nextValue,
+              },
+            };
+          });
+        }
       }
     } catch (error) {
       console.error('Error toggling category insumo:', error);
@@ -501,6 +504,69 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
       },
     }));
   };
+
+  const handleUseAllFromLot = (
+    recipeItemId: string,
+    lotId: string,
+    quantityRemaining: number,
+    requiredQuantity: number
+  ) => {
+    setLotSelections(prev => {
+      const lotMap = prev[recipeItemId] || {};
+      const currentValue = lotMap[lotId] || 0;
+      const selectedTotal = Object.values(lotMap).reduce((sum, value) => sum + value, 0);
+      const remainingNeeded = requiredQuantity - (selectedTotal - currentValue);
+
+      if (remainingNeeded <= 0) return prev;
+
+      const nextValue = Number(Math.min(quantityRemaining, remainingNeeded).toFixed(4));
+
+      return {
+        ...prev,
+        [recipeItemId]: {
+          ...lotMap,
+          [lotId]: nextValue,
+        },
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (recipeWithLotes.length === 0 || quantity <= 0) return;
+
+    setLotSelections(prev => {
+      let changed = false;
+      const next = { ...prev };
+
+      recipeWithLotes.forEach((item) => {
+        const requiredQuantity = Number((item.quantity_needed * quantity).toFixed(4));
+        if (requiredQuantity <= 0) return;
+
+        if (!item.use_categorias && item.insumo_id) {
+          const availableLotes = (item.lotes || []).filter(lote => lote.quantity_remaining > 0);
+          if (availableLotes.length === 1 && (!next[item.recipe_item_id] || Object.keys(next[item.recipe_item_id]).length === 0)) {
+            const lote = availableLotes[0];
+            const nextValue = Number(Math.min(lote.quantity_remaining, requiredQuantity).toFixed(4));
+            next[item.recipe_item_id] = { [lote.id]: nextValue };
+            changed = true;
+          }
+        }
+
+        if (item.use_categorias && item.selected_insumos && item.selected_insumos.length === 1) {
+          const selected = item.selected_insumos[0];
+          const availableLotes = (selected.lotes || []).filter(lote => lote.quantity_remaining > 0);
+          if (availableLotes.length === 1 && (!next[item.recipe_item_id] || Object.keys(next[item.recipe_item_id]).length === 0)) {
+            const lote = availableLotes[0];
+            const nextValue = Number(Math.min(lote.quantity_remaining, requiredQuantity).toFixed(4));
+            next[item.recipe_item_id] = { [lote.id]: nextValue };
+            changed = true;
+          }
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [recipeWithLotes, quantity]);
 
   const resetSelectionsForItem = (recipeItem: RecipeItemWithLotes) => {
     const defaults = buildDefaultSelections([recipeItem], quantity);
@@ -670,7 +736,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
         }
 
         if (lote) {
-          totalCost += qtyUsed * lote.base_unit_cost;
+          totalCost += qtyUsed * lote.price_per_unit;
         }
       });
     });
@@ -682,6 +748,23 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
       costPerUnit,
     };
   }, [selectedProducto, quantity, recipeWithLotes, lotSelections]);
+
+  // Auto-calculate suggested price when margin or cost changes
+  useEffect(() => {
+    if (!selectedProducto || marginPercentage < 0 || marginPercentage > 100) return;
+
+    const costUnit =
+      dynamicCostCalculation.costPerUnit > 0
+        ? dynamicCostCalculation.costPerUnit
+        : selectedProducto.cost_unit || 0;
+    if (costUnit <= 0) return;
+
+    // Formula: price = cost * (1 + margin/100)
+    // This calculates margin ON TOP of cost (markup)
+    // Example: if cost=8000 and margin=50%, then price = 8000 * 1.5 = 12000
+    const suggestedPrice = costUnit * (1 + marginPercentage / 100);
+    setValue('price_sale', Number(suggestedPrice.toFixed(2)));
+  }, [selectedProducto, marginPercentage, dynamicCostCalculation.costPerUnit, setValue]);
 
   const isSubmitDisabled =
     isSubmitting ||
@@ -888,44 +971,44 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                 </div>
               </div>
             ) : (
-              <>
-                <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-xl p-3">
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-xl p-3">
+                <div className="flex gap-2">
+                  <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[20px]">
+                    check_circle
+                  </span>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Todos los ingredientes están disponibles
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Category-based ingredients selector */}
+            {recipeWithLotes.some(item => item.use_categorias && item.compatible_insumos && item.compatible_insumos.length > 0) && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
+                    category
+                  </span>
+                  <h4 className="text-sm font-medium text-slate-900 dark:text-white">
+                    Ingredientes por categoría
+                  </h4>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
                   <div className="flex gap-2">
-                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[20px]">
-                      check_circle
+                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">
+                      lightbulb
                     </span>
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      Todos los ingredientes están disponibles
-                    </p>
+                    <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                      <p className="font-medium">Ingredientes flexibles - Selección múltiple</p>
+                      <p>1. <strong>Selecciona uno o más insumos</strong> que quieras combinar (checkboxes)</p>
+                      <p>2. Abajo verás los lotes de cada insumo seleccionado <strong>agrupados</strong></p>
+                      <p>3. Ajusta las cantidades de cada lote para completar lo necesario</p>
+                      <p className="font-medium mt-1">Ejemplo: Si necesitas 62.5g de queso, puedes usar:</p>
+                      <p className="ml-3">✓ 37.5g de Parmeggiano + 25g de Mar del Plata</p>
+                    </div>
                   </div>
                 </div>
-
-                {/* Category-based ingredients selector */}
-                {recipeWithLotes.some(item => item.use_categorias && item.compatible_insumos && item.compatible_insumos.length > 0) && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
-                        category
-                      </span>
-                      <h4 className="text-sm font-medium text-slate-900 dark:text-white">
-                        Ingredientes por categoría
-                      </h4>
-                    </div>
-                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
-                      <div className="flex gap-2">
-                        <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">
-                          lightbulb
-                        </span>
-                        <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
-                          <p className="font-medium">Ingredientes flexibles - Selección múltiple</p>
-                          <p>1. <strong>Selecciona uno o más insumos</strong> que quieras combinar (checkboxes)</p>
-                          <p>2. Abajo verás los lotes de cada insumo seleccionado <strong>agrupados</strong></p>
-                          <p>3. Ajusta las cantidades de cada lote para completar lo necesario</p>
-                          <p className="font-medium mt-1">Ejemplo: Si necesitas 62.5g de queso, puedes usar:</p>
-                          <p className="ml-3">✓ 37.5g de Parmeggiano + 25g de Mar del Plata</p>
-                        </div>
-                      </div>
-                    </div>
 
                     {recipeWithLotes
                       .filter(item => item.use_categorias && item.compatible_insumos && item.compatible_insumos.length > 0)
@@ -1014,8 +1097,8 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                           </Card>
                         );
                       })}
-                  </div>
-                )}
+              </div>
+            )}
 
                 {/* Lote selection per ingredient */}
                 <div className="space-y-3">
@@ -1051,7 +1134,10 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                   {recipeWithLotes
                     .filter(item => !item.use_categorias && item.insumo_id)
                     .map((recipeItem) => {
-                      const orderedLotes = getOrderedLotes(recipeItem);
+                      const orderedLotes = getOrderedLotes(recipeItem).filter(
+                        (lote) => lote.quantity_remaining > 0
+                      );
+                      const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
                       const status = selectionStatus[recipeItem.recipe_item_id];
                       const stepValue = recipeItem.unit_type === 'unit' ? 1 : 0.1;
 
@@ -1107,6 +1193,19 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                           max={lote.quantity_remaining}
                                           step={stepValue}
                                         />
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleUseAllFromLot(
+                                            recipeItem.recipe_item_id,
+                                            lote.id,
+                                            lote.quantity_remaining,
+                                            requiredQuantity
+                                          )}
+                                        >
+                                          Completar
+                                        </Button>
                                       </div>
                                     </div>
                                   );
@@ -1189,7 +1288,10 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                             {/* Show each selected insumo with its lotes */}
                             <div className="space-y-3">
                               {(recipeItem.selected_insumos || []).map((selectedInsumo) => {
-                                const insumoLotes = selectedInsumo.lotes || [];
+                                const insumoLotes = (selectedInsumo.lotes || []).filter(
+                                  (lote) => lote.quantity_remaining > 0
+                                );
+                                const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
                                 const orderedInsumoLotes = loteOrder[selectedInsumo.insumo_id]
                                   ? loteOrder[selectedInsumo.insumo_id]
                                       .map(loteId => insumoLotes.find(l => l.id === loteId))
@@ -1236,6 +1338,19 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                                   max={lote.quantity_remaining}
                                                   step={stepValue}
                                                 />
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => handleUseAllFromLot(
+                                                    recipeItem.recipe_item_id,
+                                                    lote.id,
+                                                    lote.quantity_remaining,
+                                                    requiredQuantity
+                                                  )}
+                                                >
+                                                  Completar
+                                                </Button>
                                               </div>
                                             </div>
                                           );
@@ -1320,7 +1435,9 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                       {recipeWithLotes.map((recipeItem) => {
                         if (!recipeItem.insumo_id) return null; // Skip items without insumo
 
-                        const orderedLotes = getOrderedLotes(recipeItem);
+                        const orderedLotes = getOrderedLotes(recipeItem).filter(
+                          (lote) => lote.quantity_remaining > 0
+                        );
 
                         return (
                           <Card key={recipeItem.recipe_item_id}>
@@ -1395,8 +1512,6 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                     </div>
                   )}
                 </div>
-              </>
-            )}
 
             {/* Info sobre LIFO */}
             {!showAdvanced && (

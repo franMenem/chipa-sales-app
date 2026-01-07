@@ -81,6 +81,17 @@ export function AdjustFinishedStockForm({ isOpen, onClose, producto }: AdjustFin
       }
     >
       <div className="space-y-6">
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
+          <div className="flex gap-2">
+            <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[18px]">
+              warning
+            </span>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Este ajuste solo cambia el stock de producto terminado. No devuelve insumos ni revierte consumos.
+            </p>
+          </div>
+        </div>
+
         {/* Product name */}
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
           <h3 className="font-semibold text-slate-900 dark:text-white text-lg">

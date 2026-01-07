@@ -1,5 +1,4 @@
-import { useState, memo, useCallback, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useState, useCallback } from 'react';
 import type { Venta } from '../../lib/types';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../utils/formatters';
 import { getDateRangeForFilter } from '../../utils/dates';
@@ -9,123 +8,22 @@ import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { useDeleteVenta } from '../../hooks/useVentas';
 
-const VIRTUALIZATION_THRESHOLD = 50;
-
 interface VentasListProps {
   ventas: Venta[];
   onFilterChange?: (filters: { startDate?: string; endDate?: string }) => void;
   onEdit?: (venta: Venta) => void;
 }
 
-// Memoized VentaCard component
-interface VentaCardProps {
-  venta: Venta;
-  onEdit?: (venta: Venta) => void;
-  onDelete: (id: string, productoName: string) => void;
-  isDeleting: boolean;
-}
-
-const VentaCard = memo(({ venta, onEdit, onDelete, isDeleting }: VentaCardProps) => (
-  <Card>
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-            <span className="material-symbols-outlined text-primary text-[20px]">
-              receipt_long
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
-              {venta.producto_name}
-            </h3>
-            <p className="text-sm text-slate-700 dark:text-slate-300">
-              {formatDate(venta.sale_date)} •{' '}
-              {formatRelativeTime(venta.sale_date)}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon="edit"
-              onClick={() => onEdit(venta)}
-              aria-label="Editar venta"
-            />
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            icon="delete"
-            onClick={() => onDelete(venta.id, venta.producto_name)}
-            disabled={isDeleting}
-            className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-            aria-label="Eliminar venta"
-          />
-        </div>
-      </div>
-
-      {/* Quantity and Price */}
-      <div className="flex items-center gap-3 text-sm">
-        <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-          <span className="material-symbols-outlined text-[16px]">
-            inventory_2
-          </span>
-          <span>Cantidad: {venta.quantity}</span>
-        </div>
-        <span className="text-slate-300 dark:text-slate-700">•</span>
-        <div className="text-slate-600 dark:text-slate-400">
-          Precio: {formatCurrency(venta.price_sold)}
-        </div>
-      </div>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3">
-          <p className="text-xs text-blue-600 dark:text-blue-400 mb-0.5">
-            Ingreso
-          </p>
-          <p className="text-base font-bold text-blue-700 dark:text-blue-300">
-            {formatCurrency(venta.total_income)}
-          </p>
-        </div>
-        <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3">
-          <p className="text-xs text-green-600 dark:text-green-400 mb-0.5">
-            Ganancia
-          </p>
-          <p className="text-base font-bold text-green-700 dark:text-green-300">
-            {formatCurrency(venta.profit)}
-          </p>
-        </div>
-      </div>
-    </div>
-  </Card>
-));
-
-VentaCard.displayName = 'VentaCard';
+type SortKey = 'date' | 'price' | 'total' | 'product' | 'quantity' | 'status' | 'delivery';
+type SortDirection = 'asc' | 'desc';
 
 export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) {
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const deleteMutation = useDeleteVenta();
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  // Use virtualization only for large lists
-  const useVirtualization = ventas.length >= VIRTUALIZATION_THRESHOLD;
-
-  // Setup virtualizer for large lists
-  const rowVirtualizer = useVirtualizer({
-    count: ventas.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 250, // Estimated height of each venta card
-    overscan: 5,
-    enabled: useVirtualization,
-  });
 
   const handleDateFilterChange = (filter: string) => {
     setDateFilter(filter as 'today' | 'week' | 'month' | 'all');
@@ -154,14 +52,59 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
     }
   }, [deleteMutation]);
 
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortKey(key);
+    setSortDirection('desc');
+  };
+
+  const sortedVentas = [...ventas].sort((a, b) => {
+    const direction = sortDirection === 'asc' ? 1 : -1;
+    switch (sortKey) {
+      case 'date':
+        return (new Date(a.sale_date).getTime() - new Date(b.sale_date).getTime()) * direction;
+      case 'price':
+        return (a.price_sold - b.price_sold) * direction;
+      case 'total':
+        return (a.total_income - b.total_income) * direction;
+      case 'product':
+        return a.producto_name.localeCompare(b.producto_name) * direction;
+      case 'quantity':
+        return (a.quantity - b.quantity) * direction;
+      case 'status':
+        return a.payment_status.localeCompare(b.payment_status) * direction;
+      case 'delivery':
+        return a.delivery_status.localeCompare(b.delivery_status) * direction;
+      default:
+        return 0;
+    }
+  });
+
   const totalIncome = ventas.reduce((sum, v) => sum + v.total_income, 0);
   const totalProfit = ventas.reduce((sum, v) => sum + v.profit, 0);
   const totalCost = ventas.reduce((sum, v) => sum + v.total_cost, 0);
 
+  const renderSortLabel = (label: string, key: SortKey) => (
+    <button
+      type="button"
+      onClick={() => handleSort(key)}
+      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300"
+    >
+      {label}
+      {sortKey === key && (
+        <span className="material-symbols-outlined text-[14px]">
+          {sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+        </span>
+      )}
+    </button>
+  );
+
   if (ventas.length === 0) {
     return (
       <div className="space-y-4">
-        {/* Filters */}
         <Select
           label="Filtrar por fecha"
           options={[
@@ -214,12 +157,10 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
 
   return (
     <div className="space-y-4">
-      {/* ARIA live region for filter results announcements */}
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {dateFilter !== 'all' && `Mostrando ${ventas.length} ${ventas.length === 1 ? 'venta' : 'ventas'} para el filtro seleccionado`}
       </div>
 
-      {/* Filters */}
       <Select
         label="Filtrar por fecha"
         options={[
@@ -255,7 +196,6 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         </div>
       )}
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <Card className="bg-blue-50 dark:bg-blue-950/30">
           <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
@@ -281,59 +221,92 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         </Card>
       </div>
 
-      {/* Sales List */}
-      {useVirtualization ? (
-        <div
-          ref={parentRef}
-          className="h-[600px] overflow-auto"
-          style={{ contain: 'strict' }}
-        >
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const venta = ventas[virtualRow.index];
-              return (
-                <div
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800">
+                <th className="text-left py-3 px-2">{renderSortLabel('Producto', 'product')}</th>
+                <th className="text-left py-3 px-2">{renderSortLabel('Fecha', 'date')}</th>
+                <th className="text-right py-3 px-2">{renderSortLabel('Cantidad', 'quantity')}</th>
+                <th className="text-right py-3 px-2">{renderSortLabel('Precio', 'price')}</th>
+                <th className="text-right py-3 px-2">{renderSortLabel('Total', 'total')}</th>
+                <th className="text-left py-3 px-2">{renderSortLabel('Pago', 'status')}</th>
+                <th className="text-left py-3 px-2">{renderSortLabel('Entrega', 'delivery')}</th>
+                <th className="text-right py-3 px-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedVentas.map((venta) => (
+                <tr
                   key={venta.id}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
+                  className="border-b border-slate-100 dark:border-slate-800 last:border-0"
                 >
-                  <div className="pb-4">
-                    <VentaCard
-                      venta={venta}
-                      onEdit={onEdit}
-                      onDelete={handleDelete}
-                      isDeleting={deleteMutation.isPending}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
+                    {venta.producto_name}
+                    {venta.customer_name && (
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        {venta.customer_name}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
+                    {formatDate(venta.sale_date)}
+                    <div className="text-xs">
+                      {formatRelativeTime(venta.sale_date)}
+                    </div>
+                  </td>
+                  <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+                    {venta.quantity}
+                  </td>
+                  <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+                    {formatCurrency(venta.price_sold)}
+                  </td>
+                  <td className="py-3 px-2 text-right font-semibold text-slate-900 dark:text-white">
+                    {formatCurrency(venta.total_income)}
+                  </td>
+                  <td className={`py-3 px-2 font-medium ${
+                    venta.payment_status === 'pagado'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-yellow-600 dark:text-yellow-400'
+                  }`}>
+                    {venta.payment_status === 'pagado' ? 'Pagado' : 'Debe'}
+                  </td>
+                  <td className={`py-3 px-2 font-medium ${
+                    venta.delivery_status === 'entregado'
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-yellow-600 dark:text-yellow-400'
+                  }`}>
+                    {venta.delivery_status === 'entregado' ? 'Entregado' : 'No entregado'}
+                  </td>
+                  <td className="py-3 px-2 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon="edit"
+                          onClick={() => onEdit(venta)}
+                          aria-label="Editar venta"
+                        />
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon="delete"
+                        onClick={() => handleDelete(venta.id, venta.producto_name)}
+                        disabled={deleteMutation.isPending}
+                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        aria-label="Eliminar venta"
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
-          {ventas.map((venta) => (
-            <VentaCard
-              key={venta.id}
-              venta={venta}
-              onEdit={onEdit}
-              onDelete={handleDelete}
-              isDeleting={deleteMutation.isPending}
-            />
-          ))}
-        </div>
-      )}
+      </Card>
     </div>
   );
 }

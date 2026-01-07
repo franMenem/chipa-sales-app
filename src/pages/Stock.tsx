@@ -6,6 +6,7 @@ import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { useProductos } from '../hooks/useProductos';
 import { useInsumos } from '../hooks/useInsumos';
+import { useStockFabricadoTotals } from '../hooks/useStockFabricado';
 import { formatCurrency } from '../utils/formatters';
 import type { ProductoWithCost } from '../lib/types';
 
@@ -13,6 +14,7 @@ export function Stock() {
   const navigate = useNavigate();
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
+  const { data: stockFabricadoTotals } = useStockFabricadoTotals();
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [selectedProductoId, setSelectedProductoId] = useState<string | undefined>(undefined);
@@ -47,6 +49,9 @@ export function Stock() {
 
   // Calcular totales
   const totalProductosStock = productos?.reduce((sum, p) => p.finished_stock + sum, 0) || 0;
+  const stockFabricadoByProducto = new Map(
+    (stockFabricadoTotals || []).map((entry) => [entry.producto_id, entry])
+  );
 
   return (
     <Layout
@@ -145,9 +150,15 @@ export function Stock() {
                     const isOutOfStock = producto.finished_stock === 0;
                     const canProduce = producto.has_sufficient_ingredients;
 
-                    // TODO: Calculate margin and profit from stock_fabricado batches
-                    const margin = 0; // Will be calculated from stock_fabricado
-                    const profit = 0; // Will be calculated from stock_fabricado
+                    const stockInfo = stockFabricadoByProducto.get(producto.id);
+                    const costUnit =
+                      stockInfo?.lifo_cost_unit ??
+                      stockInfo?.avg_cost_unit ??
+                      producto.cost_unit;
+                    const margin =
+                      stockInfo?.lifo_margin_percentage ??
+                      stockInfo?.avg_margin_percentage ??
+                      null;
 
                     return (
                       <div
@@ -167,7 +178,7 @@ export function Stock() {
                             </h3>
                             <div className="flex items-center gap-3 mt-1">
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Costo estimado: {formatCurrency(producto.cost_unit)}
+                                Costo: {formatCurrency(costUnit)}
                               </p>
                               {/* TODO: Show price from stock_fabricado batches */}
                             </div>
@@ -192,26 +203,20 @@ export function Stock() {
                           </div>
                         </div>
 
-                        {/* Margen y Ganancia */}
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Ganancia</p>
-                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              {formatCurrency(profit)}
-                            </p>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Margen</p>
-                            <p className={`text-sm font-semibold ${
-                              margin < 20
-                                ? 'text-red-600 dark:text-red-400'
-                                : margin >= 40
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-yellow-600 dark:text-yellow-400'
-                            }`}>
-                              {margin.toFixed(1)}%
-                            </p>
-                          </div>
+                        {/* Margen */}
+                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 mb-3">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">Margen</p>
+                          <p className={`text-sm font-semibold ${
+                            margin !== null && margin < 20
+                              ? 'text-red-600 dark:text-red-400'
+                              : margin !== null && margin >= 40
+                              ? 'text-green-600 dark:text-green-400'
+                              : margin !== null
+                              ? 'text-yellow-600 dark:text-yellow-400'
+                              : 'text-slate-600 dark:text-slate-400'
+                          }`}>
+                            {margin === null ? 'N/D' : `${margin.toFixed(1)}%`}
+                          </p>
                         </div>
 
                         {/* Stock */}

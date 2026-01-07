@@ -6,6 +6,8 @@ import { Button } from '../components/ui/Button';
 import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
 import { useInsumos } from '../hooks/useInsumos';
+import { useVentas } from '../hooks/useVentas';
+import { useAllInsumoPurchases } from '../hooks/useInsumoLotes';
 import { useToast } from '../hooks/useToast';
 import { formatCurrency } from '../utils/formatters';
 import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
@@ -18,6 +20,9 @@ export function Reports() {
   const { data: topProducts } = useTopProducts(10);
   const { data: profitTrend } = useDailyProfitTrend(30);
   const { data: insumos = [] } = useInsumos();
+  const { data: paidVentas = [] } = useVentas({ payment_status: 'pagado' });
+  const { data: dueVentas = [] } = useVentas({ payment_status: 'debe' });
+  const { data: compras = [] } = useAllInsumoPurchases();
 
   const handleExportCSV = () => {
     if (!topProducts || !profitTrend) {
@@ -56,6 +61,10 @@ export function Reports() {
   const totalIncome = profitTrend?.reduce((sum, d) => sum + d.income, 0) || 0;
   const totalCost = profitTrend?.reduce((sum, d) => sum + d.cost, 0) || 0;
   const totalProfit = profitTrend?.reduce((sum, d) => sum + d.profit, 0) || 0;
+  const paidIncome = paidVentas.reduce((sum, v) => sum + v.total_income, 0);
+  const dueIncome = dueVentas.reduce((sum, v) => sum + v.total_income, 0);
+  const totalPurchases = compras.reduce((sum, lote) => sum + (lote.quantity_purchased * lote.price_per_unit), 0);
+  const bankBalance = paidIncome - totalPurchases;
 
   // Calcular inversión total en insumos
   // Inversión = valor del stock actual + costos ya vendidos
@@ -144,14 +153,14 @@ export function Reports() {
                 account_balance
               </span>
               <p className="text-xs text-primary font-semibold">
-                En Banco (Total Ventas)
+                En Banco (Pagado - Compras)
               </p>
             </div>
             <p className="text-2xl font-bold text-primary">
-              {formatCurrency(totalIncome)}
+              {formatCurrency(bankBalance)}
             </p>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Dinero total recibido de las ventas
+              Pagado: {formatCurrency(paidIncome)} • Compras: {formatCurrency(totalPurchases)}
             </p>
           </Card>
         </div>
@@ -221,6 +230,65 @@ export function Reports() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        )}
+
+        {/* Debtors Table */}
+        {dueVentas.length > 0 && (
+          <Card>
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
+              Deudores
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                      Cliente
+                    </th>
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                      Producto
+                    </th>
+                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                      Monto
+                    </th>
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                      Pago a
+                    </th>
+                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dueVentas.map((venta) => (
+                    <tr
+                      key={venta.id}
+                      className="border-b border-slate-100 dark:border-slate-800 last:border-0"
+                    >
+                      <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
+                        {venta.customer_name || 'Sin nombre'}
+                      </td>
+                      <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
+                        {venta.producto_name}
+                      </td>
+                      <td className="py-3 px-2 text-right font-semibold text-slate-900 dark:text-white">
+                        {formatCurrency(venta.total_income)}
+                      </td>
+                      <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
+                        {venta.payment_destination || '-'}
+                      </td>
+                      <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+                        {venta.sale_date.split('T')[0]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-3">
+              Total adeudado: {formatCurrency(dueIncome)}
+            </p>
           </Card>
         )}
 

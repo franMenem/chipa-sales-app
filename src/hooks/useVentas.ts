@@ -9,6 +9,10 @@ interface CreateVentaInput {
   quantity: number;
   price_sold: number;
   cost_unit: number;
+  customer_name?: string | null;
+  payment_status?: 'pagado' | 'debe';
+  payment_destination?: string | null;
+  delivery_status?: 'entregado' | 'no_entregado';
   sale_date?: string;
 }
 
@@ -16,6 +20,7 @@ interface VentasFilters {
   startDate?: string;
   endDate?: string;
   producto_id?: string;
+  payment_status?: 'pagado' | 'debe';
 }
 
 // Fetch all ventas for current user with optional filters
@@ -40,6 +45,9 @@ export function useVentas(filters?: VentasFilters) {
       }
       if (filters?.producto_id) {
         query = query.eq('producto_id', filters.producto_id);
+      }
+      if (filters?.payment_status) {
+        query = query.eq('payment_status', filters.payment_status);
       }
 
       const { data, error } = await query;
@@ -95,6 +103,20 @@ export function useCreateVenta() {
 
       // Si no hay suficiente finished_stock, auto-producir
       if (finishedStock < needed) {
+        const { data: recipeItems, error: recipeError } = await supabase
+          .from('recipe_items')
+          .select('use_categorias')
+          .eq('producto_id', input.producto_id);
+
+        if (recipeError) throw recipeError;
+
+        const usesCategorias = (recipeItems || []).some((item) => item.use_categorias);
+        if (usesCategorias) {
+          throw new Error(
+            'Este producto usa ingredientes por categoría. Debes fabricarlo manualmente para elegir los lotes.'
+          );
+        }
+
         const quantityToProduce = needed - finishedStock;
 
         // Llamar a produce_producto para fabricar lo faltante
@@ -168,10 +190,33 @@ export function useUpdateVenta() {
   const toast = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, quantity, price_sold }: { id: string; quantity: number; price_sold: number }) => {
+    mutationFn: async ({
+      id,
+      quantity,
+      price_sold,
+      customer_name,
+      payment_status,
+      payment_destination,
+      delivery_status,
+    }: {
+      id: string;
+      quantity: number;
+      price_sold: number;
+      customer_name?: string | null;
+      payment_status?: 'pagado' | 'debe';
+      payment_destination?: string | null;
+      delivery_status?: 'entregado' | 'no_entregado';
+    }) => {
       const { data, error } = await supabase
         .from('ventas')
-        .update({ quantity, price_sold })
+        .update({
+          quantity,
+          price_sold,
+          customer_name,
+          payment_status,
+          payment_destination,
+          delivery_status,
+        })
         .eq('id', id)
         .select()
         .single();

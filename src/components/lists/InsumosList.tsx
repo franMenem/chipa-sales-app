@@ -45,6 +45,9 @@ const LoteCard = memo(({ lote, onEditLote }: LoteCardProps) => {
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Compra: {format(new Date(lote.purchase_date), "dd 'de' MMM, yyyy", { locale: es })}
             </p>
+            <p className="text-xs text-slate-500 dark:text-slate-500">
+              Registrado: {format(new Date(lote.created_at), 'HH:mm', { locale: es })} hs
+            </p>
           </div>
 
           <Button

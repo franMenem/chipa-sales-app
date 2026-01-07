@@ -66,7 +66,7 @@ export function useProducto(id: string | undefined) {
       // Calculate cost_unit
       const cost_unit = (recipeItems || []).reduce((total, item) => {
         if (!item.insumo) return total;
-        return total + (item.quantity_in_base_units * (item.insumo.current_base_unit_cost || 0));
+        return total + (item.quantity_in_base_units * (item.insumo.current_price_per_unit || 0));
       }, 0);
 
       return {

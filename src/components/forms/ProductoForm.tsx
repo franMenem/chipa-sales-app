@@ -74,7 +74,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
 
       const insumo = insumos.find((i) => i.id === item.insumo_id);
       if (!insumo) return total;
-      return total + item.quantity_in_base_units * (insumo.current_base_unit_cost || 0);
+      return total + item.quantity_in_base_units * (insumo.current_price_per_unit || 0);
     }, 0);
   }, [recipeItems, insumos]);
 
@@ -307,11 +307,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                     { value: '', label: 'Seleccionar ingrediente...' },
                     ...availableInsumos.map((insumo) => ({
                       value: insumo.id,
-                      label: `${insumo.name} (${formatCurrency(insumo.current_base_unit_cost || 0)}/${
-                        unitLabels[insumo.unit_type] === 'kg' || unitLabels[insumo.unit_type] === 'L'
-                          ? 'g o ml'
-                          : 'ud'
-                      })`,
+                      label: `${insumo.name} (${formatCurrency(insumo.current_price_per_unit || 0)}/${unitLabels[insumo.unit_type]})`,
                     })),
                   ]}
                   value={selectedInsumoId}
@@ -468,7 +464,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                 const insumo = insumos.find((i) => i.id === item.insumo_id);
                 if (!insumo) return null;
 
-                const itemCost = item.quantity_in_base_units * (insumo.current_base_unit_cost || 0);
+                const itemCost = item.quantity_in_base_units * (insumo.current_price_per_unit || 0);
 
                 return (
                   <Card key={`insumo-${item.insumo_id}`}>
@@ -478,11 +474,8 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
                           {insumo.name}
                         </h4>
                         <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
-                          Costo: {formatCurrency(itemCost)} ({formatCurrency(insumo.current_base_unit_cost || 0)}/
-                          {unitLabels[insumo.unit_type] === 'kg' ||
-                          unitLabels[insumo.unit_type] === 'L'
-                            ? 'g o ml'
-                            : 'ud'}
+                          Costo: {formatCurrency(itemCost)} ({formatCurrency(insumo.current_price_per_unit || 0)}/
+                          {unitLabels[insumo.unit_type]}
                           )
                         </p>
                       </div>

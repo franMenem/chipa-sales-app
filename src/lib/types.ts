@@ -132,6 +132,10 @@ export interface Venta {
   quantity: number;
   price_sold: number;
   cost_unit: number;
+  customer_name: string | null;
+  payment_status: 'pagado' | 'debe';
+  payment_destination: string | null;
+  delivery_status: 'entregado' | 'no_entregado';
   total_income: number; // Calculated
   total_cost: number; // Calculated
   profit: number; // Calculated

@@ -82,6 +82,7 @@ export function useProduceProducto() {
         queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['stock-fabricado-totals'], refetchType: 'active' }),
       ]);
 
       toast.success(
@@ -129,6 +130,7 @@ export function useReverseProduction() {
         queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['stock-fabricado-totals'], refetchType: 'active' }),
       ]);
 
       const message = data.was_forced
@@ -201,6 +203,7 @@ export function useProduceProductoCustomOrder() {
         queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['production-history'], refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['stock-fabricado'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['stock-fabricado-totals'], refetchType: 'active' }),
       ]);
 
       toast.success(

@@ -53,6 +53,27 @@ export function useAllInsumoLotes() {
   });
 }
 
+// Fetch all lotes (including consumed) for the user
+export function useAllInsumoPurchases() {
+  return useQuery({
+    queryKey: ['insumo-lotes', 'all'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+
+      const { data, error } = await supabase
+        .from('insumo_lotes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('purchase_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as InsumoLote[];
+    },
+  });
+}
+
 // Fetch price history for charts (all lotes, including consumed ones)
 export function useInsumoPriceHistory(insumo_id: string | undefined) {
   return useQuery({
