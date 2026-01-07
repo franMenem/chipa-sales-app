@@ -14,7 +14,7 @@ interface VentasListProps {
   onEdit?: (venta: Venta) => void;
 }
 
-type SortKey = 'date' | 'price' | 'total' | 'product' | 'quantity' | 'status' | 'delivery';
+type SortKey = 'date' | 'price' | 'profit' | 'product' | 'quantity' | 'status' | 'delivery';
 type SortDirection = 'asc' | 'desc';
 
 export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) {
@@ -68,8 +68,8 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         return (new Date(a.sale_date).getTime() - new Date(b.sale_date).getTime()) * direction;
       case 'price':
         return (a.price_sold - b.price_sold) * direction;
-      case 'total':
-        return (a.total_income - b.total_income) * direction;
+      case 'profit':
+        return (a.profit - b.profit) * direction;
       case 'product':
         return a.producto_name.localeCompare(b.producto_name) * direction;
       case 'quantity':
@@ -230,7 +230,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
                 <th className="text-left py-3 px-2">{renderSortLabel('Fecha', 'date')}</th>
                 <th className="text-right py-3 px-2">{renderSortLabel('Cantidad', 'quantity')}</th>
                 <th className="text-right py-3 px-2">{renderSortLabel('Precio', 'price')}</th>
-                <th className="text-right py-3 px-2">{renderSortLabel('Total', 'total')}</th>
+                <th className="text-right py-3 px-2">{renderSortLabel('Ganancia', 'profit')}</th>
                 <th className="text-left py-3 px-2">{renderSortLabel('Pago', 'status')}</th>
                 <th className="text-left py-3 px-2">{renderSortLabel('Entrega', 'delivery')}</th>
                 <th className="text-right py-3 px-2">Acciones</th>
@@ -262,8 +262,8 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
                   <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
                     {formatCurrency(venta.price_sold)}
                   </td>
-                  <td className="py-3 px-2 text-right font-semibold text-slate-900 dark:text-white">
-                    {formatCurrency(venta.total_income)}
+                  <td className="py-3 px-2 text-right font-semibold text-green-600 dark:text-green-400">
+                    {formatCurrency(venta.profit)}
                   </td>
                   <td className={`py-3 px-2 font-medium ${
                     venta.payment_status === 'pagado'
