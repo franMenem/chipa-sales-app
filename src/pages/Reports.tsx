@@ -191,13 +191,13 @@ export function Reports() {
                     <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Producto
                     </th>
-                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Cantidad
                     </th>
-                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Ingresos
                     </th>
-                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Ganancia
                     </th>
                   </tr>
@@ -209,20 +209,20 @@ export function Reports() {
                       className="border-b border-slate-100 dark:border-slate-800 last:border-0"
                     >
                       <td className="py-3 px-2">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                        <div className="flex items-center justify-start w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
                           {index + 1}
                         </div>
                       </td>
                       <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
                         {product.producto_name}
                       </td>
-                      <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+                      <td className="py-3 px-2 text-left text-slate-600 dark:text-slate-400">
                         {product.total_quantity}
                       </td>
-                      <td className="py-3 px-2 text-right font-semibold text-slate-900 dark:text-white">
+                      <td className="py-3 px-2 text-left font-semibold text-slate-900 dark:text-white">
                         {formatCurrency(product.total_income)}
                       </td>
-                      <td className="py-3 px-2 text-right font-semibold text-green-600 dark:text-green-400">
+                      <td className="py-3 px-2 text-left font-semibold text-green-600 dark:text-green-400">
                         {formatCurrency(product.total_profit)}
                       </td>
                     </tr>
@@ -249,13 +249,13 @@ export function Reports() {
                     <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Producto
                     </th>
-                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Monto
                     </th>
                     <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Pago a
                     </th>
-                    <th className="text-right py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
+                    <th className="text-left py-3 px-2 font-semibold text-slate-700 dark:text-slate-300">
                       Fecha
                     </th>
                   </tr>
@@ -272,13 +272,13 @@ export function Reports() {
                       <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
                         {venta.producto_name}
                       </td>
-                      <td className="py-3 px-2 text-right font-semibold text-slate-900 dark:text-white">
+                      <td className="py-3 px-2 text-left font-semibold text-slate-900 dark:text-white">
                         {formatCurrency(venta.total_income)}
                       </td>
                       <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
                         {venta.payment_destination || '-'}
                       </td>
-                      <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+                      <td className="py-3 px-2 text-left text-slate-600 dark:text-slate-400">
                         {venta.sale_date.split('T')[0]}
                       </td>
                     </tr>

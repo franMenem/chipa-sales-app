@@ -43,7 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className="w-full">
+      <div className="w-full min-w-0">
         {label && (
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
             {label}
@@ -58,7 +58,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={`
-              w-full px-4 py-2.5 rounded-xl
+              w-full min-w-0 px-4 py-2.5 rounded-xl
               bg-white dark:bg-surface-dark
               border border-slate-200 dark:border-slate-700
               text-slate-900 dark:text-white
