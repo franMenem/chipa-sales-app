@@ -97,7 +97,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
@@ -111,33 +111,33 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className={`relative w-full ${sizeStyles[size]} animate-in zoom-in-95 slide-in-from-bottom-4 duration-200`}
+        className={`relative w-full ${sizeStyles[size]} max-h-[95vh] sm:max-h-[90vh] animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 flex flex-col`}
       >
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-full">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 id="modal-title" className="text-xl font-bold text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+            <h2 id="modal-title" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white pr-2">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center justify-center w-9 h-9 sm:w-8 sm:h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
               aria-label="Cerrar modal"
             >
-              <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">
+              <span className="material-symbols-outlined text-slate-700 dark:text-slate-300 text-[22px] sm:text-[20px]">
                 close
               </span>
             </button>
           </div>
 
-          {/* Body */}
-          <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+          {/* Body - Scrollable */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 overflow-y-auto flex-1 min-h-0">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
               {footer}
             </div>
           )}

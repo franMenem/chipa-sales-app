@@ -25,6 +25,11 @@ interface DailyProfit {
   cost: number;
 }
 
+interface DateRangeFilters {
+  startDate?: string;
+  endDate?: string;
+}
+
 export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard', 'stats'],
@@ -66,17 +71,26 @@ export function useDashboardStats() {
   });
 }
 
-export function useTopProducts(limit: number = 5) {
+export function useTopProducts(limit: number = 5, filters?: DateRangeFilters) {
   return useQuery({
-    queryKey: ['dashboard', 'top-products', limit],
+    queryKey: ['dashboard', 'top-products', limit, filters],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      const { data: ventas, error } = await supabase
+      let query = supabase
         .from('ventas')
         .select('producto_name, quantity, total_income, profit')
         .eq('user_id', user.id);
+
+      if (filters?.startDate) {
+        query = query.gte('sale_date', filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte('sale_date', filters.endDate);
+      }
+
+      const { data: ventas, error } = await query;
 
       if (error) throw error;
 
@@ -108,22 +122,32 @@ export function useTopProducts(limit: number = 5) {
   });
 }
 
-export function useDailyProfitTrend(days: number = 30) {
+export function useDailyProfitTrend(days: number = 30, filters?: DateRangeFilters) {
   return useQuery({
-    queryKey: ['dashboard', 'daily-profit', days],
+    queryKey: ['dashboard', 'daily-profit', days, filters],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      const { data: ventas, error } = await supabase
+      let query = supabase
         .from('ventas')
         .select('sale_date, profit, total_income, total_cost')
         .eq('user_id', user.id)
-        .gte('sale_date', startDate.toISOString())
         .order('sale_date', { ascending: true });
+
+      if (filters?.startDate) {
+        query = query.gte('sale_date', filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte('sale_date', filters.endDate);
+      }
+      if (!filters?.startDate && !filters?.endDate) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        query = query.gte('sale_date', startDate.toISOString());
+      }
+
+      const { data: ventas, error } = await query;
 
       if (error) throw error;
 

@@ -58,15 +58,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={`
-              w-full min-w-0 px-4 py-2.5 rounded-xl
+              w-full min-w-0 px-4 py-3 rounded-xl
               bg-white dark:bg-surface-dark
               border border-slate-200 dark:border-slate-700
-              text-slate-900 dark:text-white
+              text-base text-slate-900 dark:text-white
               placeholder:text-slate-500 dark:placeholder:text-slate-400
               focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-200
-              ${icon ? 'pl-10' : ''}
+              touch-manipulation
+              ${icon ? 'pl-11' : ''}
               ${error ? 'border-red-500 focus:ring-red-500/50 focus:border-red-500' : ''}
               ${className}
             `}
@@ -77,13 +78,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+          <p className="mt-1.5 text-xs sm:text-sm text-red-500 flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px]">error</span>
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
             {helperText}
           </p>
         )}

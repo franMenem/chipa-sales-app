@@ -363,19 +363,19 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId, editi
                         setSelectedCategorias(prev => [...prev, categoria.id]);
                       }
                     }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs sm:text-sm font-medium transition-all touch-manipulation ${
                       isSelected
                         ? 'bg-primary/20 text-primary border-2 border-primary'
                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
                   >
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 flex-shrink-0 rounded-full"
                       style={{ backgroundColor: categoria.color }}
                     />
-                    <span>{categoria.name}</span>
+                    <span className="truncate">{categoria.name}</span>
                     {isSelected && (
-                      <span className="material-symbols-outlined text-[16px]">check</span>
+                      <span className="material-symbols-outlined text-[16px] flex-shrink-0">check</span>
                     )}
                   </button>
                 );

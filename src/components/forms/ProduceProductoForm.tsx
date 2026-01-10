@@ -825,7 +825,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
 
         {/* Margin and price configuration */}
         {selectedProducto && !isLoadingRecipe && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Margen de ganancia (%)"
               type="number"
@@ -1036,7 +1036,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                     return (
                                       <label
                                         key={insumo.id}
-                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                        className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-colors touch-manipulation ${
                                           isChecked
                                             ? 'bg-primary-50 dark:bg-primary-950/30 border-primary-300 dark:border-primary-700'
                                             : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-primary-200 dark:hover:border-primary-800'
@@ -1046,10 +1046,10 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                           type="checkbox"
                                           checked={isChecked}
                                           onChange={() => handleCategoryInsumoToggle(recipeItem.recipe_item_id, insumo.id)}
-                                          className="w-4 h-4 text-primary-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary-500"
+                                          className="w-5 h-5 sm:w-4 sm:h-4 text-primary-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-primary-500 flex-shrink-0"
                                         />
-                                        <div className="flex-1">
-                                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                                             {insumo.name}
                                           </p>
                                           <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -1057,7 +1057,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                           </p>
                                         </div>
                                         {isChecked && (
-                                          <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px]">
+                                          <span className="material-symbols-outlined text-primary-600 dark:text-primary-400 text-[20px] flex-shrink-0">
                                             check_circle
                                           </span>
                                         )}
@@ -1175,10 +1175,10 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                   return (
                                     <div
                                       key={lote.id}
-                                      className="flex flex-col gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800/40"
+                                      className="flex flex-col gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/40"
                                     >
-                                      <div className="flex items-center justify-between gap-3">
-                                        <div>
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                                        <div className="flex-1 min-w-0">
                                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                                             Lote del {format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })}
                                           </p>
@@ -1186,26 +1186,30 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                             Disponible: {lote.quantity_remaining.toFixed(3)} {unitLabels[lote.unit_type as keyof typeof unitLabels]} • {formatCurrency(lote.price_per_unit)}/{unitLabels[lote.unit_type as keyof typeof unitLabels]}
                                           </p>
                                         </div>
-                                        <QuantityStepper
-                                          value={currentValue}
-                                          onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
-                                          min={0}
-                                          max={lote.quantity_remaining}
-                                          step={stepValue}
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleUseAllFromLot(
-                                            recipeItem.recipe_item_id,
-                                            lote.id,
-                                            lote.quantity_remaining,
-                                            requiredQuantity
-                                          )}
-                                        >
-                                          Completar
-                                        </Button>
+                                        <div className="flex items-center gap-2 justify-between sm:justify-end">
+                                          <QuantityStepper
+                                            value={currentValue}
+                                            onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
+                                            min={0}
+                                            max={lote.quantity_remaining}
+                                            step={stepValue}
+                                          />
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleUseAllFromLot(
+                                              recipeItem.recipe_item_id,
+                                              lote.id,
+                                              lote.quantity_remaining,
+                                              requiredQuantity
+                                            )}
+                                            className="flex-shrink-0"
+                                          >
+                                            <span className="hidden xs:inline">Completar</span>
+                                            <span className="xs:hidden">Max</span>
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
                                   );
@@ -1322,8 +1326,8 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                               key={lote.id}
                                               className="flex flex-col gap-2 rounded-lg border border-slate-200 dark:border-slate-600 p-2.5 bg-white dark:bg-slate-800"
                                             >
-                                              <div className="flex items-center justify-between gap-3">
-                                                <div>
+                                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                                                <div className="flex-1 min-w-0">
                                                   <p className="text-sm font-medium text-slate-900 dark:text-white">
                                                     Lote del {format(new Date(lote.purchase_date), 'dd/MM/yyyy', { locale: es })}
                                                   </p>
@@ -1331,26 +1335,30 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                                                     Disponible: {lote.quantity_remaining.toFixed(3)} {unitLabels[lote.unit_type as keyof typeof unitLabels]} • {formatCurrency(lote.price_per_unit)}/{unitLabels[lote.unit_type as keyof typeof unitLabels]}
                                                   </p>
                                                 </div>
-                                                <QuantityStepper
-                                                  value={currentValue}
-                                                  onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
-                                                  min={0}
-                                                  max={lote.quantity_remaining}
-                                                  step={stepValue}
-                                                />
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => handleUseAllFromLot(
-                                                    recipeItem.recipe_item_id,
-                                                    lote.id,
-                                                    lote.quantity_remaining,
-                                                    requiredQuantity
-                                                  )}
-                                                >
-                                                  Completar
-                                                </Button>
+                                                <div className="flex items-center gap-2 justify-between sm:justify-end">
+                                                  <QuantityStepper
+                                                    value={currentValue}
+                                                    onChange={(val) => handleLotQuantityChange(recipeItem.recipe_item_id, lote.id, val)}
+                                                    min={0}
+                                                    max={lote.quantity_remaining}
+                                                    step={stepValue}
+                                                  />
+                                                  <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleUseAllFromLot(
+                                                      recipeItem.recipe_item_id,
+                                                      lote.id,
+                                                      lote.quantity_remaining,
+                                                      requiredQuantity
+                                                    )}
+                                                    className="flex-shrink-0"
+                                                  >
+                                                    <span className="hidden xs:inline">Completar</span>
+                                                    <span className="xs:hidden">Max</span>
+                                                  </Button>
+                                                </div>
                                               </div>
                                             </div>
                                           );

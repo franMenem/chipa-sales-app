@@ -282,7 +282,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
 
         {selectedProducto && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <Input
                 label="Cliente"
                 type="text"
@@ -291,33 +291,35 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
                 onChange={(e) => setCustomerName(e.target.value)}
                 icon="person"
               />
-              <Select
-                label="Estado de pago"
-                options={[
-                  { value: 'pagado', label: 'Pagado' },
-                  { value: 'debe', label: 'Debe' },
-                ]}
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value as 'pagado' | 'debe')}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Select
+                  label="Estado de pago"
+                  options={[
+                    { value: 'pagado', label: 'Pagado' },
+                    { value: 'debe', label: 'Debe' },
+                  ]}
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value as 'pagado' | 'debe')}
+                />
+                <Select
+                  label="Estado de entrega"
+                  options={[
+                    { value: 'entregado', label: 'Entregado' },
+                    { value: 'no_entregado', label: 'No entregado' },
+                  ]}
+                  value={deliveryStatus}
+                  onChange={(e) => setDeliveryStatus(e.target.value as 'entregado' | 'no_entregado')}
+                />
+              </div>
+              <Input
+                label="Pago a"
+                type="text"
+                placeholder="Efectivo, transferencia, QR, etc."
+                value={paymentDestination}
+                onChange={(e) => setPaymentDestination(e.target.value)}
+                icon="account_balance_wallet"
               />
             </div>
-            <Select
-              label="Estado de entrega"
-              options={[
-                { value: 'entregado', label: 'Entregado' },
-                { value: 'no_entregado', label: 'No entregado' },
-              ]}
-              value={deliveryStatus}
-              onChange={(e) => setDeliveryStatus(e.target.value as 'entregado' | 'no_entregado')}
-            />
-            <Input
-              label="Pago a"
-              type="text"
-              placeholder="Efectivo, transferencia, QR, etc."
-              value={paymentDestination}
-              onChange={(e) => setPaymentDestination(e.target.value)}
-              icon="account_balance_wallet"
-            />
 
             {/* Product Info */}
             {!isEdit && (

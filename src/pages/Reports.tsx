@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { endOfDay, parseISO, startOfDay } from 'date-fns';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -17,11 +18,15 @@ export function Reports() {
   const [startDate, setStartDate] = useState(getDaysAgoForInput(30));
   const [endDate, setEndDate] = useState(getTodayForInput());
 
-  const { data: topProducts } = useTopProducts(10);
-  const { data: profitTrend } = useDailyProfitTrend(30);
+  const rangeStart = startDate ? startOfDay(parseISO(startDate)).toISOString() : undefined;
+  const rangeEnd = endDate ? endOfDay(parseISO(endDate)).toISOString() : undefined;
+  const dateFilters = { startDate: rangeStart, endDate: rangeEnd };
+
+  const { data: topProducts } = useTopProducts(10, dateFilters);
+  const { data: profitTrend } = useDailyProfitTrend(30, dateFilters);
   const { data: insumos = [] } = useInsumos();
-  const { data: paidVentas = [] } = useVentas({ payment_status: 'pagado' });
-  const { data: dueVentas = [] } = useVentas({ payment_status: 'debe' });
+  const { data: paidVentas = [] } = useVentas({ payment_status: 'pagado', ...dateFilters });
+  const { data: dueVentas = [] } = useVentas({ payment_status: 'debe', ...dateFilters });
   const { data: compras = [] } = useAllInsumoPurchases();
 
   const handleExportCSV = () => {
@@ -69,7 +74,7 @@ export function Reports() {
   // Calcular inversión total en insumos
   // Inversión = valor del stock actual + costos ya vendidos
   const currentStockValue = insumos.reduce((sum, insumo) => {
-    return sum + (insumo.current_price_per_unit || 0 * insumo.total_stock);
+    return sum + ((insumo.current_price_per_unit || 0) * insumo.total_stock);
   }, 0);
   const totalInvestment = currentStockValue + totalCost;
 
