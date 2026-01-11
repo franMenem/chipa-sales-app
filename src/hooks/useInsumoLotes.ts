@@ -43,7 +43,7 @@ export function useAllInsumoLotes() {
           insumo:insumos(*)
         `)
         .eq('user_id', user.id)
-        .gt('quantity_remaining', 0)
+        .gte('quantity_remaining', 0.01)
         .order('purchase_date', { ascending: false })
         .order('created_at', { ascending: false });
 

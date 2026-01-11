@@ -237,7 +237,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                 .from('insumo_lotes')
                 .select('*')
                 .eq('insumo_id', item.insumo_id)
-                .gt('quantity_remaining', 0)
+                .gte('quantity_remaining', 0.01)
                 .order('purchase_date', { ascending: false })
                 .order('created_at', { ascending: false });
 
@@ -405,7 +405,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
           .from('insumo_lotes')
           .select('*')
           .eq('insumo_id', insumoId)
-          .gt('quantity_remaining', 0)
+          .gte('quantity_remaining', 0.01)
           .order('purchase_date', { ascending: false })
           .order('created_at', { ascending: false });
 
@@ -437,7 +437,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
           [insumoId]: (lotes || []).map(l => l.id),
         }));
 
-        const availableLotes = (lotes || []).filter(lote => lote.quantity_remaining > 0);
+        const availableLotes = (lotes || []).filter(lote => lote.quantity_remaining >= 0.01);
         const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
         if (availableLotes.length === 1 && updatedSelectedInsumos.length === 1 && requiredQuantity > 0) {
           setLotSelections(prev => {
@@ -543,7 +543,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
         if (requiredQuantity <= 0) return;
 
         if (!item.use_categorias && item.insumo_id) {
-          const availableLotes = (item.lotes || []).filter(lote => lote.quantity_remaining > 0);
+          const availableLotes = (item.lotes || []).filter(lote => lote.quantity_remaining >= 0.01);
           if (availableLotes.length === 1 && (!next[item.recipe_item_id] || Object.keys(next[item.recipe_item_id]).length === 0)) {
             const lote = availableLotes[0];
             const nextValue = Number(Math.min(lote.quantity_remaining, requiredQuantity).toFixed(4));
@@ -554,7 +554,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
 
         if (item.use_categorias && item.selected_insumos && item.selected_insumos.length === 1) {
           const selected = item.selected_insumos[0];
-          const availableLotes = (selected.lotes || []).filter(lote => lote.quantity_remaining > 0);
+          const availableLotes = (selected.lotes || []).filter(lote => lote.quantity_remaining >= 0.01);
           if (availableLotes.length === 1 && (!next[item.recipe_item_id] || Object.keys(next[item.recipe_item_id]).length === 0)) {
             const lote = availableLotes[0];
             const nextValue = Number(Math.min(lote.quantity_remaining, requiredQuantity).toFixed(4));
@@ -1135,7 +1135,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                     .filter(item => !item.use_categorias && item.insumo_id)
                     .map((recipeItem) => {
                       const orderedLotes = getOrderedLotes(recipeItem).filter(
-                        (lote) => lote.quantity_remaining > 0
+                        (lote) => lote.quantity_remaining >= 0.01
                       );
                       const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
                       const status = selectionStatus[recipeItem.recipe_item_id];
@@ -1293,7 +1293,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                             <div className="space-y-3">
                               {(recipeItem.selected_insumos || []).map((selectedInsumo) => {
                                 const insumoLotes = (selectedInsumo.lotes || []).filter(
-                                  (lote) => lote.quantity_remaining > 0
+                                  (lote) => lote.quantity_remaining >= 0.01
                                 );
                                 const requiredQuantity = Number((recipeItem.quantity_needed * quantity).toFixed(4));
                                 const orderedInsumoLotes = loteOrder[selectedInsumo.insumo_id]
@@ -1444,7 +1444,7 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
                         if (!recipeItem.insumo_id) return null; // Skip items without insumo
 
                         const orderedLotes = getOrderedLotes(recipeItem).filter(
-                          (lote) => lote.quantity_remaining > 0
+                          (lote) => lote.quantity_remaining >= 0.01
                         );
 
                         return (
