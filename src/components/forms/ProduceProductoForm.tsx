@@ -190,7 +190,8 @@ export function ProduceProductoForm({ isOpen, onClose, preselectedProductoId }: 
               const { data: allInsumos, error: insumosError } = await supabase
                 .from('insumos_with_stock')
                 .select('id, name, unit_type, total_stock, categoria_ids')
-                .eq('user_id', user.id);
+                .eq('user_id', user.id)
+                .gte('total_stock', 0.01);
 
               if (insumosError) throw insumosError;
 
