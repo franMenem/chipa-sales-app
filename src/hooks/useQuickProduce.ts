@@ -3,7 +3,6 @@ import { useProduceProductoCustomOrder, useReverseProduction } from './useProduc
 import { useToast } from './useToast';
 import { canQuickProduce, buildAutoLIFOSelections, calculatePriceWithMargin } from '../utils/productionHelpers';
 import type { ProductoWithCost } from '../lib/types';
-import { formatCurrency } from '../utils/formatters';
 
 /**
  * Hook para fabricación automática rápida de 1 unidad
@@ -93,18 +92,6 @@ export function useQuickProduce() {
       return { shouldOpenForm: true };
     } finally {
       setIsProducing(false);
-    }
-  };
-
-  const handleUndo = async (productionHistoryId: string) => {
-    try {
-      await reverseMutation.mutateAsync({
-        production_history_id: productionHistoryId,
-        force: false,
-      });
-      setLastProductionHistoryId(null);
-    } catch (error) {
-      console.error('Error al deshacer fabricación:', error);
     }
   };
 
