@@ -14,6 +14,7 @@ interface ProductosListProps {
   productos: ProductoWithCost[];
   onEdit: (producto: ProductoWithCost) => void;
   onQuickProduce: (producto: ProductoWithCost) => void;
+  onUndo: (producto: ProductoWithCost) => void;
   isQuickProducing: boolean;
 }
 
@@ -22,16 +23,19 @@ interface ProductoCardProps {
   producto: ProductoWithCost;
   onEdit: (producto: ProductoWithCost) => void;
   onQuickProduce: (producto: ProductoWithCost) => void;
+  onUndo: (producto: ProductoWithCost) => void;
   isQuickProducing: boolean;
 }
 
-const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing }: ProductoCardProps) => {
+const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickProducing }: ProductoCardProps) => {
   const hasLowStock = producto.finished_stock < 10;
   const hasNoStock = producto.finished_stock === 0;
+  const hasStock = producto.finished_stock >= 1;
 
   // State for quick produce validation
   const [canQuick, setCanQuick] = useState<boolean | null>(null);
   const [quickProduceReason, setQuickProduceReason] = useState<string>('');
+  const [canShowUndo, setCanShowUndo] = useState(false);
 
   // Lazy validation: check if product can be quick-produced
   useEffect(() => {
@@ -41,13 +45,15 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing 
       if (mounted) {
         setCanQuick(result.canProduce);
         setQuickProduceReason(result.reason || '');
+        // Show undo if has stock AND is specific recipe (same validation as quick produce)
+        setCanShowUndo(hasStock && result.canProduce);
       }
     });
 
     return () => {
       mounted = false;
     };
-  }, [producto.id]);
+  }, [producto.id, hasStock]);
 
   return (
     <Card>
@@ -68,12 +74,23 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing 
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {canShowUndo && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="undo"
+                onClick={() => onUndo(producto)}
+                aria-label={`Deshacer última fabricación de ${producto.name}`}
+                title="Deshacer última fabricación"
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"
               icon="edit"
               onClick={() => onEdit(producto)}
               aria-label={`Editar ${producto.name}`}
+              title="Editar receta"
             />
             <Button
               variant="ghost"
@@ -154,16 +171,6 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing 
           </div>
         )}
 
-        {hasLowStock && !hasNoStock && (
-          <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 rounded-lg p-2">
-            <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-[18px] mt-0.5">
-              warning
-            </span>
-            <p className="text-xs text-yellow-700 dark:text-yellow-300">
-              Stock bajo. Considera fabricar más unidades.
-            </p>
-          </div>
-        )}
 
         {/* Info note */}
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
@@ -181,7 +188,7 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing 
 
 ProductoCard.displayName = 'ProductoCard';
 
-export function ProductosList({ productos, onEdit, onQuickProduce, isQuickProducing }: ProductosListProps) {
+export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQuickProducing }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -276,6 +283,7 @@ export function ProductosList({ productos, onEdit, onQuickProduce, isQuickProduc
                       producto={producto}
                       onEdit={onEdit}
                       onQuickProduce={onQuickProduce}
+                      onUndo={onUndo}
                       isQuickProducing={isQuickProducing}
                     />
                   </div>
@@ -292,6 +300,7 @@ export function ProductosList({ productos, onEdit, onQuickProduce, isQuickProduc
               producto={producto}
               onEdit={onEdit}
               onQuickProduce={onQuickProduce}
+              onUndo={onUndo}
               isQuickProducing={isQuickProducing}
             />
           ))}

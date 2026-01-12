@@ -6,6 +6,7 @@ import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/useProductos';
 import { useQuickProduce } from '../hooks/useQuickProduce';
+import { useReverseProduction } from '../hooks/useProduction';
 import { useToast } from '../hooks/useToast';
 import type { ProductoWithCost, RecipeItemFormData } from '../lib/types';
 import { supabase } from '../lib/supabase';
@@ -24,7 +25,8 @@ export function Productos() {
   // Quick produce state and hook
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
   const [selectedProductoForProduce, setSelectedProductoForProduce] = useState<ProductoWithCost | null>(null);
-  const { quickProduce, isProducing, undoLastProduction, canUndo } = useQuickProduce();
+  const { quickProduce, isProducing } = useQuickProduce();
+  const reverseMutation = useReverseProduction();
 
   const handleAdd = () => {
     setEditingProducto(null);
@@ -77,26 +79,40 @@ export function Productos() {
     }
   };
 
+  const handleUndo = async (producto: ProductoWithCost) => {
+    try {
+      // Get the latest production history for this product
+      const { data: latestProduction, error } = await supabase
+        .from('production_history')
+        .select('id')
+        .eq('producto_id', producto.id)
+        .order('production_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !latestProduction) {
+        toast.warning('No hay producción para deshacer', 'No se encontró producción reciente de esta receta');
+        return;
+      }
+
+      // Reverse the production
+      await reverseMutation.mutateAsync({
+        production_history_id: latestProduction.id,
+        force: false,
+      });
+    } catch (err) {
+      console.error('Error al deshacer:', err);
+    }
+  };
+
   return (
     <Layout
       title="Recetas"
       subtitle="Gestión de recetas"
       headerAction={
-        <div className="flex items-center gap-2">
-          {canUndo && (
-            <Button
-              variant="secondary"
-              size="sm"
-              icon="undo"
-              onClick={undoLastProduction}
-            >
-              <span className="hidden sm:inline">Deshacer</span>
-            </Button>
-          )}
-          <Button icon="add" size="sm" onClick={handleAdd}>
-            <span className="hidden sm:inline">Agregar</span>
-          </Button>
-        </div>
+        <Button icon="add" size="sm" onClick={handleAdd}>
+          Agregar
+        </Button>
       }
     >
       <div className="p-4">
@@ -122,6 +138,7 @@ export function Productos() {
             productos={productos || []}
             onEdit={handleEdit}
             onQuickProduce={handleQuickProduce}
+            onUndo={handleUndo}
             isQuickProducing={isProducing}
           />
         )}

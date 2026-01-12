@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProduceProductoCustomOrder, useReverseProduction } from './useProduction';
+import { useProduceProductoCustomOrder } from './useProduction';
 import { useToast } from './useToast';
 import { canQuickProduce, buildAutoLIFOSelections, calculatePriceWithMargin } from '../utils/productionHelpers';
 import type { ProductoWithCost } from '../lib/types';
@@ -16,10 +16,8 @@ import type { ProductoWithCost } from '../lib/types';
  */
 export function useQuickProduce() {
   const produceMutation = useProduceProductoCustomOrder();
-  const reverseMutation = useReverseProduction();
   const toast = useToast();
   const [isProducing, setIsProducing] = useState(false);
-  const [lastProductionHistoryId, setLastProductionHistoryId] = useState<string | null>(null);
 
   const quickProduce = async (
     producto: ProductoWithCost,
@@ -60,7 +58,7 @@ export function useQuickProduce() {
       }
 
       // 4. Fabricar producto
-      const result = await produceMutation.mutateAsync({
+      await produceMutation.mutateAsync({
         producto_id: producto.id,
         quantity: 1,
         margin_percentage: marginPercentage,
@@ -68,12 +66,7 @@ export function useQuickProduce() {
         lot_selections: selections.lotSelections!,
       });
 
-      // 5. Guardar production_history_id para poder deshacer
-      if (result.production_history_id) {
-        setLastProductionHistoryId(result.production_history_id);
-      }
-
-      // 6. Callback de éxito (si se proporcionó)
+      // 5. Callback de éxito (si se proporcionó)
       onSuccess?.();
 
       return { shouldOpenForm: false };
@@ -95,29 +88,8 @@ export function useQuickProduce() {
     }
   };
 
-  const undoLastProduction = async () => {
-    if (!lastProductionHistoryId) {
-      toast.warning('No hay fabricación para deshacer', 'No se encontró la última fabricación');
-      return false;
-    }
-
-    try {
-      await reverseMutation.mutateAsync({
-        production_history_id: lastProductionHistoryId,
-        force: false,
-      });
-      setLastProductionHistoryId(null);
-      return true;
-    } catch (error) {
-      console.error('Error al deshacer fabricación:', error);
-      return false;
-    }
-  };
-
   return {
     quickProduce,
     isProducing,
-    undoLastProduction,
-    canUndo: lastProductionHistoryId !== null,
   };
 }
