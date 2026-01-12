@@ -24,7 +24,7 @@ export function BottomNav() {
     {
       path: ROUTES.PRODUCTOS,
       icon: 'bakery_dining',
-      label: 'Productos',
+      label: 'Recetas',
     },
     {
       path: ROUTES.STOCK,

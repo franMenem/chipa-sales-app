@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useRef } from 'react';
+import { useState, useMemo, memo, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProductoWithCost } from '../../lib/types';
 import { formatCurrency } from '../../utils/formatters';
@@ -6,23 +6,48 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { SearchBar } from '../ui/SearchBar';
 import { useDebounce } from '../../hooks/useDebounce';
+import { canQuickProduce } from '../../utils/productionHelpers';
 
 const VIRTUALIZATION_THRESHOLD = 50;
 
 interface ProductosListProps {
   productos: ProductoWithCost[];
   onEdit: (producto: ProductoWithCost) => void;
+  onQuickProduce: (producto: ProductoWithCost) => void;
+  isQuickProducing: boolean;
 }
 
 // Memoized ProductoCard component
 interface ProductoCardProps {
   producto: ProductoWithCost;
   onEdit: (producto: ProductoWithCost) => void;
+  onQuickProduce: (producto: ProductoWithCost) => void;
+  isQuickProducing: boolean;
 }
 
-const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
+const ProductoCard = memo(({ producto, onEdit, onQuickProduce, isQuickProducing }: ProductoCardProps) => {
   const hasLowStock = producto.finished_stock < 10;
   const hasNoStock = producto.finished_stock === 0;
+
+  // State for quick produce validation
+  const [canQuick, setCanQuick] = useState<boolean | null>(null);
+  const [quickProduceReason, setQuickProduceReason] = useState<string>('');
+
+  // Lazy validation: check if product can be quick-produced
+  useEffect(() => {
+    let mounted = true;
+
+    canQuickProduce(producto.id).then((result) => {
+      if (mounted) {
+        setCanQuick(result.canProduce);
+        setQuickProduceReason(result.reason || '');
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [producto.id]);
 
   return (
     <Card>
@@ -50,6 +75,24 @@ const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
               onClick={() => onEdit(producto)}
               aria-label={`Editar ${producto.name}`}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onQuickProduce(producto)}
+              disabled={!canQuick || isQuickProducing}
+              aria-label={`Fabricar rápido ${producto.name}`}
+              title={
+                canQuick
+                  ? 'Fabricar 1 unidad automáticamente (LIFO, 30% margen)'
+                  : quickProduceReason || 'No disponible para fabricación rápida'
+              }
+            >
+              {isQuickProducing ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+              ) : (
+                <span className="material-symbols-outlined text-[20px]">bolt</span>
+              )}
+            </Button>
           </div>
         </div>
 
@@ -138,7 +181,7 @@ const ProductoCard = memo(({ producto, onEdit }: ProductoCardProps) => {
 
 ProductoCard.displayName = 'ProductoCard';
 
-export function ProductosList({ productos, onEdit }: ProductosListProps) {
+export function ProductosList({ productos, onEdit, onQuickProduce, isQuickProducing }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -170,10 +213,10 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
           bakery_dining
         </span>
         <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-          No hay productos
+          No hay recetas
         </h3>
         <p className="text-slate-700 dark:text-slate-300">
-          Agrega tu primer producto para comenzar
+          Agrega tu primera receta para comenzar
         </p>
       </div>
     );
@@ -183,11 +226,11 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
     <div className="space-y-4">
       {/* ARIA live region for search results announcements */}
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {searchTerm && `Se ${filteredProductos.length === 1 ? 'encontró' : 'encontraron'} ${filteredProductos.length} ${filteredProductos.length === 1 ? 'producto' : 'productos'}`}
+        {searchTerm && `Se ${filteredProductos.length === 1 ? 'encontró' : 'encontraron'} ${filteredProductos.length} ${filteredProductos.length === 1 ? 'receta' : 'recetas'}`}
       </div>
 
       <SearchBar
-        placeholder="Buscar producto..."
+        placeholder="Buscar receta..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         onClear={() => setSearchTerm('')}
@@ -199,7 +242,7 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
             search_off
           </span>
           <p className="text-slate-700 dark:text-slate-300">
-            No se encontraron productos con "{searchTerm}"
+            No se encontraron recetas con "{searchTerm}"
           </p>
         </div>
       ) : useVirtualization ? (
@@ -232,6 +275,8 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
                     <ProductoCard
                       producto={producto}
                       onEdit={onEdit}
+                      onQuickProduce={onQuickProduce}
+                      isQuickProducing={isQuickProducing}
                     />
                   </div>
                 </div>
@@ -246,6 +291,8 @@ export function ProductosList({ productos, onEdit }: ProductosListProps) {
               key={producto.id}
               producto={producto}
               onEdit={onEdit}
+              onQuickProduce={onQuickProduce}
+              isQuickProducing={isQuickProducing}
             />
           ))}
         </div>

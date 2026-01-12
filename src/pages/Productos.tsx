@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { ProductoForm } from '../components/forms/ProductoForm';
+import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/useProductos';
+import { useQuickProduce } from '../hooks/useQuickProduce';
 import { useToast } from '../hooks/useToast';
 import type { ProductoWithCost, RecipeItemFormData } from '../lib/types';
 import { supabase } from '../lib/supabase';
@@ -18,6 +20,11 @@ export function Productos() {
   } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
   const { data: productos, isLoading, error } = useProductos();
+
+  // Quick produce state and hook
+  const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
+  const [selectedProductoForProduce, setSelectedProductoForProduce] = useState<ProductoWithCost | null>(null);
+  const { quickProduce, isProducing, undoLastProduction, canUndo } = useQuickProduce();
 
   const handleAdd = () => {
     setEditingProducto(null);
@@ -49,7 +56,7 @@ export function Productos() {
       setIsModalOpen(true);
     } catch (err) {
       console.error('Error loading recipe:', err);
-      toast.error('Error al cargar', 'No se pudo cargar la receta del producto');
+      toast.error('Error al cargar', 'No se pudo cargar la receta');
     } finally {
       setIsLoadingRecipe(false);
     }
@@ -60,21 +67,43 @@ export function Productos() {
     setEditingProducto(null);
   };
 
+  const handleQuickProduce = async (producto: ProductoWithCost) => {
+    const result = await quickProduce(producto);
+
+    // If quick produce fails, open the full production form as fallback
+    if (result.shouldOpenForm) {
+      setSelectedProductoForProduce(producto);
+      setIsProduceModalOpen(true);
+    }
+  };
+
   return (
     <Layout
-      title="Productos"
-      subtitle="Gestión de productos"
+      title="Recetas"
+      subtitle="Gestión de recetas"
       headerAction={
-        <Button icon="add" size="sm" onClick={handleAdd}>
-          Agregar
-        </Button>
+        <div className="flex items-center gap-2">
+          {canUndo && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="undo"
+              onClick={undoLastProduction}
+            >
+              <span className="hidden sm:inline">Deshacer</span>
+            </Button>
+          )}
+          <Button icon="add" size="sm" onClick={handleAdd}>
+            <span className="hidden sm:inline">Agregar</span>
+          </Button>
+        </div>
       }
     >
       <div className="p-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-700 dark:text-slate-300">Cargando productos...</p>
+            <p className="text-slate-700 dark:text-slate-300">Cargando recetas...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -82,14 +111,19 @@ export function Productos() {
               error
             </span>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Error al cargar productos
+              Error al cargar recetas
             </h3>
             <p className="text-slate-700 dark:text-slate-300 text-center">
               {error instanceof Error ? error.message : 'Ocurrió un error inesperado'}
             </p>
           </div>
         ) : (
-          <ProductosList productos={productos || []} onEdit={handleEdit} />
+          <ProductosList
+            productos={productos || []}
+            onEdit={handleEdit}
+            onQuickProduce={handleQuickProduce}
+            isQuickProducing={isProducing}
+          />
         )}
 
         {isLoadingRecipe && (
@@ -104,6 +138,18 @@ export function Productos() {
         onClose={handleCloseModal}
         editData={editingProducto || undefined}
       />
+
+      {/* Fallback: Production form for when quick produce fails */}
+      {selectedProductoForProduce && (
+        <ProduceProductoForm
+          isOpen={isProduceModalOpen}
+          onClose={() => {
+            setIsProduceModalOpen(false);
+            setSelectedProductoForProduce(null);
+          }}
+          preselectedProductoId={selectedProductoForProduce.id}
+        />
+      )}
     </Layout>
   );
 }

@@ -8,7 +8,7 @@ import { Modal } from '../ui/Modal';
 import { Card } from '../ui/Card';
 import { QuantityStepper } from '../ui/QuantityStepper';
 import { useCreateProducto, useUpdateProducto, useDeleteProducto } from '../../hooks/useProductos';
-import { useInsumos } from '../../hooks/useInsumos';
+import { useAllInsumos } from '../../hooks/useInsumos';
 import { useCategorias } from '../../hooks/useCategorias';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';
@@ -40,7 +40,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
   const createMutation = useCreateProducto();
   const updateMutation = useUpdateProducto();
   const deleteMutation = useDeleteProducto();
-  const { data: insumos = [] } = useInsumos();
+  const { data: insumos = [] } = useAllInsumos();
   const { data: categorias = [] } = useCategorias();
   const toast = useToast();
 
@@ -197,7 +197,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
 
   const handleDeleteProducto = async () => {
     if (!editData) return;
-    const confirmMessage = `¿Estás seguro de que quieres eliminar "${editData.name}"?\n\nEsta acción eliminará el producto y su receta.\n\nEsta acción NO se puede deshacer.`;
+    const confirmMessage = `¿Estás seguro de que quieres eliminar "${editData.name}"?\n\nEsta acción eliminará la receta.\n\nEsta acción NO se puede deshacer.`;
 
     if (window.confirm(confirmMessage)) {
       try {
@@ -217,7 +217,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={isEdit ? 'Editar Producto' : 'Nuevo Producto'}
+      title={isEdit ? 'Editar Receta' : 'Nueva Receta'}
       size="lg"
       footer={
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-2 sm:gap-0">
@@ -263,7 +263,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
             Información básica
           </h3>
           <Input
-            label="Nombre del producto"
+            label="Nombre de la receta"
             placeholder="Ej: Chipa tradicional x12"
             icon="bakery_dining"
             error={errors.name?.message}
@@ -520,7 +520,7 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
               <Card className="bg-slate-50 dark:bg-slate-900/50">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    Costo {hasCategoryItems ? 'estimado' : 'total'} del producto:
+                    Costo {hasCategoryItems ? 'estimado' : 'total'} de la receta:
                   </span>
                   <span className="text-xl font-bold text-primary">
                     {formatCurrency(calculatedCost)}
