@@ -74,24 +74,6 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            {canShowUndo && (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon="undo"
-                onClick={() => onUndo(producto)}
-                aria-label={`Deshacer última fabricación de ${producto.name}`}
-                title="Deshacer última fabricación"
-              />
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              icon="edit"
-              onClick={() => onEdit(producto)}
-              aria-label={`Editar ${producto.name}`}
-              title="Editar receta"
-            />
             <Button
               variant="ghost"
               size="sm"
@@ -159,18 +141,31 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
           </div>
         </div>
 
-        {/* Stock warnings */}
-        {hasNoStock && (
-          <div className="flex items-start gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-2">
-            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-[18px] mt-0.5">
-              error
-            </span>
-            <p className="text-xs text-red-700 dark:text-red-300">
-              Sin stock. Fabrica más unidades para poder vender.
-            </p>
-          </div>
-        )}
-
+        {/* Acciones */}
+        <div className="flex items-center gap-2 pt-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="edit"
+            onClick={() => onEdit(producto)}
+            className="flex-1 sm:flex-none"
+            aria-label={`Editar ${producto.name}`}
+          >
+            <span className="hidden sm:inline">Editar</span>
+          </Button>
+          {canShowUndo && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="undo"
+              onClick={() => onUndo(producto)}
+              className="flex-1 sm:flex-none"
+              aria-label={`Deshacer última fabricación de ${producto.name}`}
+            >
+              <span className="hidden sm:inline">Deshacer</span>
+            </Button>
+          )}
+        </div>
 
         {/* Info note */}
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
