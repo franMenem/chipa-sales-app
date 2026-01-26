@@ -61,6 +61,7 @@ export function InsumoForm({ isOpen, onClose, editData }: InsumoFormProps) {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<InsumoFormData>({
+    mode: 'onBlur', // Validate only on blur to reduce re-renders
     resolver: zodResolver(insumoSchema),
     defaultValues: editData || {
       name: '',

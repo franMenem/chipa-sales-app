@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { ProductoForm } from '../components/forms/ProductoForm';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
-import { useProductos } from '../hooks/useProductos';
+import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useQuickProduce } from '../hooks/useQuickProduce';
 import { useReverseProduction } from '../hooks/useProduction';
 import { useToast } from '../hooks/useToast';

@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import type { Venta } from '../lib/types';
-import { useToast } from './useToast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
+import type { Venta } from '../../lib/types';
+import { useToast } from '../useToast';
+import { invalidateSalesRelated } from '../../utils/cacheInvalidation';
 
-interface CreateVentaInput {
+export interface CreateVentaInput {
   producto_id: string;
   producto_name: string;
   quantity: number;
@@ -14,78 +15,6 @@ interface CreateVentaInput {
   payment_destination?: string | null;
   delivery_status?: 'entregado' | 'no_entregado';
   sale_date?: string;
-}
-
-interface VentasFilters {
-  startDate?: string;
-  endDate?: string;
-  producto_id?: string;
-  payment_status?: 'pagado' | 'debe';
-}
-
-// Fetch all ventas for current user with optional filters
-export function useVentas(filters?: VentasFilters) {
-  return useQuery({
-    queryKey: [
-      'ventas',
-      filters?.startDate,
-      filters?.endDate,
-      filters?.producto_id,
-      filters?.payment_status,
-    ],
-    staleTime: 1000 * 60 * 1, // 1 minute (frequently changing data)
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
-
-      let query = supabase
-        .from('ventas')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('sale_date', { ascending: false });
-
-      if (filters?.startDate) {
-        query = query.gte('sale_date', filters.startDate);
-      }
-      if (filters?.endDate) {
-        query = query.lte('sale_date', filters.endDate);
-      }
-      if (filters?.producto_id) {
-        query = query.eq('producto_id', filters.producto_id);
-      }
-      if (filters?.payment_status) {
-        query = query.eq('payment_status', filters.payment_status);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as Venta[];
-    },
-  });
-}
-
-// Fetch single venta by ID
-export function useVenta(id: string | undefined) {
-  return useQuery({
-    queryKey: ['ventas', id],
-    staleTime: 1000 * 60 * 1, // 1 minute (frequently changing data)
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    queryFn: async () => {
-      if (!id) throw new Error('ID is required');
-
-      const { data, error } = await supabase
-        .from('ventas')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data as Venta;
-    },
-    enabled: !!id,
-  });
 }
 
 // Create venta (with cost snapshot and automatic stock deduction)
@@ -99,7 +28,7 @@ export function useCreateVenta() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      // Obtener el producto para verificar finished_stock
+      // Get producto to check finished_stock
       const { data: producto, error: productoError } = await supabase
         .from('productos')
         .select('finished_stock')
@@ -111,7 +40,7 @@ export function useCreateVenta() {
       const finishedStock = producto.finished_stock || 0;
       const needed = input.quantity;
 
-      // Si no hay suficiente finished_stock, auto-producir
+      // If not enough finished_stock, auto-produce
       if (finishedStock < needed) {
         const { data: recipeItems, error: recipeError } = await supabase
           .from('recipe_items')
@@ -129,8 +58,7 @@ export function useCreateVenta() {
 
         const quantityToProduce = needed - finishedStock;
 
-        // Llamar a produce_producto para fabricar lo faltante
-        // Esta función automáticamente aumenta finished_stock
+        // Call produce_producto to manufacture missing quantity
         const { data: productionResult, error: productionError } = await supabase.rpc(
           'produce_producto',
           {
@@ -148,7 +76,7 @@ export function useCreateVenta() {
         }
       }
 
-      // Obtener finished_stock actualizado (puede haber aumentado si se produjo)
+      // Get updated finished_stock (may have increased if production occurred)
       const { data: updatedProducto } = await supabase
         .from('productos')
         .select('finished_stock')
@@ -157,7 +85,7 @@ export function useCreateVenta() {
 
       const currentFinishedStock = updatedProducto?.finished_stock || 0;
 
-      // Descontar la cantidad vendida del finished_stock
+      // Deduct sold quantity from finished_stock
       const { error: updateError } = await supabase
         .from('productos')
         .update({ finished_stock: currentFinishedStock - needed })
@@ -165,7 +93,7 @@ export function useCreateVenta() {
 
       if (updateError) throw updateError;
 
-      // Crear la venta
+      // Create the sale
       const { data, error } = await supabase
         .from('ventas')
         .insert({
@@ -180,11 +108,10 @@ export function useCreateVenta() {
       return data as Venta;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      invalidateSalesRelated(queryClient);
+      // Also invalidate production-related queries since we may have auto-produced
+      queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['production-history'] });
       toast.success('Venta registrada', 'La venta se registró y el stock se actualizó');
     },
@@ -235,8 +162,7 @@ export function useUpdateVenta() {
       return data as Venta;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      invalidateSalesRelated(queryClient);
       toast.success('Venta actualizada', 'La venta se actualizó correctamente');
     },
     onError: (error: Error) => {
@@ -260,8 +186,7 @@ export function useDeleteVenta() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ventas'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      invalidateSalesRelated(queryClient);
       toast.success('Venta eliminada', 'La venta se eliminó correctamente');
     },
     onError: (error: Error) => {

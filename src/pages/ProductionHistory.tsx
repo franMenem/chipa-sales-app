@@ -3,7 +3,7 @@ import { Layout } from '../components/layout/Layout';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { useProductos } from '../hooks/useProductos';
+import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useProductionHistory, useReverseProduction } from '../hooks/useProduction';
 import { formatCurrency } from '../utils/formatters';
 import { format } from 'date-fns';

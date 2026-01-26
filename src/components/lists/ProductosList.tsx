@@ -38,20 +38,25 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
   const [canShowUndo, setCanShowUndo] = useState(false);
 
   // Lazy validation: check if product can be quick-produced
+  // Use random delay to distribute load and prevent 50+ parallel requests
   useEffect(() => {
     let mounted = true;
 
-    canQuickProduce(producto.id).then((result) => {
-      if (mounted) {
-        setCanQuick(result.canProduce);
-        setQuickProduceReason(result.reason || '');
-        // Show undo if has stock AND is specific recipe (same validation as quick produce)
-        setCanShowUndo(hasStock && result.canProduce);
-      }
-    });
+    // Random delay (0-100ms) to distribute API calls over time
+    const timer = setTimeout(() => {
+      canQuickProduce(producto.id).then((result) => {
+        if (mounted) {
+          setCanQuick(result.canProduce);
+          setQuickProduceReason(result.reason || '');
+          // Show undo if has stock AND is specific recipe (same validation as quick produce)
+          setCanShowUndo(hasStock && result.canProduce);
+        }
+      });
+    }, Math.random() * 100);
 
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
   }, [producto.id, hasStock]);
 

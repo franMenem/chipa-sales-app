@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { Card } from '../ui/Card';
 import { QuantityStepper } from '../ui/QuantityStepper';
-import { useProductos } from '../../hooks/useProductos';
+import { useProductos } from '../../hooks/queries/useProductosQueries';
 import { useProduceProductoCustomOrder } from '../../hooks/useProduction';
 import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatters';

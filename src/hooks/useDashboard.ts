@@ -33,6 +33,8 @@ interface DateRangeFilters {
 export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard', 'stats'],
+    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -73,7 +75,9 @@ export function useDashboardStats() {
 
 export function useTopProducts(limit: number = 5, filters?: DateRangeFilters) {
   return useQuery({
-    queryKey: ['dashboard', 'top-products', limit, filters],
+    queryKey: ['dashboard', 'top-products', limit, filters?.startDate, filters?.endDate],
+    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -124,7 +128,9 @@ export function useTopProducts(limit: number = 5, filters?: DateRangeFilters) {
 
 export function useDailyProfitTrend(days: number = 30, filters?: DateRangeFilters) {
   return useQuery({
-    queryKey: ['dashboard', 'daily-profit', days, filters],
+    queryKey: ['dashboard', 'daily-profit', days, filters?.startDate, filters?.endDate],
+    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');

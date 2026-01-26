@@ -4,11 +4,13 @@ import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
-import { useProductos } from '../../hooks/useProductos';
+import { useProductos } from '../../hooks/queries/useProductosQueries';
 import { useInsumos } from '../../hooks/useInsumos';
 import { useStockFabricadoTotals } from '../../hooks/useStockFabricado';
-import { useCreateVenta, useUpdateVenta } from '../../hooks/useVentas';
+import { useCreateVenta, useUpdateVenta } from '../../hooks/mutations/useVentasMutations';
 import { useToast } from '../../hooks/useToast';
+import { useAvailableStock } from '../../hooks/domain/useAvailableStock';
+import { useProfitCalculation } from '../../hooks/domain/useProfitCalculation';
 import { formatCurrency } from '../../utils/formatters';
 import { getTodayForInput, isoToInputDate } from '../../utils/dates';
 import type { Venta } from '../../lib/types';
@@ -86,60 +88,13 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       ? suggestedCostUnit * (1 + suggestedMargin / 100)
       : 0);
 
-  // Calcular stock disponible
-  const availableStock = useMemo(() => {
-    if (!selectedProducto) return 0;
-
-    // Stock de productos terminados
-    const finishedStock = selectedProducto.finished_stock || 0;
-
-    // Stock que se puede hacer con insumos
-    let stockFromInsumos = 0;
-    if (selectedProducto.recipe_items && selectedProducto.recipe_items.length > 0) {
-      const possibleUnitsPerInsumo = selectedProducto.recipe_items.map((item) => {
-        const insumo = insumos.find((i) => i.id === item.insumo_id);
-        if (!insumo) return 0;
-
-        let availableInBaseUnits = insumo.total_stock;
-        if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-          availableInBaseUnits = insumo.total_stock * 1000;
-        }
-
-        const possibleUnits = Math.floor(availableInBaseUnits / item.quantity_in_base_units);
-        return possibleUnits;
-      });
-
-      stockFromInsumos = Math.min(...possibleUnitsPerInsumo);
-    }
-
-    // Stock total = productos terminados + lo que se puede hacer con insumos
-    return finishedStock + stockFromInsumos;
-  }, [selectedProducto, insumos]);
+  // Calculate available stock using custom hook
+  const availableStock = useAvailableStock(selectedProducto, insumos);
 
   const priceToUse = customPrice ?? suggestedPrice;
 
-  const calculations = useMemo(() => {
-    if (!selectedProducto) {
-      return {
-        totalIncome: 0,
-        totalCost: 0,
-        profit: 0,
-        profitMargin: 0,
-      };
-    }
-
-    const totalIncome = quantity * priceToUse;
-    const totalCost = quantity * suggestedCostUnit;
-    const profit = totalIncome - totalCost;
-    const profitMargin = totalIncome > 0 ? (profit / totalIncome) * 100 : 0;
-
-    return {
-      totalIncome,
-      totalCost,
-      profit,
-      profitMargin,
-    };
-  }, [selectedProducto, quantity, priceToUse]);
+  // Calculate profit metrics using custom hook
+  const calculations = useProfitCalculation(quantity, priceToUse, suggestedCostUnit);
 
   const handleSubmit = async () => {
     if (!selectedProducto) {

@@ -31,12 +31,12 @@ function PageLoader() {
   );
 }
 
-// Create a client
+// Create a client with differentiated cache strategy
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30, // 30 seconds (reduced from 5 minutes for better reactivity)
-      refetchOnWindowFocus: true, // Refetch when window regains focus
+      staleTime: 1000 * 60 * 2, // 2 minutes default (master data)
+      refetchOnWindowFocus: false, // Disabled globally (enabled selectively per query)
       retry: 1,
     },
   },

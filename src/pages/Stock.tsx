@@ -4,7 +4,7 @@ import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
-import { useProductos } from '../hooks/useProductos';
+import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useInsumos } from '../hooks/useInsumos';
 import { useStockFabricadoTotals } from '../hooks/useStockFabricado';
 import { formatCurrency } from '../utils/formatters';

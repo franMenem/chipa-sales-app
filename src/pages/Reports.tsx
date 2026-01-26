@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
 import { useInsumos } from '../hooks/useInsumos';
-import { useVentas } from '../hooks/useVentas';
+import { useVentas } from '../hooks/queries/useVentasQueries';
 import { useAllInsumoPurchases } from '../hooks/useInsumoLotes';
 import { useToast } from '../hooks/useToast';
 import { formatCurrency } from '../utils/formatters';

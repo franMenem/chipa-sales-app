@@ -7,6 +7,7 @@ import { useToast } from './useToast';
 export function useInsumos() {
   return useQuery({
     queryKey: ['insumos'],
+    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -29,6 +30,7 @@ export function useInsumos() {
 export function useAllInsumos() {
   return useQuery({
     queryKey: ['insumos', 'all'],
+    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -49,6 +51,7 @@ export function useAllInsumos() {
 export function useInsumo(id: string | undefined) {
   return useQuery({
     queryKey: ['insumos', id],
+    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
     queryFn: async () => {
       if (!id) throw new Error('ID is required');
 

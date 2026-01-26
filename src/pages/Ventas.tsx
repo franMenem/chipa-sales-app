@@ -3,7 +3,7 @@ import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { VentaForm } from '../components/forms/VentaForm';
 import { VentasList } from '../components/lists/VentasList';
-import { useVentas } from '../hooks/useVentas';
+import { useVentas } from '../hooks/queries/useVentasQueries';
 import type { Venta } from '../lib/types';
 
 export function Ventas() {

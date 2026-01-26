@@ -7,6 +7,7 @@ import { useToast } from './useToast';
 export function useCategorias() {
   return useQuery({
     queryKey: ['categorias'],
+    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -28,6 +29,7 @@ export function useCategorias() {
 export function useCategoria(id: string | undefined) {
   return useQuery({
     queryKey: ['categorias', id],
+    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
     queryFn: async () => {
       if (!id) throw new Error('Categoria ID is required');
 
@@ -140,6 +142,7 @@ export function useDeleteCategoria() {
 export function useInsumosByCategoriaCount() {
   return useQuery({
     queryKey: ['categorias', 'insumos-count'],
+    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
