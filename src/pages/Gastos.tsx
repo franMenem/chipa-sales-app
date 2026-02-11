@@ -11,21 +11,7 @@ import { useGastoConceptos, useGastos, useGastosTrend } from '../hooks/queries/u
 import { useCreateGasto, useUpdateGasto, useDeleteGasto } from '../hooks/mutations/useGastosMutations';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
-import type { GastoWithConcepto, GastoFormData, PaymentMethod } from '../lib/types';
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  efectivo: 'Efectivo',
-  transferencia: 'Transferencia',
-  tarjeta: 'Tarjeta',
-  otro: 'Otro',
-};
-
-const paymentMethodColors: Record<PaymentMethod, string> = {
-  efectivo: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  transferencia: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  tarjeta: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  otro: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
-};
+import type { GastoWithConcepto, GastoFormData } from '../lib/types';
 
 export function Gastos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
