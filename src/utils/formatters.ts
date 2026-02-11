@@ -74,7 +74,12 @@ export function formatRelativeTime(date: string | Date): string {
  * @returns Formatted date string
  */
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
+  // For date-only strings (YYYY-MM-DD), append T12:00:00 to avoid timezone shift
+  const d = typeof date === 'string' && date.length === 10
+    ? new Date(date + 'T12:00:00')
+    : typeof date === 'string'
+      ? new Date(date)
+      : date;
   return new Intl.DateTimeFormat(APP_LOCALE, {
     day: 'numeric',
     month: 'short',

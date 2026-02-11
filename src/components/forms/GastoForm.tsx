@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { gastoSchema, gastoConceptoSchema } from '../../utils/validators';
 import { PAYMENT_METHODS } from '../../lib/constants';
+import { getTodayForInput } from '../../utils/dates';
 import { useGastoConceptos } from '../../hooks/queries/useGastosQueries';
 import { useCreateGastoConcepto } from '../../hooks/mutations/useGastosMutations';
 import type { GastoFormData, GastoConceptoFormData } from '../../lib/types';
@@ -32,7 +33,7 @@ export function GastoForm({ onSubmit, defaultValues, formId = 'gasto-form' }: Ga
     defaultValues: defaultValues || {
       concepto_id: '',
       amount: 0,
-      payment_date: '',
+      payment_date: getTodayForInput(),
       payment_method: 'efectivo',
       notes: '',
     },
