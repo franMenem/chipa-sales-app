@@ -1,3 +1,5 @@
+import { APP_LOCALE, APP_CURRENCY } from '../lib/constants';
+
 /**
  * Formats a number as currency (Pesos)
  * @param amount - Number to format
@@ -5,9 +7,9 @@
  * @returns Formatted currency string
  */
 export function formatCurrency(amount: number, decimals: number = 2): string {
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(APP_LOCALE, {
     style: 'currency',
-    currency: 'ARS',
+    currency: APP_CURRENCY,
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(amount);
@@ -30,7 +32,7 @@ export function formatPercentage(value: number, decimals: number = 1): string {
  * @returns Formatted number string
  */
 export function formatNumber(value: number, decimals: number = 0): string {
-  return new Intl.NumberFormat('es-PY', {
+  return new Intl.NumberFormat(APP_LOCALE, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
@@ -73,7 +75,7 @@ export function formatRelativeTime(date: string | Date): string {
  */
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat('es-PY', {
+  return new Intl.DateTimeFormat(APP_LOCALE, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -87,7 +89,7 @@ export function formatDate(date: string | Date): string {
  */
 export function formatTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat('es-PY', {
+  return new Intl.DateTimeFormat(APP_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(d);
@@ -100,7 +102,7 @@ export function formatTime(date: string | Date): string {
  */
 export function formatDateTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat('es-PY', {
+  return new Intl.DateTimeFormat(APP_LOCALE, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

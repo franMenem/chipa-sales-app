@@ -56,3 +56,16 @@ export async function invalidateCategoriasRelated(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: ['categorias'], exact: false, refetchType: 'active' }),
   ]);
 }
+
+/**
+ * Invalidate all queries related to gastos
+ * (used when gastos or gasto_conceptos are created/updated/deleted)
+ */
+export async function invalidateGastosRelated(queryClient: QueryClient) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['gastos'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['gastos_trend'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['gastos_monthly_by_concepto'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['dashboard'], exact: false, refetchType: 'active' }),
+  ]);
+}

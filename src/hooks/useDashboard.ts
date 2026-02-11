@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/auth';
+import { STALE_TIME } from '../lib/constants';
 
 interface DashboardStats {
   salesToday: number;
@@ -33,11 +35,10 @@ interface DateRangeFilters {
 export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard', 'stats'],
-    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const now = new Date();
       const todayStart = new Date(now.setHours(0, 0, 0, 0)).toISOString();
@@ -76,11 +77,10 @@ export function useDashboardStats() {
 export function useTopProducts(limit: number = 5, filters?: DateRangeFilters) {
   return useQuery({
     queryKey: ['dashboard', 'top-products', limit, filters?.startDate, filters?.endDate],
-    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       let query = supabase
         .from('ventas')
@@ -129,11 +129,10 @@ export function useTopProducts(limit: number = 5, filters?: DateRangeFilters) {
 export function useDailyProfitTrend(days: number = 30, filters?: DateRangeFilters) {
   return useQuery({
     queryKey: ['dashboard', 'daily-profit', days, filters?.startDate, filters?.endDate],
-    staleTime: 1000 * 60, // 1 minute (frequently changing analytics data)
+    staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       let query = supabase
         .from('ventas')

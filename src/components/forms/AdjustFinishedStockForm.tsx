@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { supabase } from '../../lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAdjustFinishedStock } from '../../hooks/mutations/useAdjustFinishedStock';
 import { useToast } from '../../hooks/useToast';
 import type { ProductoWithCost } from '../../lib/types';
 
@@ -15,9 +14,10 @@ interface AdjustFinishedStockFormProps {
 
 export function AdjustFinishedStockForm({ isOpen, onClose, producto }: AdjustFinishedStockFormProps) {
   const [quantity, setQuantity] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const adjustMutation = useAdjustFinishedStock();
   const toast = useToast();
+
+  const isSubmitting = adjustMutation.isPending;
 
   const handleSubmit = async () => {
     if (!producto) return;
@@ -29,33 +29,14 @@ export function AdjustFinishedStockForm({ isOpen, onClose, producto }: AdjustFin
       return;
     }
 
-    setIsSubmitting(true);
+    await adjustMutation.mutateAsync({
+      producto_id: producto.id,
+      producto_name: producto.name,
+      new_stock: newStock,
+    });
 
-    try {
-      const { error } = await supabase
-        .from('productos')
-        .update({ finished_stock: newStock })
-        .eq('id', producto.id);
-
-      if (error) throw error;
-
-      // Invalidar queries
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-
-      toast.success(
-        'Stock actualizado',
-        `${producto.name} ahora tiene ${newStock} unidades terminadas`
-      );
-
-      // Reset y cerrar
-      setQuantity(0);
-      onClose();
-    } catch (error) {
-      console.error('Error updating stock:', error);
-      toast.error('Error', 'No se pudo actualizar el stock');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setQuantity(0);
+    onClose();
   };
 
   if (!producto) return null;

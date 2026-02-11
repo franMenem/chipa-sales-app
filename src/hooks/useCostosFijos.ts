@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/auth';
 import type { CostoFijo, Frequency } from '../lib/types';
 import { useToast } from './useToast';
 
@@ -18,8 +19,7 @@ export function useCostosFijos() {
   return useQuery({
     queryKey: ['costos_fijos'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('costos_fijos')
@@ -60,8 +60,7 @@ export function useCreateCostoFijo() {
 
   return useMutation({
     mutationFn: async (input: CreateCostoFijoInput) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('costos_fijos')

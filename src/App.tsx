@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PageErrorBoundary } from './components/layout/PageErrorBoundary';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { STALE_TIME } from './lib/constants';
 
 // Lazy load pages for better performance
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
@@ -17,6 +18,7 @@ const ProductionHistory = lazy(() => import('./pages/ProductionHistory').then(m 
 const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock })));
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
 const CostosFijos = lazy(() => import('./pages/CostosFijos').then(m => ({ default: m.CostosFijos })));
+const Gastos = lazy(() => import('./pages/Gastos').then(m => ({ default: m.Gastos })));
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
 
 // Loading component
@@ -35,7 +37,7 @@ function PageLoader() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes default (master data)
+      staleTime: STALE_TIME.STANDARD,
       refetchOnWindowFocus: false, // Disabled globally (enabled selectively per query)
       retry: 1,
     },
@@ -147,6 +149,16 @@ function App() {
                   <ProtectedRoute>
                     <PageErrorBoundary pageName="Costos Fijos">
                       <CostosFijos />
+                    </PageErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/gastos"
+                element={
+                  <ProtectedRoute>
+                    <PageErrorBoundary pageName="Mis Gastos">
+                      <Gastos />
                     </PageErrorBoundary>
                   </ProtectedRoute>
                 }

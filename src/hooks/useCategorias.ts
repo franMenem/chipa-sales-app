@@ -1,16 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/auth';
 import type { Categoria, CreateCategoriaFormData } from '../lib/types';
 import { useToast } from './useToast';
+import { STALE_TIME } from '../lib/constants';
 
 // Fetch all categorias for current user
 export function useCategorias() {
   return useQuery({
     queryKey: ['categorias'],
-    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
+    staleTime: STALE_TIME.RARE,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('categorias')
@@ -29,12 +30,11 @@ export function useCategorias() {
 export function useCategoria(id: string | undefined) {
   return useQuery({
     queryKey: ['categorias', id],
-    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
+    staleTime: STALE_TIME.RARE,
     queryFn: async () => {
       if (!id) throw new Error('Categoria ID is required');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('categorias')
@@ -57,8 +57,7 @@ export function useCreateCategoria() {
 
   return useMutation({
     mutationFn: async (formData: CreateCategoriaFormData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('categorias')
@@ -142,10 +141,9 @@ export function useDeleteCategoria() {
 export function useInsumosByCategoriaCount() {
   return useQuery({
     queryKey: ['categorias', 'insumos-count'],
-    staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
+    staleTime: STALE_TIME.RARE,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       // Fetch all categorias
       const { data: categorias, error: categoriasError } = await supabase

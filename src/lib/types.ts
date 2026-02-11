@@ -154,6 +154,39 @@ export interface CostoFijo {
   updated_at: string;
 }
 
+// Gastos (expenses tracking)
+export type PaymentMethod = 'efectivo' | 'transferencia' | 'tarjeta' | 'otro';
+
+export interface GastoConcepto {
+  id: string;
+  user_id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Gasto {
+  id: string;
+  user_id: string;
+  concepto_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: PaymentMethod;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GastoWithConcepto extends Gasto {
+  concepto_name: string;
+}
+
+export interface GastoTrendPoint {
+  date: string;
+  amount: number;
+}
+
 export interface ProductionRecord {
   id: string;
   user_id: string;
@@ -232,6 +265,18 @@ export interface CostoFijoFormData {
   name: string;
   amount: number;
   frequency: Frequency;
+}
+
+export interface GastoConceptoFormData {
+  name: string;
+}
+
+export interface GastoFormData {
+  concepto_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: PaymentMethod;
+  notes?: string;
 }
 
 // Dashboard aggregations
@@ -353,6 +398,26 @@ export interface Database {
         Insert: Omit<Venta, 'id' | 'total_income' | 'total_cost' | 'profit' | 'profit_margin' | 'created_at'>
         Update: Partial<Omit<Venta, 'id' | 'total_income' | 'total_cost' | 'profit' | 'profit_margin' | 'created_at'>>
         Relationships: []
+      }
+      gasto_conceptos: {
+        Row: GastoConcepto
+        Insert: Omit<GastoConcepto, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<GastoConcepto, 'id' | 'created_at' | 'updated_at'>>
+        Relationships: []
+      }
+      gastos: {
+        Row: Gasto
+        Insert: Omit<Gasto, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Gasto, 'id' | 'created_at' | 'updated_at'>>
+        Relationships: [
+          {
+            foreignKeyName: "gastos_concepto_id_fkey"
+            columns: ["concepto_id"]
+            isOneToOne: false
+            referencedRelation: "gasto_conceptos"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

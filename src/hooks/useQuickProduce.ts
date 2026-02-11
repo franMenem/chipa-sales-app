@@ -3,6 +3,7 @@ import { useProduceProductoCustomOrder } from './useProduction';
 import { useToast } from './useToast';
 import { canQuickProduce, buildAutoLIFOSelections, calculatePriceWithMargin } from '../utils/productionHelpers';
 import type { ProductoWithCost } from '../lib/types';
+import { QUICK_PRODUCE_MARGIN_PERCENTAGE } from '../lib/constants';
 
 /**
  * Hook para fabricación automática rápida de 1 unidad
@@ -48,8 +49,8 @@ export function useQuickProduce() {
         return { shouldOpenForm: true };
       }
 
-      // 3. Calcular precio con 30% de margen
-      const marginPercentage = 30;
+      // 3. Calcular precio con margen
+      const marginPercentage = QUICK_PRODUCE_MARGIN_PERCENTAGE;
       const priceWithMargin = calculatePriceWithMargin(selections.costPerUnit!, marginPercentage);
 
       if (priceWithMargin <= 0) {

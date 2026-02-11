@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { getCurrentUser } from '../../lib/auth';
 import type { ProductoWithCost, RecipeItem } from '../../lib/types';
+import { STALE_TIME } from '../../lib/constants';
 
 // Fetch all productos with calculated costs
 export function useProductos() {
   return useQuery({
     queryKey: ['productos'],
-    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
+    staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('productos_with_cost')
@@ -27,7 +28,7 @@ export function useProductos() {
 export function useProducto(id: string | undefined) {
   return useQuery({
     queryKey: ['productos', id],
-    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
+    staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
       if (!id) throw new Error('ID is required');
 

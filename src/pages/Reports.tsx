@@ -82,13 +82,13 @@ export function Reports() {
     <Layout
       title="Reportes"
       subtitle="Analytics y estadísticas"
-      headerAction={
-        <Button icon="download" size="sm" onClick={handleExportCSV}>
-          Exportar
-        </Button>
-      }
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button icon="download" size="sm" onClick={handleExportCSV}>
+            Exportar
+          </Button>
+        </div>
         {/* Date Range Filter */}
         <Card>
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4">

@@ -81,6 +81,31 @@ export const costoFijoSchema = z.object({
 
 export type CostoFijoSchema = z.infer<typeof costoFijoSchema>;
 
+// Gasto Concepto validation schema
+export const gastoConceptoSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'El nombre es requerido')
+    .max(255, 'El nombre es demasiado largo'),
+});
+
+export type GastoConceptoSchema = z.infer<typeof gastoConceptoSchema>;
+
+// Gasto validation schema
+export const gastoSchema = z.object({
+  concepto_id: z.string().min(1, 'Seleccioná un concepto'),
+  amount: z
+    .number()
+    .positive('El monto debe ser mayor a 0'),
+  payment_date: z
+    .string()
+    .min(1, 'La fecha es requerida'),
+  payment_method: z.enum(['efectivo', 'transferencia', 'tarjeta', 'otro']),
+  notes: z.string().max(500, 'Las notas son demasiado largas').optional(),
+});
+
+export type GastoSchema = z.infer<typeof gastoSchema>;
+
 // Login validation schema
 export const loginSchema = z.object({
   email: z

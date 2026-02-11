@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { LotSelectionPayload, RecipeItem, InsumoLote } from '../lib/types';
+import { FLOAT_PRECISION, QUANTITY_DECIMAL_PLACES } from '../lib/constants';
 
 /**
  * Valida si un producto puede ser fabricado automáticamente (sin intervención manual)
@@ -106,7 +107,7 @@ export async function buildAutoLIFOSelections(
         };
       }
 
-      const quantityNeeded = Number((item.quantity_in_base_units * quantity).toFixed(4));
+      const quantityNeeded = Number((item.quantity_in_base_units * quantity).toFixed(QUANTITY_DECIMAL_PLACES));
 
       // 3. Fetch lotes disponibles ordenados por LIFO
       const { data: lotes, error: lotesError } = await supabase
@@ -136,17 +137,17 @@ export async function buildAutoLIFOSelections(
         if (toUse > 0) {
           lots.push({
             lot_id: lote.id,
-            quantity: Number(toUse.toFixed(4)),
+            quantity: Number(toUse.toFixed(QUANTITY_DECIMAL_PLACES)),
           });
 
           // Acumular costo
           totalCost += toUse * lote.price_per_unit;
-          remaining = Number((remaining - toUse).toFixed(4));
+          remaining = Number((remaining - toUse).toFixed(QUANTITY_DECIMAL_PLACES));
         }
       }
 
       // 5. Validar que se pudo cubrir la cantidad necesaria
-      if (remaining > 0.0001) {
+      if (remaining > FLOAT_PRECISION) {
         // Permitir tolerancia de precisión
         return {
           success: false,

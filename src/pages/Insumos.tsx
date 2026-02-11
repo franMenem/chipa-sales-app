@@ -38,29 +38,25 @@ export function Insumos() {
     <Layout
       title="Insumos"
       subtitle="Ingredientes - LIFO"
-      headerAction={
-        <div className="flex gap-1.5 sm:gap-2">
+    >
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            icon="add_shopping_cart"
+            size="sm"
+            onClick={() => handleAddBatch()}
+          >
+            Registrar Compra
+          </Button>
           <Button
             variant="ghost"
             icon="receipt_long"
             size="sm"
             onClick={() => navigate('/insumos/historial')}
-            aria-label="Historial"
           >
-            <span className="hidden sm:inline">Historial</span>
-          </Button>
-          <Button
-            icon="add_shopping_cart"
-            size="sm"
-            onClick={() => handleAddBatch()}
-            aria-label="Registrar Compra"
-          >
-            <span className="hidden sm:inline">Registrar Compra</span>
+            Historial
           </Button>
         </div>
-      }
-    >
-      <div className="p-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />

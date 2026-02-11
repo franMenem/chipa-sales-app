@@ -8,8 +8,8 @@ import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useQuickProduce } from '../hooks/useQuickProduce';
 import { useReverseProduction } from '../hooks/useProduction';
 import { useToast } from '../hooks/useToast';
+import { fetchLatestProductionHistory, fetchRecipeItems } from '../lib/queries';
 import type { ProductoWithCost, RecipeItemFormData } from '../lib/types';
-import { supabase } from '../lib/supabase';
 
 export function Productos() {
   const toast = useToast();
@@ -37,23 +37,12 @@ export function Productos() {
     setIsLoadingRecipe(true);
 
     try {
-      // Fetch recipe items for this product
-      const { data: recipeItems, error: recipeError } = await supabase
-        .from('recipe_items')
-        .select('*')
-        .eq('producto_id', producto.id);
-
-      if (recipeError) throw recipeError;
+      const recipeItems = await fetchRecipeItems(producto.id);
 
       setEditingProducto({
         id: producto.id,
         name: producto.name,
-        recipe_items: (recipeItems || []).map((item) => ({
-          insumo_id: item.insumo_id,
-          quantity_in_base_units: item.quantity_in_base_units,
-          use_categorias: item.use_categorias,
-          required_categoria_ids: item.required_categoria_ids || [],
-        })),
+        recipe_items: recipeItems,
       });
       setIsModalOpen(true);
     } catch (err) {
@@ -81,23 +70,15 @@ export function Productos() {
 
   const handleUndo = async (producto: ProductoWithCost) => {
     try {
-      // Get the latest production history for this product
-      const { data: latestProduction, error } = await supabase
-        .from('production_history')
-        .select('id')
-        .eq('producto_id', producto.id)
-        .order('production_date', { ascending: false })
-        .limit(1)
-        .single();
+      const productionId = await fetchLatestProductionHistory(producto.id);
 
-      if (error || !latestProduction) {
+      if (!productionId) {
         toast.warning('No hay producción para deshacer', 'No se encontró producción reciente de esta receta');
         return;
       }
 
-      // Reverse the production
       await reverseMutation.mutateAsync({
-        production_history_id: latestProduction.id,
+        production_history_id: productionId,
         force: false,
       });
     } catch (err) {
@@ -109,13 +90,13 @@ export function Productos() {
     <Layout
       title="Recetas"
       subtitle="Gestión de recetas"
-      headerAction={
-        <Button icon="add" size="sm" onClick={handleAdd}>
-          Agregar
-        </Button>
-      }
     >
-      <div className="p-4">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button icon="add" size="sm" onClick={handleAdd}>
+            Nueva Receta
+          </Button>
+        </div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
@@ -144,8 +125,8 @@ export function Productos() {
         )}
 
         {isLoadingRecipe && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" />
           </div>
         )}
       </div>

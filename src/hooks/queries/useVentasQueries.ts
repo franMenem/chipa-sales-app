@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { getCurrentUser } from '../../lib/auth';
 import type { Venta } from '../../lib/types';
+import { STALE_TIME } from '../../lib/constants';
 
 export interface VentasFilters {
   startDate?: string;
@@ -19,11 +21,10 @@ export function useVentas(filters?: VentasFilters) {
       filters?.producto_id,
       filters?.payment_status,
     ],
-    staleTime: 1000 * 60 * 1, // 1 minute (frequently changing data)
+    staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       let query = supabase
         .from('ventas')
@@ -56,7 +57,7 @@ export function useVentas(filters?: VentasFilters) {
 export function useVenta(id: string | undefined) {
   return useQuery({
     queryKey: ['ventas', id],
-    staleTime: 1000 * 60 * 1, // 1 minute (frequently changing data)
+    staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {
       if (!id) throw new Error('ID is required');

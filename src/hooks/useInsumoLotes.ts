@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { InsumoLote, AddInsumoBatchFormData, PriceHistoryPoint } from '../lib/types';
+import { getCurrentUser } from '../lib/auth';
+import type { InsumoLote, AddInsumoBatchFormData, PriceHistoryPoint, InsumoWithStock } from '../lib/types';
 import { useToast } from './useToast';
 
 // Fetch all lotes for a specific insumo
@@ -10,8 +11,7 @@ export function useInsumoLotes(insumo_id: string | undefined) {
     queryFn: async () => {
       if (!insumo_id) throw new Error('Insumo ID is required');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumo_lotes')
@@ -33,8 +33,7 @@ export function useAllInsumoLotes() {
   return useQuery({
     queryKey: ['insumo-lotes', 'all-with-stock'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumo_lotes')
@@ -48,7 +47,7 @@ export function useAllInsumoLotes() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as (InsumoLote & { insumo: any })[];
+      return data as (InsumoLote & { insumo: InsumoWithStock })[];
     },
   });
 }
@@ -58,8 +57,7 @@ export function useAllInsumoPurchases() {
   return useQuery({
     queryKey: ['insumo-lotes', 'all'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumo_lotes')
@@ -81,8 +79,7 @@ export function useInsumoPriceHistory(insumo_id: string | undefined) {
     queryFn: async () => {
       if (!insumo_id) throw new Error('Insumo ID is required');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumo_lotes')
@@ -93,7 +90,7 @@ export function useInsumoPriceHistory(insumo_id: string | undefined) {
 
       if (error) throw error;
 
-      return (data as any[]).map(item => ({
+      return (data as { purchase_date: string; price_per_unit: number; quantity_purchased: number }[]).map(item => ({
         date: item.purchase_date,
         price_per_unit: item.price_per_unit,
         quantity_purchased: item.quantity_purchased,
@@ -110,8 +107,7 @@ export function useAddInsumoBatch() {
 
   return useMutation({
     mutationFn: async (input: AddInsumoBatchFormData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumo_lotes')

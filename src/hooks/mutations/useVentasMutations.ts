@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { getCurrentUser } from '../../lib/auth';
 import type { Venta } from '../../lib/types';
 import { useToast } from '../useToast';
 import { invalidateSalesRelated } from '../../utils/cacheInvalidation';
@@ -25,8 +26,7 @@ export function useCreateVenta() {
 
   return useMutation({
     mutationFn: async (input: CreateVentaInput) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       // Get producto to check finished_stock
       const { data: producto, error: productoError } = await supabase

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/auth';
 import type { ProductionRecord, ProduceProductoFormData, LotSelectionPayload } from '../lib/types';
 import { useToast } from './useToast';
 import { formatCurrency } from '../utils/formatters';
@@ -11,8 +12,7 @@ export function useProductionHistory(producto_id: string | undefined) {
     queryFn: async () => {
       if (!producto_id) throw new Error('Producto ID is required');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('production_history')
@@ -33,8 +33,7 @@ export function useAllProductionHistory() {
   return useQuery({
     queryKey: ['production-history'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('production_history')

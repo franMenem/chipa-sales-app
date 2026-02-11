@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { getCurrentUser } from '../../lib/auth';
 import { useToast } from '../useToast';
 import { invalidateProductosRelated } from '../../utils/cacheInvalidation';
 
@@ -24,8 +25,7 @@ export function useCreateProducto() {
 
   return useMutation({
     mutationFn: async (input: CreateProductoInput) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { recipe_items, ...productoData } = input;
 

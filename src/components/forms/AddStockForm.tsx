@@ -3,8 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { QuantityStepper } from '../ui/QuantityStepper';
 import { useInsumos } from '../../hooks/useInsumos';
-import { supabase } from '../../lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAddInsumoStock } from '../../hooks/mutations/useAddInsumoStock';
 import { useToast } from '../../hooks/useToast';
 import type { ProductoWithCost } from '../../lib/types';
 
@@ -17,9 +16,10 @@ interface AddStockFormProps {
 export function AddStockForm({ isOpen, onClose, producto }: AddStockFormProps) {
   const { data: insumos } = useInsumos();
   const [quantity, setQuantity] = useState(10);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const addStockMutation = useAddInsumoStock();
   const toast = useToast();
+
+  const isSubmitting = addStockMutation.isPending;
 
   const handleSubmit = async () => {
     if (!producto || !producto.recipe_items || !insumos) {
@@ -27,54 +27,25 @@ export function AddStockForm({ isOpen, onClose, producto }: AddStockFormProps) {
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      // Calcular cuánto agregar de cada insumo
-      for (const item of producto.recipe_items) {
+    const items = producto.recipe_items
+      .map((item) => {
         const insumo = insumos.find((i) => i.id === item.insumo_id);
-        if (!insumo) continue;
+        if (!insumo) return null;
+        return {
+          insumo,
+          quantityInBaseUnits: item.quantity_in_base_units * quantity,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
 
-        // Cantidad a agregar en unidades base (g, ml, o unidades)
-        const quantityToAdd = item.quantity_in_base_units * quantity;
+    await addStockMutation.mutateAsync({
+      items,
+      productoName: producto.name,
+      quantity,
+    });
 
-        // Convertir a la unidad del insumo
-        let newQuantity = insumo.total_stock;
-        if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-          // Convertir de g/ml a kg/l
-          newQuantity = insumo.total_stock + (quantityToAdd / 1000);
-        } else {
-          // Unidades directas
-          newQuantity = insumo.total_stock + quantityToAdd;
-        }
-
-        // Actualizar el insumo
-        const { error: updateError } = await supabase
-          .from('insumos')
-          .update({ quantity: newQuantity })
-          .eq('id', insumo.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Invalidar queries para actualizar la UI
-      queryClient.invalidateQueries({ queryKey: ['insumos'] });
-      queryClient.invalidateQueries({ queryKey: ['productos'] });
-
-      toast.success(
-        'Stock agregado',
-        `Se agregaron ${quantity} unidades de ${producto.name}`
-      );
-
-      // Reset y cerrar
-      setQuantity(10);
-      onClose();
-    } catch (error) {
-      console.error('Error adding stock:', error);
-      toast.error('Error', 'No se pudo agregar el stock');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setQuantity(10);
+    onClose();
   };
 
   if (!producto) return null;

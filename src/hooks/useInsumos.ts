@@ -1,16 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/auth';
 import type { Insumo, InsumoWithStock, CreateInsumoFormData } from '../lib/types';
 import { useToast } from './useToast';
+import { STALE_TIME } from '../lib/constants';
 
 // Fetch insumos with stock (from view) - only active with stock > 0
 export function useInsumos() {
   return useQuery({
     queryKey: ['insumos'],
-    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
+    staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumos_with_stock')
@@ -30,10 +31,9 @@ export function useInsumos() {
 export function useAllInsumos() {
   return useQuery({
     queryKey: ['insumos', 'all'],
-    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
+    staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumos_with_stock')
@@ -51,7 +51,7 @@ export function useAllInsumos() {
 export function useInsumo(id: string | undefined) {
   return useQuery({
     queryKey: ['insumos', id],
-    staleTime: 1000 * 60 * 5, // 5 minutes (master data, changes infrequently)
+    staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
       if (!id) throw new Error('ID is required');
 
@@ -75,8 +75,7 @@ export function useCreateInsumo() {
 
   return useMutation({
     mutationFn: async (input: CreateInsumoFormData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      const user = await getCurrentUser();
 
       const { data, error } = await supabase
         .from('insumos')

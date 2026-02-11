@@ -1,4 +1,4 @@
-import type { Insumo, RecipeItem, UnitType } from '../lib/types';
+import type { InsumoWithStock, RecipeItem, UnitType } from '../lib/types';
 
 /**
  * Calculates the base unit cost for an insumo based on its unit type
@@ -31,13 +31,14 @@ export function calculateBaseUnitCost(
  */
 export function calculateProductCost(
   recipeItems: RecipeItem[],
-  insumos: Insumo[]
+  insumos: InsumoWithStock[]
 ): number {
   return recipeItems.reduce((total, item) => {
+    if (item.use_categorias) return total;
     const insumo = insumos.find((i) => i.id === item.insumo_id);
     if (!insumo) return total;
 
-    return total + item.quantity_in_base_units * 0;
+    return total + item.quantity_in_base_units * (insumo.current_price_per_unit || 0);
   }, 0);
 }
 

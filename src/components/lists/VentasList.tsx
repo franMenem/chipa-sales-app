@@ -285,29 +285,21 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-        <Card className="bg-blue-50 dark:bg-blue-950/30">
-          <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">
-            Ingresos
-          </p>
-          <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-            {formatCurrency(totals.income)}
-          </p>
-        </Card>
-        <Card className="bg-red-50 dark:bg-red-950/30">
-          <p className="text-xs text-red-600 dark:text-red-400 mb-1">Costos</p>
-          <p className="text-lg font-bold text-red-700 dark:text-red-300">
-            {formatCurrency(totals.cost)}
-          </p>
-        </Card>
-        <Card className="bg-green-50 dark:bg-green-950/30">
-          <p className="text-xs text-green-600 dark:text-green-400 mb-1">
-            Ganancia
-          </p>
-          <p className="text-lg font-bold text-green-700 dark:text-green-300">
-            {formatCurrency(totals.profit)}
-          </p>
-        </Card>
+      <div className="flex items-center gap-4 flex-wrap bg-slate-50 dark:bg-slate-800/50 rounded-lg px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-sm">
+        <div className="flex items-center gap-1.5">
+          <span className="text-blue-600 dark:text-blue-400 font-medium">Ingresos:</span>
+          <span className="font-bold text-blue-700 dark:text-blue-300">{formatCurrency(totals.income)}</span>
+        </div>
+        <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 hidden sm:block" />
+        <div className="flex items-center gap-1.5">
+          <span className="text-red-600 dark:text-red-400 font-medium">Costos:</span>
+          <span className="font-bold text-red-700 dark:text-red-300">{formatCurrency(totals.cost)}</span>
+        </div>
+        <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 hidden sm:block" />
+        <div className="flex items-center gap-1.5">
+          <span className="text-green-600 dark:text-green-400 font-medium">Ganancia:</span>
+          <span className="font-bold text-green-700 dark:text-green-300">{formatCurrency(totals.profit)}</span>
+        </div>
       </div>
 
       <Card>
