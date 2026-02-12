@@ -32,6 +32,7 @@ export function EditInsumoForm({ isOpen, onClose, insumo }: EditInsumoFormProps)
   } = useForm<FormData>();
 
   // Reset form when modal opens/closes or insumo changes
+  /* eslint-disable react-hooks/set-state-in-effect -- Syncing props to local state for form reset */
   useEffect(() => {
     if (isOpen && insumo) {
       reset({
@@ -44,6 +45,7 @@ export function EditInsumoForm({ isOpen, onClose, insumo }: EditInsumoFormProps)
       setSelectedCategorias([]);
     }
   }, [isOpen, insumo, reset]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const onSubmit = async (data: FormData) => {
     if (!insumo) return;

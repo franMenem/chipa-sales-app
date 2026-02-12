@@ -174,8 +174,15 @@ function App() {
                 }
               />
 
-              {/* Catch all - redirect to dashboard */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {/* Catch all - ProtectedRoute decides: logged in → dashboard, not logged in → login */}
+              <Route
+                path="*"
+                element={
+                  <ProtectedRoute>
+                    <Navigate to="/dashboard" replace />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </Suspense>
 

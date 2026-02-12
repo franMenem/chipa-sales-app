@@ -97,7 +97,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
@@ -111,9 +111,9 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className={`relative w-full ${sizeStyles[size]} max-h-[95vh] sm:max-h-[90vh] animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 flex flex-col`}
+        className={`relative w-full ${sizeStyles[size]} max-h-[85dvh] sm:max-h-[90dvh] animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 flex flex-col`}
       >
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-full">
+        <div className="bg-surface-light dark:bg-surface-dark rounded-t-xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-full">
           {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
             <h2 id="modal-title" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white pr-2">

@@ -52,6 +52,7 @@ export function useLotSelection({
   }, [loteOrder, getOrderedLotesFromMap]);
 
   // Auto-set default selections when recipe/quantity changes
+  /* eslint-disable react-hooks/set-state-in-effect -- Auto-computing lot selections from recipe data is a valid sync pattern */
   useEffect(() => {
     if (recipeWithLotes.length === 0) {
       setLotSelections({});
@@ -97,6 +98,7 @@ export function useLotSelection({
       return changed ? next : prev;
     });
   }, [recipeWithLotes, quantity]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleLotQuantityChange = (recipeItemId: string, lotId: string, value: number) => {
     const safeValue = Number(Math.max(0, value).toFixed(QUANTITY_DECIMAL_PLACES));

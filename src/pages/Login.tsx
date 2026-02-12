@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
@@ -8,10 +8,15 @@ import { ROUTES } from '../lib/constants';
 
 export function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, loading, session } = useAuth();
   const navigate = useNavigate();
 
   const isLogin = mode === 'login';
+
+  // If already authenticated, redirect to dashboard
+  if (session && !loading) {
+    return <Navigate to={ROUTES.DASHBOARD} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">

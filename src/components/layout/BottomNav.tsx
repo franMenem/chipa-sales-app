@@ -42,9 +42,11 @@ export function BottomNav() {
   }, [showMore]);
 
   // Close menu on route change
+  /* eslint-disable react-hooks/set-state-in-effect -- Closing menu on navigation is a valid side effect */
   useEffect(() => {
     setShowMore(false);
   }, [location.pathname]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div

@@ -42,6 +42,9 @@ export default defineConfig({
       workbox: {
         mode: 'development', // Avoid rollup-plugin-terser failures when bundling SW
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,

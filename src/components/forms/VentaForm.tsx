@@ -41,6 +41,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
   const [deliveryStatus, setDeliveryStatus] = useState<'entregado' | 'no_entregado'>('entregado');
 
   // Cargar datos de edición
+  /* eslint-disable react-hooks/set-state-in-effect -- Syncing props to local state for form reset */
   useEffect(() => {
     if (isOpen && editData) {
       setSelectedProductoId(editData.producto_id || '');
@@ -52,7 +53,6 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setPaymentDestination(editData.payment_destination || '');
       setDeliveryStatus(editData.delivery_status || 'entregado');
     } else if (isOpen && !editData) {
-      // Reset para nueva venta
       setSelectedProductoId('');
       setQuantity(1);
       setCustomPrice(null);
@@ -63,6 +63,7 @@ export function VentaForm({ isOpen, onClose, editData }: VentaFormProps) {
       setDeliveryStatus('entregado');
     }
   }, [isOpen, editData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const selectedProducto = useMemo(() => {
     return productos.find((p) => p.id === selectedProductoId);
