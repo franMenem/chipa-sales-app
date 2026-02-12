@@ -121,7 +121,7 @@ export function Reports() {
                 Inversión Total
               </p>
             </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+            <p className="text-lg sm:text-2xl font-bold text-purple-700 dark:text-purple-300">
               {formatCurrency(totalInvestment)}
             </p>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
@@ -161,7 +161,7 @@ export function Reports() {
                 En Banco (Pagado - Compras)
               </p>
             </div>
-            <p className="text-2xl font-bold text-primary">
+            <p className="text-lg sm:text-2xl font-bold text-primary">
               {formatCurrency(bankBalance)}
             </p>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
@@ -186,7 +186,37 @@ export function Reports() {
             <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
               Ranking de Productos
             </h3>
-            <div className="overflow-x-auto">
+            {/* Mobile: card layout */}
+            <div className="space-y-2 sm:hidden">
+              {topProducts.map((product, index) => (
+                <div
+                  key={product.producto_name}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                >
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                      {product.producto_name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {product.total_quantity} vendidos
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(product.total_income)}
+                    </p>
+                    <p className="text-xs font-medium text-green-600 dark:text-green-400">
+                      +{formatCurrency(product.total_profit)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table layout */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -244,7 +274,35 @@ export function Reports() {
             <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
               Deudores
             </h3>
-            <div className="overflow-x-auto">
+            {/* Mobile: card layout */}
+            <div className="space-y-2 sm:hidden">
+              {dueVentas.map((venta) => (
+                <div
+                  key={venta.id}
+                  className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {venta.customer_name || 'Sin nombre'}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatCurrency(venta.total_income)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>{venta.producto_name}</span>
+                    <span>{venta.sale_date.split('T')[0]}</span>
+                  </div>
+                  {venta.payment_destination && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Pago a: {venta.payment_destination}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table layout */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800">

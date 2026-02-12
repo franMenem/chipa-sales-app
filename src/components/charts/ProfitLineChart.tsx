@@ -15,13 +15,15 @@ export function ProfitLineChart({ data }: ProfitLineChartProps) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={220} minHeight={180}>
       <LineChart data={formattedData}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis
           dataKey="date"
           stroke="#64748b"
-          style={{ fontSize: '12px' }}
+          style={{ fontSize: '11px' }}
+          tick={{ fontSize: 11 }}
+          interval="preserveStartEnd"
         />
         <YAxis
           stroke="#64748b"

@@ -34,7 +34,7 @@ export function ProductionHistory() {
           production_history_id: historyId,
           force: needsForce
         });
-      } catch (error) {
+      } catch {
         // Error handled by mutation
       }
     }
@@ -154,7 +154,7 @@ export function ProductionHistory() {
                         </div>
 
                         {/* Cantidades */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
                             <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
                               Cantidad Producida

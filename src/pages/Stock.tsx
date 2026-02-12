@@ -80,7 +80,7 @@ export function Stock() {
         ) : (
           <>
             {/* Resumen compacto */}
-            <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-4 py-2.5 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 sm:px-4 py-2.5 border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[18px]">
                   bakery_dining
@@ -88,7 +88,7 @@ export function Stock() {
                 <span className="text-sm text-slate-600 dark:text-slate-400">Terminados:</span>
                 <span className="text-sm font-bold text-slate-900 dark:text-white">{totalProductosStock} ud</span>
               </div>
-              <div className="w-px h-5 bg-slate-300 dark:bg-slate-600" />
+              <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 hidden sm:block" />
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[18px]">
                   inventory
@@ -179,7 +179,8 @@ export function Stock() {
                         <button
                           type="button"
                           onClick={() => handleAdjustStock(producto)}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95"
+                          style={{ touchAction: 'manipulation' }}
                           title="Ajustar stock"
                         >
                           <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">edit</span>
@@ -188,7 +189,8 @@ export function Stock() {
                           type="button"
                           onClick={() => handleProduce(producto.id)}
                           disabled={!canProduce}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30 active:scale-95"
+                          style={{ touchAction: 'manipulation' }}
                           title="Fabricar"
                         >
                           <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">manufacturing</span>

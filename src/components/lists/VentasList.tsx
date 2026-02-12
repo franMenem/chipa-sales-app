@@ -208,7 +208,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         />
 
         {dateFilter === 'custom' && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Desde"
               type="date"
@@ -221,7 +221,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Button fullWidth onClick={handleCustomDateApply}>
                 Aplicar filtro
               </Button>
@@ -285,7 +285,7 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         </div>
       )}
 
-      <div className="flex items-center gap-4 flex-wrap bg-slate-50 dark:bg-slate-800/50 rounded-lg px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-sm">
+      <div className="flex items-center gap-2 sm:gap-4 flex-wrap bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 sm:px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-sm">
         <div className="flex items-center gap-1.5">
           <span className="text-blue-600 dark:text-blue-400 font-medium">Ingresos:</span>
           <span className="font-bold text-blue-700 dark:text-blue-300">{formatCurrency(totals.income)}</span>
@@ -302,7 +302,66 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
         </div>
       </div>
 
-      <Card>
+      {/* Mobile: card layout */}
+      <div className="space-y-2 sm:hidden">
+        {sortedVentas.map((venta) => (
+          <Card key={venta.id}>
+            <div className="space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                    {venta.producto_name}
+                  </p>
+                  {venta.customer_name && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{venta.customer_name}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {onEdit && (
+                    <Button variant="ghost" size="sm" icon="edit" onClick={() => onEdit(venta)} aria-label="Editar venta" />
+                  )}
+                  <Button
+                    variant="ghost" size="sm" icon="delete"
+                    onClick={() => handleDelete(venta.id, venta.producto_name)}
+                    disabled={deleteMutation.isPending}
+                    className="text-red-600 dark:text-red-400"
+                    aria-label="Eliminar venta"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <span>{formatDate(venta.sale_date)}</span>
+                <span>x{venta.quantity}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    venta.payment_status === 'pagado'
+                      ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
+                      : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
+                  }`}>
+                    {venta.payment_status === 'pagado' ? 'Pagado' : 'Debe'}
+                  </span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    venta.delivery_status === 'entregado'
+                      ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
+                      : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
+                  }`}>
+                    {venta.delivery_status === 'entregado' ? 'Entregado' : 'Pendiente'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(venta.price_sold)}</p>
+                  <p className="text-xs font-medium text-green-600 dark:text-green-400">+{formatCurrency(venta.profit)}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: table layout */}
+      <Card className="hidden sm:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

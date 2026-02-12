@@ -18,7 +18,7 @@ export function GastosTrendChart({ data, conceptoName }: GastosTrendChartProps) 
       <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">
         Tendencia: {conceptoName}
       </h3>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={220} minHeight={180}>
         <AreaChart data={formattedData}>
           <defs>
             <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -30,7 +30,9 @@ export function GastosTrendChart({ data, conceptoName }: GastosTrendChartProps) 
           <XAxis
             dataKey="date"
             stroke="#64748b"
-            style={{ fontSize: '12px' }}
+            style={{ fontSize: '11px' }}
+            tick={{ fontSize: 11 }}
+            interval="preserveStartEnd"
           />
           <YAxis
             stroke="#64748b"

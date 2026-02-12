@@ -8,7 +8,7 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-auto min-w-[300px] max-w-[90%] space-y-2"
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto sm:min-w-[300px] max-w-[90%] space-y-2"
       aria-live="polite"
       aria-atomic="false"
       role="region"

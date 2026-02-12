@@ -134,7 +134,7 @@ export function Gastos() {
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               Filtros
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Input
                 label="Desde"
                 type="date"
@@ -210,7 +210,52 @@ export function Gastos() {
             </p>
           </div>
         ) : (
-          <Card className="overflow-hidden !p-0">
+          <>
+            {/* Mobile: card layout */}
+            <div className="space-y-2 sm:hidden">
+              {gastos.map((gasto) => (
+                <Card key={gasto.id}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                          {gasto.concepto_name}
+                        </p>
+                        <p className="text-sm font-semibold text-red-600 dark:text-red-400 shrink-0 ml-2">
+                          {formatCurrency(gasto.amount)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {formatDate(gasto.payment_date)}
+                      </p>
+                      {gasto.notes && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                          {gasto.notes}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon="edit"
+                        onClick={() => handleEdit(gasto)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon="delete"
+                        onClick={() => handleDelete(gasto.id, gasto.concepto_name)}
+                        disabled={deleteMutation.isPending}
+                        className="text-red-600 dark:text-red-400"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            {/* Desktop: table layout */}
+            <Card className="overflow-hidden !p-0 hidden sm:block">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -266,7 +311,8 @@ export function Gastos() {
                 </tbody>
               </table>
             </div>
-          </Card>
+            </Card>
+          </>
         )}
       </div>
 

@@ -255,7 +255,7 @@ export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQui
       ) : useVirtualization ? (
         <div
           ref={parentRef}
-          className="h-[600px] overflow-auto"
+          className="h-[calc(100vh-220px)] min-h-[400px] max-h-[600px] overflow-auto"
           style={{ contain: 'strict' }}
         >
           <div
