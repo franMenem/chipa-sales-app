@@ -46,8 +46,8 @@ src/
 - `utils/validators.ts` - Zod schemas para todos los formularios
 
 ## Navegación
-- **Sidebar (desktop)**: Dividido en secciones "Operaciones" (Inicio, Insumos, Categorías, Recetas, Stock, Ventas) y "Finanzas" (Mis Gastos, Costos Fijos, Reportes)
-- **BottomNav (mobile)**: 4 items primarios (Inicio, Recetas, Stock, Ventas) + menú "Más" con el resto (Insumos, Categorías, Costos Fijos, Mis Gastos, Reportes)
+- **Sidebar (desktop)**: Dividido en secciones "Operaciones" (Inicio, Insumos, Categorías, Recetas, Stock, Ventas) y "Finanzas" (Mis Gastos, Deudas, Costos Fijos, Reportes)
+- **BottomNav (mobile)**: 4 items primarios (Inicio, Recetas, Stock, Ventas) + menú "Más" con el resto (Insumos, Categorías, Costos Fijos, Mis Gastos, Deudas, Reportes)
 - Todas las rutas están en `lib/constants.ts` → `ROUTES`
 
 ## Tablas Supabase (RLS habilitado en todas)
@@ -63,6 +63,8 @@ src/
 - `costos_fijos` - Gastos fijos recurrentes (monthly/weekly/annual)
 - `gasto_conceptos` - Conceptos reutilizables de gastos (Luz, Gas, Alquiler, etc.)
 - `gastos` - Registros individuales de gastos con monto, fecha, método de pago y notas
+- `deudas` - Deudas con remaining_amount y status auto-calculados (GENERATED ALWAYS AS)
+- `deuda_pagos` - Pagos individuales de deudas (trigger sincroniza paid_amount en deudas)
 - **Vista** `insumos_with_stock` - Vista con SECURITY INVOKER (corregido de SECURITY DEFINER)
 
 ## Módulo Gastos (feature reciente)
@@ -75,8 +77,18 @@ src/
 - **Tipos**: PaymentMethod, GastoConcepto, Gasto, GastoWithConcepto, GastoTrendPoint, GastoFormData, GastoConceptoFormData en `lib/types.ts`
 - **Migration**: `supabase/migrations/20260211_gastos_and_security_fix.sql`
 
+## Módulo Deudas (feature reciente)
+- **Página**: `pages/Deudas.tsx` - Resumen total/pagado/restante, filtro por estado, lista con barra de progreso, pagos expandibles
+- **Forms**: `components/forms/DeudaForm.tsx` + `components/forms/DeudaPagoForm.tsx`
+- **Queries**: `hooks/queries/useDeudasQueries.ts` - useDeudas (con filtro status), useDeudaPagos
+- **Mutations**: `hooks/mutations/useDeudasMutations.ts` - useCreateDeuda, useUpdateDeuda, useDeleteDeuda, useCreateDeudaPago, useDeleteDeudaPago
+- **Validación**: `deudaSchema` y `deudaPagoSchema` en `utils/validators.ts`
+- **Tipos**: DeudaStatus, Deuda, DeudaPago, DeudaWithPagos, DeudaFormData, DeudaPagoFormData en `lib/types.ts`
+- **Migration**: `supabase/migrations/20260213_deudas.sql`
+- **DB**: remaining_amount y status son columnas GENERATED (auto-calculadas). Trigger `sync_deuda_paid_amount` actualiza paid_amount al insertar/borrar pagos.
+
 ## Pendiente
-- Aplicar migration `20260211_gastos_and_security_fix.sql` a Supabase (`supabase db push`)
+- (nada pendiente)
 
 ## Reglas de desarrollo (OBLIGATORIAS)
 
@@ -118,6 +130,14 @@ src/
 - Usar `memo()` para componentes en listas
 - Usar `useCallback` para handlers pasados como props
 - Virtualizar listas de más de 50 items (`@tanstack/react-virtual`)
+
+### iOS Safari / Mobile Touch (IMPORTANTE)
+- **NUNCA usar `overflow-x: hidden` en `html` o `body`.** Usar `overflow-x: clip` en su lugar. `hidden` crea un scroll container en iOS Safari que interfiere con el procesamiento de touch events, causando que taps rápidos consecutivos dejen de registrarse.
+- **NUNCA usar `document.addEventListener('touchstart', ...)` para cerrar menús.** Usar `pointerdown` que unifica touch+mouse sin las race conditions de touchstart en iOS Safari.
+- **Evitar `active:scale-*` en elementos de navegación (Links, tabs).** Las CSS transforms durante navegación crean nuevas capas de compositor en iOS Safari. Usar `transition-colors` en su lugar de `transition-all`.
+- **NO usar `WebkitTransform: 'translateZ(0)'` como hack de GPU.** En iOS Safari moderno es innecesario y puede causar stacking context issues.
+- **NO poner `position: relative` en `body`.** Crea un stacking context innecesario que afecta z-index de elementos fixed en iOS.
+- **Siempre agregar `onClick={closeHandler}` a Links dentro de menús popup**, además del cierre por route change, para garantizar cierre inmediato sin depender del useEffect.
 
 ## Comandos
 ```bash

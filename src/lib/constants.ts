@@ -49,6 +49,7 @@ export const ROUTES = {
   VENTAS: '/ventas',
   COSTOS_FIJOS: '/costos-fijos',
   GASTOS: '/gastos',
+  DEUDAS: '/deudas',
   REPORTS: '/reports',
 } as const;
 

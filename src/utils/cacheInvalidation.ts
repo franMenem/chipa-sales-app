@@ -58,6 +58,17 @@ export async function invalidateCategoriasRelated(queryClient: QueryClient) {
 }
 
 /**
+ * Invalidate all queries related to deudas
+ * (used when deudas or deuda_pagos are created/updated/deleted)
+ */
+export async function invalidateDeudasRelated(queryClient: QueryClient) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['deudas'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['deuda_pagos'], exact: false, refetchType: 'active' }),
+  ]);
+}
+
+/**
  * Invalidate all queries related to gastos
  * (used when gastos or gasto_conceptos are created/updated/deleted)
  */

@@ -106,6 +106,40 @@ export const gastoSchema = z.object({
 
 export type GastoSchema = z.infer<typeof gastoSchema>;
 
+// Deuda validation schema
+export const deudaSchema = z.object({
+  description: z
+    .string()
+    .min(1, 'La descripción es requerida')
+    .max(255, 'La descripción es demasiado larga'),
+  creditor_name: z
+    .string()
+    .min(1, 'El nombre del acreedor es requerido')
+    .max(255, 'El nombre es demasiado largo'),
+  total_amount: z
+    .number()
+    .positive('El monto debe ser mayor a 0'),
+  due_date: z.string().optional(),
+  notes: z.string().max(500, 'Las notas son demasiado largas').optional(),
+});
+
+export type DeudaSchema = z.infer<typeof deudaSchema>;
+
+// Deuda Pago validation schema
+export const deudaPagoSchema = z.object({
+  deuda_id: z.string().min(1, 'La deuda es requerida'),
+  amount: z
+    .number()
+    .positive('El monto debe ser mayor a 0'),
+  payment_date: z
+    .string()
+    .min(1, 'La fecha es requerida'),
+  payment_method: z.enum(['efectivo', 'transferencia', 'tarjeta', 'otro']),
+  notes: z.string().max(500, 'Las notas son demasiado largas').optional(),
+});
+
+export type DeudaPagoSchema = z.infer<typeof deudaPagoSchema>;
+
 // Login validation schema
 export const loginSchema = z.object({
   email: z

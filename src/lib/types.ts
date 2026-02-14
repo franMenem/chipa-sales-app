@@ -187,6 +187,39 @@ export interface GastoTrendPoint {
   amount: number;
 }
 
+// Deudas (debts tracking)
+export type DeudaStatus = 'pendiente' | 'parcial' | 'pagada';
+
+export interface Deuda {
+  id: string;
+  user_id: string;
+  description: string;
+  creditor_name: string;
+  total_amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  due_date: string | null;
+  status: DeudaStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeudaPago {
+  id: string;
+  user_id: string;
+  deuda_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: PaymentMethod;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DeudaWithPagos extends Deuda {
+  pagos: DeudaPago[];
+}
+
 export interface ProductionRecord {
   id: string;
   user_id: string;
@@ -273,6 +306,22 @@ export interface GastoConceptoFormData {
 
 export interface GastoFormData {
   concepto_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: PaymentMethod;
+  notes?: string;
+}
+
+export interface DeudaFormData {
+  description: string;
+  creditor_name: string;
+  total_amount: number;
+  due_date?: string;
+  notes?: string;
+}
+
+export interface DeudaPagoFormData {
+  deuda_id: string;
   amount: number;
   payment_date: string;
   payment_method: PaymentMethod;
@@ -415,6 +464,26 @@ export interface Database {
             columns: ["concepto_id"]
             isOneToOne: false
             referencedRelation: "gasto_conceptos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      deudas: {
+        Row: Deuda
+        Insert: Omit<Deuda, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Deuda, 'id' | 'paid_amount' | 'remaining_amount' | 'status' | 'created_at' | 'updated_at'>>
+        Relationships: []
+      }
+      deuda_pagos: {
+        Row: DeudaPago
+        Insert: Omit<DeudaPago, 'id' | 'created_at'>
+        Update: Partial<Omit<DeudaPago, 'id' | 'created_at'>>
+        Relationships: [
+          {
+            foreignKeyName: "deuda_pagos_deuda_id_fkey"
+            columns: ["deuda_id"]
+            isOneToOne: false
+            referencedRelation: "deudas"
             referencedColumns: ["id"]
           }
         ]

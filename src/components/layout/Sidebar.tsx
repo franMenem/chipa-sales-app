@@ -45,6 +45,11 @@ export function Sidebar() {
       label: 'Mis Gastos',
     },
     {
+      path: ROUTES.DEUDAS,
+      icon: 'credit_card',
+      label: 'Deudas',
+    },
+    {
       path: ROUTES.COSTOS_FIJOS,
       icon: 'payments',
       label: 'Costos Fijos',

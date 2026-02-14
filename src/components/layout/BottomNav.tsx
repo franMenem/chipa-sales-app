@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../lib/constants';
 
@@ -14,6 +14,7 @@ const moreItems = [
   { path: ROUTES.CATEGORIAS, icon: 'category', label: 'Categorías' },
   { path: ROUTES.COSTOS_FIJOS, icon: 'payments', label: 'Costos Fijos' },
   { path: ROUTES.GASTOS, icon: 'account_balance_wallet', label: 'Mis Gastos' },
+  { path: ROUTES.DEUDAS, icon: 'credit_card', label: 'Deudas' },
   { path: ROUTES.REPORTS, icon: 'bar_chart', label: 'Reportes' },
 ];
 
@@ -24,35 +25,34 @@ export function BottomNav() {
 
   const isMoreActive = moreItems.some(item => location.pathname === item.path);
 
-  // Close menu on outside tap/click
+  const closeMenu = useCallback(() => setShowMore(false), []);
+
+  // Close menu on outside tap/click — use pointerdown (unified touch+mouse)
   useEffect(() => {
     if (!showMore) return;
-    const handleClose = (e: TouchEvent | MouseEvent) => {
+    const handleClose = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMore(false);
+        closeMenu();
       }
     };
-    // Use touchstart for mobile, mousedown for desktop
-    document.addEventListener('touchstart', handleClose, { passive: true });
-    document.addEventListener('mousedown', handleClose);
+    document.addEventListener('pointerdown', handleClose);
     return () => {
-      document.removeEventListener('touchstart', handleClose);
-      document.removeEventListener('mousedown', handleClose);
+      document.removeEventListener('pointerdown', handleClose);
     };
-  }, [showMore]);
+  }, [showMore, closeMenu]);
 
   // Close menu on route change
   /* eslint-disable react-hooks/set-state-in-effect -- Closing menu on navigation is a valid side effect */
   useEffect(() => {
-    setShowMore(false);
-  }, [location.pathname]);
+    closeMenu();
+  }, [location.pathname, closeMenu]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div
       className="md:hidden fixed bottom-0 left-0 w-full z-40"
       ref={menuRef}
-      style={{ touchAction: 'manipulation', WebkitTransform: 'translateZ(0)' }}
+      style={{ touchAction: 'manipulation' }}
     >
       {/* "More" menu popover */}
       {showMore && (
@@ -64,7 +64,8 @@ export function BottomNav() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3.5 min-h-[44px] transition-all active:scale-[0.98] ${
+                  onClick={closeMenu}
+                  className={`flex items-center gap-3 px-4 py-3.5 min-h-[44px] transition-colors ${
                     isActive
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'text-slate-700 dark:text-slate-300 active:bg-slate-100 dark:active:bg-slate-800'
@@ -94,7 +95,7 @@ export function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 rounded-lg transition-all active:scale-95 ${
+                className={`relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 rounded-lg transition-colors ${
                   isActive
                     ? 'text-primary'
                     : 'text-slate-400 active:text-slate-600 dark:active:text-slate-200'
@@ -116,7 +117,7 @@ export function BottomNav() {
           <button
             type="button"
             onClick={() => setShowMore(!showMore)}
-            className={`relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 rounded-lg transition-all active:scale-95 ${
+            className={`relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] px-2 rounded-lg transition-colors ${
               isMoreActive || showMore
                 ? 'text-primary'
                 : 'text-slate-400 active:text-slate-600 dark:active:text-slate-200'

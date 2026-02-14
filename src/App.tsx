@@ -19,6 +19,7 @@ const Stock = lazy(() => import('./pages/Stock').then(m => ({ default: m.Stock }
 const Ventas = lazy(() => import('./pages/Ventas').then(m => ({ default: m.Ventas })));
 const CostosFijos = lazy(() => import('./pages/CostosFijos').then(m => ({ default: m.CostosFijos })));
 const Gastos = lazy(() => import('./pages/Gastos').then(m => ({ default: m.Gastos })));
+const Deudas = lazy(() => import('./pages/Deudas').then(m => ({ default: m.Deudas })));
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
 
 // Loading component
@@ -159,6 +160,16 @@ function App() {
                   <ProtectedRoute>
                     <PageErrorBoundary pageName="Mis Gastos">
                       <Gastos />
+                    </PageErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/deudas"
+                element={
+                  <ProtectedRoute>
+                    <PageErrorBoundary pageName="Deudas">
+                      <Deudas />
                     </PageErrorBoundary>
                   </ProtectedRoute>
                 }
