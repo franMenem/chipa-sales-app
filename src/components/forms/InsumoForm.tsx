@@ -7,7 +7,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { useCreateInsumo } from '../../hooks/useInsumos';
+import { useCreateInsumo } from '../../hooks/mutations/useInsumosMutations';
 // useUpdateInsumo removed - insumos no longer editable, use AddInsumoBatch instead
 import { formatCurrency } from '../../utils/formatters';
 

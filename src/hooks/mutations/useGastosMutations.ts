@@ -28,7 +28,7 @@ export function useCreateGastoConcepto() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gasto_conceptos'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['gasto-conceptos'], refetchType: 'active' });
       toast.success('Concepto creado', 'El concepto se agregó correctamente');
     },
     onError: (error: Error) => {

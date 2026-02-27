@@ -64,7 +64,7 @@ export async function invalidateCategoriasRelated(queryClient: QueryClient) {
 export async function invalidateDeudasRelated(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['deudas'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['deuda_pagos'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['deuda-pagos'], exact: false, refetchType: 'active' }),
   ]);
 }
 
@@ -75,8 +75,8 @@ export async function invalidateDeudasRelated(queryClient: QueryClient) {
 export async function invalidateGastosRelated(queryClient: QueryClient) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['gastos'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['gastos_trend'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['gastos_monthly_by_concepto'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['gastos-trend'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['gastos-monthly-by-concepto'], refetchType: 'active' }),
     queryClient.invalidateQueries({ queryKey: ['dashboard'], exact: false, refetchType: 'active' }),
   ]);
 }

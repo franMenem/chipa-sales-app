@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { QuantityStepper } from '../ui/QuantityStepper';
-import { useInsumos } from '../../hooks/useInsumos';
+import { useInsumos } from '../../hooks/queries/useInsumosQueries';
 import { useAddInsumoStock } from '../../hooks/mutations/useAddInsumoStock';
 import { useToast } from '../../hooks/useToast';
 import type { ProductoWithCost } from '../../lib/types';

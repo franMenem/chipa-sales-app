@@ -18,8 +18,9 @@ export interface CreateVentaInput {
   sale_date?: string;
 }
 
-// Create venta (with cost snapshot and automatic stock deduction)
-// Hybrid system: uses finished_stock first, auto-produces if needed
+// Create venta atomically via RPC.
+// Wraps stock check → optional auto-produce → stock deduction → venta insert
+// in a single DB transaction, preventing partial-failure inconsistencies.
 export function useCreateVenta() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -28,81 +29,19 @@ export function useCreateVenta() {
     mutationFn: async (input: CreateVentaInput) => {
       const user = await getCurrentUser();
 
-      // Get producto to check finished_stock
-      const { data: producto, error: productoError } = await supabase
-        .from('productos')
-        .select('finished_stock')
-        .eq('id', input.producto_id)
-        .single();
-
-      if (productoError) throw productoError;
-
-      const finishedStock = producto.finished_stock || 0;
-      const needed = input.quantity;
-
-      // If not enough finished_stock, auto-produce
-      if (finishedStock < needed) {
-        const { data: recipeItems, error: recipeError } = await supabase
-          .from('recipe_items')
-          .select('use_categorias')
-          .eq('producto_id', input.producto_id);
-
-        if (recipeError) throw recipeError;
-
-        const usesCategorias = (recipeItems || []).some((item) => item.use_categorias);
-        if (usesCategorias) {
-          throw new Error(
-            'Este producto usa ingredientes por categoría. Debes fabricarlo manualmente para elegir los lotes.'
-          );
-        }
-
-        const quantityToProduce = needed - finishedStock;
-
-        // Call produce_producto to manufacture missing quantity
-        const { data: productionResult, error: productionError } = await supabase.rpc(
-          'produce_producto',
-          {
-            p_producto_id: input.producto_id,
-            p_quantity: quantityToProduce,
-          }
-        );
-
-        if (productionError) throw productionError;
-
-        if (productionResult && !productionResult.success) {
-          throw new Error(
-            productionResult.error || 'No hay suficientes insumos para fabricar el producto'
-          );
-        }
-      }
-
-      // Get updated finished_stock (may have increased if production occurred)
-      const { data: updatedProducto } = await supabase
-        .from('productos')
-        .select('finished_stock')
-        .eq('id', input.producto_id)
-        .single();
-
-      const currentFinishedStock = updatedProducto?.finished_stock || 0;
-
-      // Deduct sold quantity from finished_stock
-      const { error: updateError } = await supabase
-        .from('productos')
-        .update({ finished_stock: currentFinishedStock - needed })
-        .eq('id', input.producto_id);
-
-      if (updateError) throw updateError;
-
-      // Create the sale
-      const { data, error } = await supabase
-        .from('ventas')
-        .insert({
-          ...input,
-          user_id: user.id,
-          sale_date: input.sale_date || new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('create_venta_with_stock', {
+        p_user_id:             user.id,
+        p_producto_id:         input.producto_id,
+        p_producto_name:       input.producto_name,
+        p_quantity:            input.quantity,
+        p_price_sold:          input.price_sold,
+        p_cost_unit:           input.cost_unit,
+        p_customer_name:       input.customer_name ?? null,
+        p_payment_status:      input.payment_status ?? 'pagado',
+        p_payment_destination: input.payment_destination ?? null,
+        p_delivery_status:     input.delivery_status ?? 'entregado',
+        p_sale_date:           input.sale_date ?? new Date().toISOString(),
+      });
 
       if (error) throw error;
       return data as Venta;

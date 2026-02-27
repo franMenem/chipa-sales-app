@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import type { CreateCategoriaFormData, Categoria } from '../../lib/types';
-import { useCreateCategoria, useUpdateCategoria } from '../../hooks/useCategorias';
+import { useCreateCategoria, useUpdateCategoria } from '../../hooks/mutations/useCategoriasMutations';
 
 interface CategoriaFormProps {
   isOpen: boolean;

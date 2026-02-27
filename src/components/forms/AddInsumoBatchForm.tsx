@@ -5,9 +5,10 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { useAllInsumos, useCreateInsumo, useUpdateInsumo } from '../../hooks/useInsumos';
+import { useAllInsumos } from '../../hooks/queries/useInsumosQueries';
+import { useCreateInsumo, useUpdateInsumo } from '../../hooks/mutations/useInsumosMutations';
 import { useAddInsumoBatch, useUpdateInsumoBatch } from '../../hooks/useInsumoLotes';
-import { useCategorias } from '../../hooks/useCategorias';
+import { useCategorias } from '../../hooks/queries/useCategoriasQueries';
 import { formatCurrency } from '../../utils/formatters';
 import { useToast } from '../../hooks/useToast';
 

@@ -34,7 +34,7 @@ export function useDeudas(statusFilter?: string) {
 // Fetch pagos for a specific deuda
 export function useDeudaPagos(deudaId: string | undefined) {
   return useQuery({
-    queryKey: ['deuda_pagos', deudaId],
+    queryKey: ['deuda-pagos', deudaId],
     staleTime: STALE_TIME.FREQUENT,
     enabled: !!deudaId,
     queryFn: async () => {

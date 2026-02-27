@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useUpdateInsumo, useDeleteInsumo } from '../../hooks/useInsumos';
-import { useCategorias } from '../../hooks/useCategorias';
+import { useUpdateInsumo, useDeleteInsumo } from '../../hooks/mutations/useInsumosMutations';
+import { useCategorias } from '../../hooks/queries/useCategoriasQueries';
 import type { Insumo } from '../../lib/types';
 
 interface EditInsumoFormProps {

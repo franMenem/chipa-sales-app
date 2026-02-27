@@ -5,7 +5,7 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
-import { useInsumos } from '../hooks/useInsumos';
+import { useInsumos } from '../hooks/queries/useInsumosQueries';
 import { useVentas } from '../hooks/queries/useVentasQueries';
 import { useAllInsumoPurchases } from '../hooks/useInsumoLotes';
 import { useToast } from '../hooks/useToast';

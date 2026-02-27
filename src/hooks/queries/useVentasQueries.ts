@@ -14,13 +14,7 @@ export interface VentasFilters {
 // Fetch all ventas for current user with optional filters
 export function useVentas(filters?: VentasFilters) {
   return useQuery({
-    queryKey: [
-      'ventas',
-      filters?.startDate,
-      filters?.endDate,
-      filters?.producto_id,
-      filters?.payment_status,
-    ],
+    queryKey: ['ventas', { startDate: filters?.startDate, endDate: filters?.endDate, producto_id: filters?.producto_id, payment_status: filters?.payment_status }],
     staleTime: STALE_TIME.FREQUENT,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     queryFn: async () => {

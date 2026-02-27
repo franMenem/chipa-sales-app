@@ -4,7 +4,8 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { CategoriaForm } from '../components/forms/CategoriaForm';
 import { useTopProducts } from '../hooks/useDashboard';
-import { useCategorias, useDeleteCategoria } from '../hooks/useCategorias';
+import { useCategorias } from '../hooks/queries/useCategoriasQueries';
+import { useDeleteCategoria } from '../hooks/mutations/useCategoriasMutations';
 import { formatCurrency } from '../utils/formatters';
 import type { Categoria } from '../lib/types';
 

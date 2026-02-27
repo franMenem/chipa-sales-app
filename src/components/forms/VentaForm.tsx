@@ -5,7 +5,7 @@ import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { useProductos } from '../../hooks/queries/useProductosQueries';
-import { useInsumos } from '../../hooks/useInsumos';
+import { useInsumos } from '../../hooks/queries/useInsumosQueries';
 import { useStockFabricadoTotals } from '../../hooks/useStockFabricado';
 import { useCreateVenta, useUpdateVenta } from '../../hooks/mutations/useVentasMutations';
 import { useToast } from '../../hooks/useToast';

@@ -1,12 +1,3 @@
-// Theme colors
-export const COLORS = {
-  primary: '#13ec5b',
-  backgroundLight: '#f6f8f6',
-  backgroundDark: '#102216',
-  surfaceLight: '#ffffff',
-  surfaceDark: '#1c2e24',
-} as const;
-
 // Unit types for insumos
 export const UNIT_TYPES = [
   { value: 'kg', label: 'Kilogramo (kg)' },

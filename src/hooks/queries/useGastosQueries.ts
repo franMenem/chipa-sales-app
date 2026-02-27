@@ -7,7 +7,7 @@ import { STALE_TIME } from '../../lib/constants';
 // Fetch all gasto conceptos for current user
 export function useGastoConceptos() {
   return useQuery({
-    queryKey: ['gasto_conceptos'],
+    queryKey: ['gasto-conceptos'],
     staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
       const user = await getCurrentUser();
@@ -66,7 +66,7 @@ export function useGastos(filters?: { startDate?: string; endDate?: string; conc
 // Fetch gastos trend for a specific concepto (for charts)
 export function useGastosTrend(conceptoId: string | undefined) {
   return useQuery({
-    queryKey: ['gastos_trend', conceptoId],
+    queryKey: ['gastos-trend', conceptoId],
     staleTime: STALE_TIME.STANDARD,
     enabled: !!conceptoId,
     queryFn: async () => {
@@ -94,7 +94,7 @@ export function useGastosTrend(conceptoId: string | undefined) {
 // Fetch monthly totals per concepto (for overview chart)
 export function useGastosMonthlyByConcepto() {
   return useQuery({
-    queryKey: ['gastos_monthly_by_concepto'],
+    queryKey: ['gastos-monthly-by-concepto'],
     staleTime: STALE_TIME.STANDARD,
     queryFn: async () => {
       const user = await getCurrentUser();

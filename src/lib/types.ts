@@ -329,33 +329,6 @@ export interface DeudaPagoFormData {
   notes?: string;
 }
 
-// Dashboard aggregations
-export interface DashboardKPIs {
-  sales_today: number;
-  sales_month: number;
-  profit_today: number;
-  profit_month: number;
-  costs_today: number;
-  costs_month: number;
-  profit_margin_avg: number;
-  total_orders_today: number;
-  total_orders_month: number;
-}
-
-export interface BestSeller {
-  producto_id: string;
-  producto_name: string;
-  units_sold: number;
-  total_revenue: number;
-}
-
-export interface ProfitTrendData {
-  date: string;
-  profit: number;
-  income: number;
-  costs: number;
-}
-
 // Toast notification types
 export interface ToastMessage {
   id: string;

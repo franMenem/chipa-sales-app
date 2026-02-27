@@ -3,7 +3,7 @@ import { Layout } from '../components/layout/Layout';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { useAllInsumos } from '../hooks/useInsumos';
+import { useAllInsumos } from '../hooks/queries/useInsumosQueries';
 import { useInsumoLotes, useDeleteInsumoBatch } from '../hooks/useInsumoLotes';
 import { formatCurrency } from '../utils/formatters';
 import { format } from 'date-fns';

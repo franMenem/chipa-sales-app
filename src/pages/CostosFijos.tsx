@@ -8,7 +8,8 @@ import { Modal } from '../components/ui/Modal';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { costoFijoSchema } from '../utils/validators';
-import { useCostosFijos, useCreateCostoFijo, useUpdateCostoFijo, useDeleteCostoFijo } from '../hooks/useCostosFijos';
+import { useCostosFijos } from '../hooks/queries/useCostosFijosQueries';
+import { useCreateCostoFijo, useUpdateCostoFijo, useDeleteCostoFijo } from '../hooks/mutations/useCostosFijosMutations';
 import type { CostoFijo, Frequency } from '../lib/types';
 import { formatCurrency } from '../utils/formatters';
 

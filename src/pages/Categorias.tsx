@@ -3,7 +3,8 @@ import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { CategoriaForm } from '../components/forms/CategoriaForm';
-import { useCategorias, useDeleteCategoria, useInsumosByCategoriaCount } from '../hooks/useCategorias';
+import { useCategorias, useInsumosByCategoriaCount } from '../hooks/queries/useCategoriasQueries';
+import { useDeleteCategoria } from '../hooks/mutations/useCategoriasMutations';
 import type { Categoria, UnitType } from '../lib/types';
 
 const unitLabels: Record<UnitType, string> = {
