@@ -180,6 +180,41 @@ export async function buildAutoLIFOSelections(
 }
 
 /**
+ * Calcula cuántas unidades se pueden fabricar de un producto dado el stock actual de insumos.
+ *
+ * Es una función pura (no hook) que refleja la misma lógica que useAvailableStock,
+ * pero sin incluir el finished_stock ya fabricado — solo lo producible desde insumos.
+ *
+ * Retorna 0 si el producto tiene algún recipe item con use_categorias=true
+ * (esos necesitan selección manual de lotes).
+ */
+export function calculateProducibleUnits(
+  producto: { recipe_items?: Array<{ insumo_id: string | null; use_categorias: boolean; quantity_in_base_units: number }> },
+  insumos: Array<{ id: string; total_stock: number; unit_type: string }>
+): number {
+  if (!producto.recipe_items || producto.recipe_items.length === 0) return 0;
+
+  // Si cualquier ingrediente usa categorías, no se puede auto-producir
+  if (producto.recipe_items.some((item) => item.use_categorias)) return 0;
+
+  const possibleUnitsPerInsumo = producto.recipe_items.map((item) => {
+    if (!item.insumo_id) return 0;
+    const insumo = insumos.find((i) => i.id === item.insumo_id);
+    if (!insumo) return 0;
+
+    let availableInBaseUnits = insumo.total_stock;
+    if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
+      availableInBaseUnits = insumo.total_stock * 1000;
+    }
+
+    return Math.floor(availableInBaseUnits / item.quantity_in_base_units);
+  });
+
+  const result = Math.min(...possibleUnitsPerInsumo, Infinity);
+  return result === Infinity ? 0 : result;
+}
+
+/**
  * Calcula precio de venta con margen de ganancia
  *
  * Formula: precio = costo * (1 + margen/100)

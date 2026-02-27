@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
@@ -7,7 +7,9 @@ import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStock
 import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useInsumos } from '../hooks/queries/useInsumosQueries';
 import { useStockFabricadoTotals } from '../hooks/useStockFabricado';
+import { useAutoProduceAll } from '../hooks/mutations/useAutoProduceAll';
 import { formatCurrency } from '../utils/formatters';
+import { calculateProducibleUnits } from '../utils/productionHelpers';
 import type { ProductoWithCost } from '../lib/types';
 
 export function Stock() {
@@ -20,7 +22,26 @@ export function Stock() {
   const [selectedProductoId, setSelectedProductoId] = useState<string | undefined>(undefined);
   const [selectedProducto, setSelectedProducto] = useState<ProductoWithCost | null>(null);
 
+  const autoProduceMutation = useAutoProduceAll();
   const isLoading = loadingProductos || loadingInsumos;
+
+  // Candidatos para auto-fabricar: productos con insumos suficientes y sin categorías
+  const autoCandidates = useMemo(() => {
+    if (!productos || !insumos) return [];
+    return productos
+      .filter((p) => p.has_sufficient_ingredients)
+      .map((p) => ({
+        productoId: p.id,
+        productoName: p.name,
+        quantity: calculateProducibleUnits(p, insumos),
+      }))
+      .filter((c) => c.quantity > 0);
+  }, [productos, insumos]);
+
+  const handleAutoProduceAll = () => {
+    if (autoCandidates.length === 0) return;
+    autoProduceMutation.mutate(autoCandidates);
+  };
 
   const handleProduce = (productoId?: string) => {
     setSelectedProductoId(productoId);
@@ -60,8 +81,21 @@ export function Stock() {
     >
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Button icon="manufacturing" size="sm" onClick={() => handleProduce()}>
-            Fabricar
+          <Button
+            icon="bolt"
+            size="sm"
+            onClick={handleAutoProduceAll}
+            disabled={autoCandidates.length === 0 || autoProduceMutation.isPending}
+          >
+            {autoProduceMutation.isPending ? 'Fabricando...' : 'Auto-fabricar'}
+          </Button>
+          <Button
+            variant="ghost"
+            icon="manufacturing"
+            size="sm"
+            onClick={() => handleProduce()}
+          >
+            Manual
           </Button>
           <Button
             variant="ghost"
