@@ -58,7 +58,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={`
-              w-full min-w-0 px-3 sm:px-4 py-3 rounded-xl
+              w-full min-w-0 py-3 rounded-xl
               bg-white dark:bg-surface-dark
               border border-slate-200 dark:border-slate-700
               text-base text-slate-900 dark:text-white
@@ -67,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-200
               touch-manipulation overflow-hidden
-              ${icon ? 'pl-11' : ''}
+              ${icon ? 'pl-11 pr-3 sm:pr-4' : 'px-3 sm:px-4'}
               ${error ? 'border-red-500 focus:ring-red-500/50 focus:border-red-500' : ''}
               ${className}
             `}
