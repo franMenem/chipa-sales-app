@@ -17,7 +17,7 @@ export function Layout({
   showBottomNav = true,
 }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-x-clip">
       {/* Sidebar for desktop */}
       {showBottomNav && <Sidebar />}
 

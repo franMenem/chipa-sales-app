@@ -89,7 +89,7 @@ const LoteCard = memo(({ lote, onEditLote }: LoteCardProps) => {
           </div>
         </div>
 
-        {/* Consumption progress bar - always visible with min height */}
+        {/* Consumption progress bar */}
         <div className="space-y-1 min-h-[32px]">
           {consumedPercentage > 0 ? (
             <>

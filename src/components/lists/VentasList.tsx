@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import type { Venta } from '../../lib/types';
-import { formatCurrency, formatDate, formatRelativeTime } from '../../utils/formatters';
+import { formatCurrency, formatDayMonthYear } from '../../utils/formatters';
 import { getDateRangeForFilter } from '../../utils/dates';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -23,81 +23,109 @@ interface VentaRowProps {
   onEdit?: (venta: Venta) => void;
   onDelete: (id: string, productoName: string) => void;
   isDeleting: boolean;
+  isSelected: boolean;
+  onRowClick: () => void;
 }
 
-const VentaRow = memo(({ venta, onEdit, onDelete, isDeleting }: VentaRowProps) => {
+const VentaRow = memo(({ venta, onEdit, onDelete, isDeleting, isSelected, onRowClick }: VentaRowProps) => {
   return (
-    <tr className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-      <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
-        {venta.producto_name}
-        {venta.customer_name && (
-          <div className="text-xs text-slate-600 dark:text-slate-400">
-            {venta.customer_name}
-          </div>
-        )}
-      </td>
-      <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
-        {formatDate(venta.sale_date)}
-        <div className="text-xs">
-          {formatRelativeTime(venta.sale_date)}
-        </div>
-      </td>
-      <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
-        {venta.quantity}
-      </td>
-      <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
-        {formatCurrency(venta.price_sold)}
-      </td>
-      <td className="py-3 px-2 text-right font-semibold text-green-600 dark:text-green-400">
-        {formatCurrency(venta.profit)}
-      </td>
-      <td className={`py-3 px-2 font-medium ${
-        venta.payment_status === 'pagado'
-          ? 'text-green-600 dark:text-green-400'
-          : 'text-yellow-600 dark:text-yellow-400'
-      }`}>
-        {venta.payment_status === 'pagado' ? 'Pagado' : 'Debe'}
-      </td>
-      <td className={`py-3 px-2 font-medium ${
-        venta.delivery_status === 'entregado'
-          ? 'text-green-600 dark:text-green-400'
-          : 'text-yellow-600 dark:text-yellow-400'
-      }`}>
-        {venta.delivery_status === 'entregado' ? 'Entregado' : 'No entregado'}
-      </td>
-      <td className="py-3 px-2 text-right">
-        <div className="flex items-center justify-end gap-2">
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon="edit"
-              onClick={() => onEdit(venta)}
-              aria-label="Editar venta"
-            />
+    <>
+      <tr
+        onClick={onRowClick}
+        className={`border-b border-slate-100 dark:border-slate-800 cursor-pointer transition-colors ${
+          isSelected
+            ? 'bg-primary/5 dark:bg-primary/10 border-primary/20'
+            : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        }`}
+        style={{ touchAction: 'manipulation' }}
+      >
+        <td className="py-3 px-2 text-slate-600 dark:text-slate-400">
+          <div className="font-medium">{formatDayMonthYear(venta.sale_date).dayMonth}</div>
+          <div className="text-xs text-slate-400">{formatDayMonthYear(venta.sale_date).year}</div>
+        </td>
+        <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
+          {venta.producto_name}
+          {venta.customer_name && (
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              {venta.customer_name}
+            </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            icon="delete"
-            onClick={() => onDelete(venta.id, venta.producto_name)}
-            disabled={isDeleting}
-            className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-            aria-label="Eliminar venta"
-          />
-        </div>
-      </td>
-    </tr>
+        </td>
+        <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+          {venta.quantity}
+        </td>
+        <td className="py-3 px-2 text-right text-slate-600 dark:text-slate-400">
+          {formatCurrency(venta.price_sold)}
+        </td>
+        <td className="py-3 px-2 text-right font-semibold text-green-600 dark:text-green-400">
+          {formatCurrency(venta.profit)}
+        </td>
+        <td className={`py-3 px-2 text-center ${
+          venta.payment_status === 'pagado'
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-yellow-600 dark:text-yellow-400'
+        }`}>
+          <span
+            className="material-symbols-outlined text-[20px]"
+            title={venta.payment_status === 'pagado' ? 'Pagado' : 'Debe'}
+          >
+            {venta.payment_status === 'pagado' ? 'check_circle' : 'schedule'}
+          </span>
+        </td>
+        <td className={`py-3 px-2 text-center ${
+          venta.delivery_status === 'entregado'
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-yellow-600 dark:text-yellow-400'
+        }`}>
+          <span
+            className="material-symbols-outlined text-[20px]"
+            title={venta.delivery_status === 'entregado' ? 'Entregado' : 'Pendiente'}
+          >
+            {venta.delivery_status === 'entregado' ? 'local_shipping' : 'hourglass_empty'}
+          </span>
+        </td>
+      </tr>
+      {isSelected && (
+        <tr className="border-b border-slate-100 dark:border-slate-800 bg-primary/5 dark:bg-primary/10">
+          <td colSpan={7} className="px-3 py-2">
+            <div className="flex items-center justify-end gap-2">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon="edit"
+                  onClick={(e) => { e.stopPropagation(); onEdit(venta); }}
+                  aria-label="Editar venta"
+                >
+                  Editar
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="delete"
+                onClick={(e) => { e.stopPropagation(); onDelete(venta.id, venta.producto_name); }}
+                disabled={isDeleting}
+                className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                aria-label="Eliminar venta"
+              >
+                Eliminar
+              </Button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }, (prev, next) => {
-  // Custom comparison for memo - only re-render if these properties change
   return prev.venta.id === next.venta.id &&
          prev.venta.quantity === next.venta.quantity &&
          prev.venta.price_sold === next.venta.price_sold &&
          prev.venta.profit === next.venta.profit &&
          prev.venta.payment_status === next.venta.payment_status &&
          prev.venta.delivery_status === next.venta.delivery_status &&
-         prev.isDeleting === next.isDeleting;
+         prev.isDeleting === next.isDeleting &&
+         prev.isSelected === next.isSelected;
 });
 
 export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) {
@@ -106,7 +134,12 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
   const [endDate, setEndDate] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedVentaId, setSelectedVentaId] = useState<string | null>(null);
   const deleteMutation = useDeleteVenta();
+
+  const handleRowClick = useCallback((id: string) => {
+    setSelectedVentaId(prev => prev === id ? null : id);
+  }, []);
 
   const handleDateFilterChange = (filter: string) => {
     setDateFilter(filter as 'today' | 'week' | 'month' | 'all');
@@ -304,60 +337,84 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
 
       {/* Mobile: card layout */}
       <div className="space-y-2 sm:hidden">
-        {sortedVentas.map((venta) => (
-          <Card key={venta.id}>
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                    {venta.producto_name}
-                  </p>
-                  {venta.customer_name && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{venta.customer_name}</p>
-                  )}
+        {sortedVentas.map((venta) => {
+          const isSelected = selectedVentaId === venta.id;
+          return (
+            <Card
+              key={venta.id}
+              onClick={() => handleRowClick(venta.id)}
+              className={`cursor-pointer transition-colors ${isSelected ? 'ring-1 ring-primary/30' : ''}`}
+            >
+              <div className="space-y-2" style={{ touchAction: 'manipulation' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                      {venta.producto_name}
+                    </p>
+                    {venta.customer_name && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{venta.customer_name}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
+                      venta.payment_status === 'pagado'
+                        ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
+                        : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[15px]">
+                        {venta.payment_status === 'pagado' ? 'check_circle' : 'schedule'}
+                      </span>
+                    </span>
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
+                      venta.delivery_status === 'entregado'
+                        ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
+                        : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[15px]">
+                        {venta.delivery_status === 'entregado' ? 'local_shipping' : 'hourglass_empty'}
+                      </span>
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {onEdit && (
-                    <Button variant="ghost" size="sm" icon="edit" onClick={() => onEdit(venta)} aria-label="Editar venta" />
-                  )}
-                  <Button
-                    variant="ghost" size="sm" icon="delete"
-                    onClick={() => handleDelete(venta.id, venta.producto_name)}
-                    disabled={deleteMutation.isPending}
-                    className="text-red-600 dark:text-red-400"
-                    aria-label="Eliminar venta"
-                  />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span>
+                      {formatDayMonthYear(venta.sale_date).dayMonth}
+                      <span className="text-slate-400 ml-1">{formatDayMonthYear(venta.sale_date).year}</span>
+                    </span>
+                    <span>x{venta.quantity}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(venta.price_sold)}</p>
+                    <p className="text-xs font-medium text-green-600 dark:text-green-400">+{formatCurrency(venta.profit)}</p>
+                  </div>
                 </div>
+                {isSelected && (
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    {onEdit && (
+                      <Button
+                        variant="ghost" size="sm" icon="edit"
+                        onClick={(e) => { e.stopPropagation(); onEdit(venta); }}
+                        aria-label="Editar venta"
+                      >
+                        Editar
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost" size="sm" icon="delete"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(venta.id, venta.producto_name); }}
+                      disabled={deleteMutation.isPending}
+                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      aria-label="Eliminar venta"
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                <span>{formatDate(venta.sale_date)}</span>
-                <span>x{venta.quantity}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    venta.payment_status === 'pagado'
-                      ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
-                      : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
-                  }`}>
-                    {venta.payment_status === 'pagado' ? 'Pagado' : 'Debe'}
-                  </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    venta.delivery_status === 'entregado'
-                      ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400'
-                      : 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400'
-                  }`}>
-                    {venta.delivery_status === 'entregado' ? 'Entregado' : 'Pendiente'}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(venta.price_sold)}</p>
-                  <p className="text-xs font-medium text-green-600 dark:text-green-400">+{formatCurrency(venta.profit)}</p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
 
       {/* Desktop: table layout */}
@@ -366,14 +423,13 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="text-left py-3 px-2">{renderSortLabel('Producto', 'product')}</th>
                 <th className="text-left py-3 px-2">{renderSortLabel('Fecha', 'date')}</th>
+                <th className="text-left py-3 px-2">{renderSortLabel('Producto', 'product')}</th>
                 <th className="text-right py-3 px-2">{renderSortLabel('Cantidad', 'quantity')}</th>
                 <th className="text-right py-3 px-2">{renderSortLabel('Precio', 'price')}</th>
                 <th className="text-right py-3 px-2">{renderSortLabel('Ganancia', 'profit')}</th>
                 <th className="text-left py-3 px-2">{renderSortLabel('Pago', 'status')}</th>
                 <th className="text-left py-3 px-2">{renderSortLabel('Entrega', 'delivery')}</th>
-                <th className="text-right py-3 px-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -384,6 +440,8 @@ export function VentasList({ ventas, onFilterChange, onEdit }: VentasListProps) 
                   onEdit={onEdit}
                   onDelete={handleDelete}
                   isDeleting={deleteMutation.isPending}
+                  isSelected={selectedVentaId === venta.id}
+                  onRowClick={() => handleRowClick(venta.id)}
                 />
               ))}
             </tbody>

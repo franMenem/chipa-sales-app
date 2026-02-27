@@ -10,7 +10,7 @@ export function useRecipeWithLotes(productoId: string, productos: ProductoWithCo
   const [loteOrder, setLoteOrder] = useState<Record<string, string[]>>({});
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
 
-  const getOrderedLotesFromMap = (
+  const getOrderedLotesFromMap = useCallback((
     recipeItem: RecipeItemWithLotes,
     orderMap: Record<string, string[]>
   ): InsumoLote[] => {
@@ -23,11 +23,11 @@ export function useRecipeWithLotes(productoId: string, productos: ProductoWithCo
       if (ordered.length > 0) return ordered;
     }
     return recipeItem.lotes;
-  };
+  }, []);
 
   const getOrderedLotes = useCallback(
     (recipeItem: RecipeItemWithLotes) => getOrderedLotesFromMap(recipeItem, loteOrder),
-    [loteOrder]
+    [loteOrder, getOrderedLotesFromMap]
   );
 
   const moveLoteUp = (insumoId: string | null, loteIndex: number) => {

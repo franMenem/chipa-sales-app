@@ -126,6 +126,54 @@ export function useUpdateProducto() {
   });
 }
 
+// Archive (soft-delete) producto — sets is_active = false
+export function useArchiveProducto() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('productos')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateProductosRelated(queryClient);
+      toast.success('Receta archivada', 'La receta se ocultó de la lista');
+    },
+    onError: (error: Error) => {
+      toast.error('Error al archivar receta', error.message);
+    },
+  });
+}
+
+// Restore (unarchive) producto — sets is_active = true
+export function useRestoreProducto() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('productos')
+        .update({ is_active: true })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateProductosRelated(queryClient);
+      toast.success('Receta restaurada', 'La receta volvió a la lista activa');
+    },
+    onError: (error: Error) => {
+      toast.error('Error al restaurar receta', error.message);
+    },
+  });
+}
+
 // Delete producto
 export function useDeleteProducto() {
   const queryClient = useQueryClient();

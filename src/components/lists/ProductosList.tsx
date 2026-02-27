@@ -15,6 +15,8 @@ interface ProductosListProps {
   onEdit: (producto: ProductoWithCost) => void;
   onQuickProduce: (producto: ProductoWithCost) => void;
   onUndo: (producto: ProductoWithCost) => void;
+  onArchive: (producto: ProductoWithCost) => void;
+  onRestore?: (producto: ProductoWithCost) => void; // present when showing archived
   isQuickProducing: boolean;
 }
 
@@ -24,31 +26,31 @@ interface ProductoCardProps {
   onEdit: (producto: ProductoWithCost) => void;
   onQuickProduce: (producto: ProductoWithCost) => void;
   onUndo: (producto: ProductoWithCost) => void;
+  onArchive: (producto: ProductoWithCost) => void;
+  onRestore?: (producto: ProductoWithCost) => void;
   isQuickProducing: boolean;
 }
 
-const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickProducing }: ProductoCardProps) => {
+const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, onArchive, onRestore, isQuickProducing }: ProductoCardProps) => {
+  const isArchived = !!onRestore; // archived view when onRestore is provided
   const hasLowStock = producto.finished_stock < 10;
   const hasNoStock = producto.finished_stock === 0;
   const hasStock = producto.finished_stock >= 1;
 
-  // State for quick produce validation
+  // State for quick produce validation (skip in archived view)
   const [canQuick, setCanQuick] = useState<boolean | null>(null);
   const [quickProduceReason, setQuickProduceReason] = useState<string>('');
   const [canShowUndo, setCanShowUndo] = useState(false);
 
-  // Lazy validation: check if product can be quick-produced
-  // Use random delay to distribute load and prevent 50+ parallel requests
   useEffect(() => {
-    let mounted = true;
+    if (isArchived) return; // no validation needed in archived view
 
-    // Random delay (0-100ms) to distribute API calls over time
+    let mounted = true;
     const timer = setTimeout(() => {
       canQuickProduce(producto.id).then((result) => {
         if (mounted) {
           setCanQuick(result.canProduce);
           setQuickProduceReason(result.reason || '');
-          // Show undo if has stock AND is specific recipe (same validation as quick produce)
           setCanShowUndo(hasStock && result.canProduce);
         }
       });
@@ -58,19 +60,14 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
       mounted = false;
       clearTimeout(timer);
     };
-  }, [producto.id, hasStock]);
+  }, [producto.id, hasStock, isArchived]);
 
   return (
-    <Card>
+    <Card className={isArchived ? 'opacity-75' : undefined}>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 shrink-0">
-              <span className="material-symbols-outlined text-primary text-[18px]">
-                bakery_dining
-              </span>
-            </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                 {producto.name}
@@ -78,26 +75,28 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onQuickProduce(producto)}
-              disabled={!canQuick || isQuickProducing}
-              aria-label={`Fabricar rápido ${producto.name}`}
-              title={
-                canQuick
-                  ? 'Fabricar 1 unidad automáticamente (LIFO, 30% margen)'
-                  : quickProduceReason || 'No disponible para fabricación rápida'
-              }
-            >
-              {isQuickProducing ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-              ) : (
-                <span className="material-symbols-outlined text-[20px]">bolt</span>
-              )}
-            </Button>
-          </div>
+          {!isArchived && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onQuickProduce(producto)}
+                disabled={!canQuick || isQuickProducing}
+                aria-label={`Fabricar rápido ${producto.name}`}
+                title={
+                  canQuick
+                    ? 'Fabricar 1 unidad automáticamente (LIFO, 30% margen)'
+                    : quickProduceReason || 'No disponible para fabricación rápida'
+                }
+              >
+                {isQuickProducing ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">bolt</span>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Metrics */}
@@ -119,20 +118,15 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
             }`}>
               Stock disponible
             </span>
-            <div className="flex items-center gap-2">
-              <span className={`text-base font-semibold ${
-                hasNoStock
-                  ? 'text-red-700 dark:text-red-300'
-                  : hasLowStock
-                  ? 'text-yellow-700 dark:text-yellow-300'
-                  : 'text-primary'
-              }`}>
-                {producto.finished_stock}
-              </span>
-              <span className="material-symbols-outlined text-[18px] text-slate-400">
-                inventory
-              </span>
-            </div>
+            <span className={`text-base font-semibold ${
+              hasNoStock
+                ? 'text-red-700 dark:text-red-300'
+                : hasLowStock
+                ? 'text-yellow-700 dark:text-yellow-300'
+                : 'text-primary'
+            }`}>
+              {producto.finished_stock}
+            </span>
           </div>
 
           {/* Cost estimate (reference only) */}
@@ -148,39 +142,67 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
 
         {/* Acciones */}
         <div className="flex items-center gap-2 pt-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="edit"
-            onClick={() => onEdit(producto)}
-            className="flex-1 sm:flex-none"
-            aria-label={`Editar ${producto.name}`}
-          >
-            <span className="hidden sm:inline">Editar</span>
-          </Button>
-          {canShowUndo && (
+          {isArchived ? (
+            // Archived view: only restore button
             <Button
               variant="secondary"
               size="sm"
-              icon="undo"
-              onClick={() => onUndo(producto)}
+              onClick={() => onRestore!(producto)}
               className="flex-1 sm:flex-none"
-              aria-label={`Deshacer última fabricación de ${producto.name}`}
+              aria-label={`Restaurar receta ${producto.name}`}
             >
-              <span className="hidden sm:inline">Deshacer</span>
+              <span className="material-symbols-outlined text-[18px]">visibility</span>
+              <span className="ml-1">Restaurar</span>
             </Button>
+          ) : (
+            // Active view: edit + undo + archive
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="edit"
+                onClick={() => onEdit(producto)}
+                className="flex-1 sm:flex-none"
+                aria-label={`Editar ${producto.name}`}
+              >
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+              {canShowUndo && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon="undo"
+                  onClick={() => onUndo(producto)}
+                  className="flex-1 sm:flex-none"
+                  aria-label={`Deshacer última fabricación de ${producto.name}`}
+                >
+                  <span className="hidden sm:inline">Deshacer</span>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onArchive(producto)}
+                aria-label={`Ocultar receta ${producto.name}`}
+                title="Ocultar receta de la lista"
+              >
+                <span className="material-symbols-outlined text-[20px]">visibility_off</span>
+              </Button>
+            </>
           )}
         </div>
 
         {/* Info note */}
-        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-          <span className="material-symbols-outlined text-[14px]">
-            info
-          </span>
-          <span>
-            El precio y margen se configuran al fabricar stock
-          </span>
-        </div>
+        {!isArchived && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">
+              info
+            </span>
+            <span>
+              El precio y margen se configuran al fabricar stock
+            </span>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -188,10 +210,11 @@ const ProductoCard = memo(({ producto, onEdit, onQuickProduce, onUndo, isQuickPr
 
 ProductoCard.displayName = 'ProductoCard';
 
-export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQuickProducing }: ProductosListProps) {
+export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, onArchive, onRestore, isQuickProducing }: ProductosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const parentRef = useRef<HTMLDivElement>(null);
+  const isArchived = !!onRestore;
 
   // Memoize filtered results with debounced search
   const filteredProductos = useMemo(
@@ -217,13 +240,13 @@ export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQui
     return (
       <div className="text-center py-12">
         <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-6xl mb-4">
-          bakery_dining
+          {isArchived ? 'inventory_2' : 'bakery_dining'}
         </span>
         <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-          No hay recetas
+          {isArchived ? 'No hay recetas archivadas' : 'No hay recetas'}
         </h3>
         <p className="text-slate-700 dark:text-slate-300">
-          Agrega tu primera receta para comenzar
+          {isArchived ? 'Las recetas que ocultes aparecerán aquí' : 'Agrega tu primera receta para comenzar'}
         </p>
       </div>
     );
@@ -284,6 +307,8 @@ export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQui
                       onEdit={onEdit}
                       onQuickProduce={onQuickProduce}
                       onUndo={onUndo}
+                      onArchive={onArchive}
+                      onRestore={onRestore}
                       isQuickProducing={isQuickProducing}
                     />
                   </div>
@@ -301,6 +326,8 @@ export function ProductosList({ productos, onEdit, onQuickProduce, onUndo, isQui
               onEdit={onEdit}
               onQuickProduce={onQuickProduce}
               onUndo={onUndo}
+              onArchive={onArchive}
+              onRestore={onRestore}
               isQuickProducing={isQuickProducing}
             />
           ))}

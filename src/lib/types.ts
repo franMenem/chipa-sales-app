@@ -68,6 +68,7 @@ export interface Producto {
   id: string;
   user_id: string;
   name: string;
+  is_active: boolean;
   finished_stock: number; // Total stock (sum of all stock_fabricado batches)
   created_at: string;
   updated_at: string;

@@ -88,6 +88,39 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
+ * Formats a date as a compact dash-separated string (e.g., "26-ene-2026")
+ * @param date - Date to format (string or Date object)
+ * @returns Compact formatted date string
+ */
+export function formatShortDate(date: string | Date): string {
+  const d = typeof date === 'string' && date.length === 10
+    ? new Date(date + 'T12:00:00')
+    : typeof date === 'string'
+      ? new Date(date)
+      : date;
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short' })
+    .format(d)
+    .replace('.', '');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+/**
+ * Parses a date into { dayMonth: "25/01", year: "2026" }
+ */
+export function formatDayMonthYear(date: string | Date): { dayMonth: string; year: string } {
+  const d = typeof date === 'string' && date.length === 10
+    ? new Date(date + 'T12:00:00')
+    : typeof date === 'string'
+      ? new Date(date)
+      : date;
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  return { dayMonth: `${day}/${month}`, year: d.getFullYear().toString() };
+}
+
+/**
  * Formats a date as a time string (e.g., "14:30")
  * @param date - Date to format (string or Date object)
  * @returns Formatted time string

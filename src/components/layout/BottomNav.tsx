@@ -11,7 +11,6 @@ const primaryItems = [
 
 const moreItems = [
   { path: ROUTES.INSUMOS, icon: 'inventory_2', label: 'Insumos' },
-  { path: ROUTES.CATEGORIAS, icon: 'category', label: 'Categorías' },
   { path: ROUTES.COSTOS_FIJOS, icon: 'payments', label: 'Costos Fijos' },
   { path: ROUTES.GASTOS, icon: 'account_balance_wallet', label: 'Mis Gastos' },
   { path: ROUTES.DEUDAS, icon: 'credit_card', label: 'Deudas' },
@@ -57,7 +56,7 @@ export function BottomNav() {
       {/* "More" menu popover */}
       {showMore && (
         <div className="absolute bottom-full left-0 w-full px-3 pb-2 animate-[slideUpFadeIn_200ms_ease-out]">
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-clip">
             {moreItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (

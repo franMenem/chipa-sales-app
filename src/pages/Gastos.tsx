@@ -6,8 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { GastoForm } from '../components/forms/GastoForm';
-import { GastosTrendChart } from '../components/charts/GastosTrendChart';
-import { useGastoConceptos, useGastos, useGastosTrend } from '../hooks/queries/useGastosQueries';
+import { useGastoConceptos, useGastos } from '../hooks/queries/useGastosQueries';
 import { useCreateGasto, useUpdateGasto, useDeleteGasto } from '../hooks/mutations/useGastosMutations';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
@@ -19,7 +18,6 @@ export function Gastos() {
   const [startDate, setStartDate] = useState(getDaysAgoForInput(30));
   const [endDate, setEndDate] = useState(getTodayForInput());
   const [conceptoFilter, setConceptoFilter] = useState<string>('');
-  const [chartConceptoId, setChartConceptoId] = useState<string>('');
 
   const { data: conceptos } = useGastoConceptos();
   const { data: gastos, isLoading, error } = useGastos({
@@ -27,8 +25,6 @@ export function Gastos() {
     endDate,
     concepto_id: conceptoFilter || undefined,
   });
-  const { data: trendData } = useGastosTrend(chartConceptoId);
-
   const createMutation = useCreateGasto();
   const updateMutation = useUpdateGasto();
   const deleteMutation = useDeleteGasto();
@@ -92,10 +88,6 @@ export function Gastos() {
     }
   };
 
-  const selectedConcepto = useMemo(() => {
-    return conceptos?.find(c => c.id === chartConceptoId);
-  }, [conceptos, chartConceptoId]);
-
   return (
     <Layout
       title="Mis Gastos"
@@ -156,28 +148,6 @@ export function Gastos() {
             </div>
           </div>
         </Card>
-
-        {/* Chart Section */}
-        {conceptoOptions.length > 0 && (
-          <Card>
-            <div className="space-y-3">
-              <Select
-                label="Ver tendencia por concepto"
-                options={[{ value: '', label: 'Seleccioná un concepto' }, ...conceptoOptions]}
-                value={chartConceptoId}
-                onChange={(e) => setChartConceptoId(e.target.value)}
-              />
-              {trendData && trendData.length > 0 && selectedConcepto && (
-                <GastosTrendChart data={trendData} conceptoName={selectedConcepto.name} />
-              )}
-              {chartConceptoId && trendData && trendData.length === 0 && (
-                <p className="text-center text-slate-500 dark:text-slate-400 py-4">
-                  No hay datos para mostrar en este período
-                </p>
-              )}
-            </div>
-          </Card>
-        )}
 
         {/* Table */}
         {isLoading ? (

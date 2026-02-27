@@ -17,11 +17,6 @@ export function Sidebar() {
       label: 'Insumos',
     },
     {
-      path: ROUTES.CATEGORIAS,
-      icon: 'category',
-      label: 'Categorías',
-    },
-    {
       path: ROUTES.PRODUCTOS,
       icon: 'bakery_dining',
       label: 'Recetas',
@@ -91,7 +86,7 @@ export function Sidebar() {
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-primary/10 text-primary font-medium'
                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
@@ -122,7 +117,7 @@ export function Sidebar() {
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-primary/10 text-primary font-medium'
                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'

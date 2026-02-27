@@ -5,6 +5,7 @@ import { ProductoForm } from '../components/forms/ProductoForm';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { ProductosList } from '../components/lists/ProductosList';
 import { useProductos } from '../hooks/queries/useProductosQueries';
+import { useArchiveProducto, useRestoreProducto } from '../hooks/mutations/useProductosMutations';
 import { useQuickProduce } from '../hooks/useQuickProduce';
 import { useReverseProduction } from '../hooks/useProduction';
 import { useToast } from '../hooks/useToast';
@@ -20,13 +21,20 @@ export function Productos() {
     recipe_items: RecipeItemFormData[];
   } | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
-  const { data: productos, isLoading, error } = useProductos();
+  const [showArchived, setShowArchived] = useState(false);
+
+  const { data: productos, isLoading, error } = useProductos(true);
+  const { data: archivedProductos, isLoading: isLoadingArchived } = useProductos(false);
 
   // Quick produce state and hook
   const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
   const [selectedProductoForProduce, setSelectedProductoForProduce] = useState<ProductoWithCost | null>(null);
   const { quickProduce, isProducing } = useQuickProduce();
   const reverseMutation = useReverseProduction();
+  const archiveMutation = useArchiveProducto();
+  const restoreMutation = useRestoreProducto();
+
+  const archivedCount = archivedProductos?.length ?? 0;
 
   const handleAdd = () => {
     setEditingProducto(null);
@@ -68,6 +76,14 @@ export function Productos() {
     }
   };
 
+  const handleArchive = (producto: ProductoWithCost) => {
+    archiveMutation.mutate(producto.id);
+  };
+
+  const handleRestore = (producto: ProductoWithCost) => {
+    restoreMutation.mutate(producto.id);
+  };
+
   const handleUndo = async (producto: ProductoWithCost) => {
     try {
       const productionId = await fetchLatestProductionHistory(producto.id);
@@ -86,21 +102,44 @@ export function Productos() {
     }
   };
 
+  const isListLoading = showArchived ? isLoadingArchived : isLoading;
+  const displayedProductos = showArchived ? (archivedProductos || []) : (productos || []);
+
   return (
     <Layout
       title="Recetas"
       subtitle="Gestión de recetas"
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Button icon="add" size="sm" onClick={handleAdd}>
-            Nueva Receta
+        <div className="flex items-center gap-2 flex-wrap">
+          {!showArchived && (
+            <Button icon="add" size="sm" onClick={handleAdd}>
+              Nueva Receta
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowArchived((v) => !v)}
+            aria-pressed={showArchived}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {showArchived ? 'visibility' : 'visibility_off'}
+            </span>
+            <span className="ml-1">
+              {showArchived
+                ? 'Ver activas'
+                : `Archivadas${archivedCount > 0 ? ` (${archivedCount})` : ''}`}
+            </span>
           </Button>
         </div>
-        {isLoading ? (
+
+        {isListLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mb-4" />
-            <p className="text-slate-700 dark:text-slate-300">Cargando recetas...</p>
+            <p className="text-slate-700 dark:text-slate-300">
+              {showArchived ? 'Cargando recetas archivadas...' : 'Cargando recetas...'}
+            </p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -116,10 +155,12 @@ export function Productos() {
           </div>
         ) : (
           <ProductosList
-            productos={productos || []}
+            productos={displayedProductos}
             onEdit={handleEdit}
             onQuickProduce={handleQuickProduce}
             onUndo={handleUndo}
+            onArchive={handleArchive}
+            onRestore={showArchived ? handleRestore : undefined}
             isQuickProducing={isProducing}
           />
         )}

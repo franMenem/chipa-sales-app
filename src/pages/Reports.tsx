@@ -4,7 +4,6 @@ import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { IncomeVsCostChart } from '../components/charts/IncomeVsCostChart';
 import { useTopProducts, useDailyProfitTrend } from '../hooks/useDashboard';
 import { useInsumos } from '../hooks/useInsumos';
 import { useVentas } from '../hooks/queries/useVentasQueries';
@@ -169,16 +168,6 @@ export function Reports() {
             </p>
           </Card>
         </div>
-
-        {/* Chart */}
-        {profitTrend && profitTrend.length > 0 && (
-          <Card>
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
-              Análisis de Ingresos, Costos y Ganancias
-            </h3>
-            <IncomeVsCostChart data={profitTrend} />
-          </Card>
-        )}
 
         {/* Top Products Table */}
         {topProducts && topProducts.length > 0 && (

@@ -5,9 +5,10 @@ import type { ProductoWithCost, RecipeItem } from '../../lib/types';
 import { STALE_TIME } from '../../lib/constants';
 
 // Fetch all productos with calculated costs
-export function useProductos() {
+// isActive: true = activas (default), false = archivadas
+export function useProductos(isActive = true) {
   return useQuery({
-    queryKey: ['productos'],
+    queryKey: ['productos', { isActive }],
     staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
       const user = await getCurrentUser();
@@ -16,6 +17,7 @@ export function useProductos() {
         .from('productos_with_cost')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', isActive)
         .order('name', { ascending: true });
 
       if (error) throw error;
