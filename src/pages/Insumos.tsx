@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
 import { InsumosList } from '../components/lists/InsumosList';
 import { useAllInsumoLotes } from '../hooks/useInsumoLotes';
@@ -50,7 +50,6 @@ export function Insumos() {
       title="Insumos"
       subtitle="Ingredientes - LIFO"
     >
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button
@@ -68,6 +67,7 @@ export function Insumos() {
           >
             Historial
           </Button>
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -90,7 +90,6 @@ export function Insumos() {
           <InsumosList lotes={lotes || []} onEditLote={handleEditLote} />
         )}
       </div>
-      </PullToRefresh>
 
       <AddInsumoBatchForm
         isOpen={isAddBatchModalOpen}

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { VentaForm } from '../components/forms/VentaForm';
 import { VentasList } from '../components/lists/VentasList';
 import { useVentas } from '../hooks/queries/useVentasQueries';
@@ -40,12 +40,12 @@ export function Ventas() {
       title="Ventas"
       subtitle="Registro de ventas"
     >
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button icon="add" size="sm" onClick={handleAdd}>
             Nueva Venta
           </Button>
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -68,7 +68,6 @@ export function Ventas() {
           <VentasList ventas={ventas || []} onFilterChange={setFilters} onEdit={handleEdit} />
         )}
       </div>
-      </PullToRefresh>
 
       <VentaForm isOpen={isModalOpen} onClose={handleCloseModal} editData={editingVenta || undefined} />
     </Layout>

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { CategoriaForm } from '../components/forms/CategoriaForm';
 import { useTopProducts } from '../hooks/useDashboard';
 import { useCategorias } from '../hooks/queries/useCategoriasQueries';
@@ -62,8 +62,10 @@ export function Dashboard() {
 
   return (
     <Layout title="Inicio" subtitle="Resumen">
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
+        </div>
         {/* Productos más vendidos */}
         {topProducts && topProducts.length > 0 ? (
           <Card>
@@ -171,7 +173,6 @@ export function Dashboard() {
           )}
         </Card>
       </div>
-      </PullToRefresh>
 
       <CategoriaForm
         isOpen={isCatFormOpen}

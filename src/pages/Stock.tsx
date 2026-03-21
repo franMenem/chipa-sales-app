@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { useProductos } from '../hooks/queries/useProductosQueries';
@@ -78,7 +78,6 @@ export function Stock() {
       title="Stock"
       subtitle="Inventario de productos e insumos"
     >
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button
@@ -105,6 +104,7 @@ export function Stock() {
           >
             Historial
           </Button>
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -244,8 +244,6 @@ export function Stock() {
         onClose={closeProduceModal}
         preselectedProductoId={selectedProductoId}
       />
-
-      </PullToRefresh>
 
       <AdjustFinishedStockForm
         isOpen={isAdjustModalOpen}

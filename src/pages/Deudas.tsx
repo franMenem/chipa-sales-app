@@ -11,7 +11,7 @@ import { DeudaCard } from '../components/lists/DeudaCard';
 import { useDeudas, useDeudaPagos } from '../hooks/queries/useDeudasQueries';
 import { useCreateDeuda, useUpdateDeuda, useDeleteDeuda, useCreateDeudaPago, useDeleteDeudaPago } from '../hooks/mutations/useDeudasMutations';
 import { useDeudaModals } from '../hooks/domain/useDeudaModals';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { formatCurrency } from '../utils/formatters';
 import { queryKeys } from '../lib/queryKeys';
 import type { Deuda, DeudaFormData, DeudaPagoFormData } from '../lib/types';
@@ -109,13 +109,13 @@ export function Deudas() {
 
   return (
     <Layout title="Deudas" subtitle="Control de deudas y pagos">
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-2">
           <Button icon="add" size="sm" onClick={handleAddDeuda}>
             Nueva Deuda
           </Button>
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
 
         {/* Summary cards */}
@@ -278,7 +278,6 @@ export function Deudas() {
           />
         )}
       </Modal>
-      </PullToRefresh>
     </Layout>
   );
 }

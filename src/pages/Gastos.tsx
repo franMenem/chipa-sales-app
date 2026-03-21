@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { GastoForm } from '../components/forms/GastoForm';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
+
 import { useGastoConceptos, useGastos } from '../hooks/queries/useGastosQueries';
 import { queryKeys } from '../lib/queryKeys';
 import { useCreateGasto, useUpdateGasto, useDeleteGasto } from '../hooks/mutations/useGastosMutations';
@@ -95,13 +95,13 @@ export function Gastos() {
       title="Mis Gastos"
       subtitle="Control de gastos"
     >
-      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         {/* Header with Add Button */}
         <div className="flex items-center gap-2">
           <Button icon="add" size="sm" onClick={handleAdd}>
             Nuevo Gasto
           </Button>
+          <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
 
         {/* Monthly Total Summary */}
@@ -336,7 +336,6 @@ export function Gastos() {
           isSubmitting={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
-      </PullToRefresh>
     </Layout>
   );
 }
