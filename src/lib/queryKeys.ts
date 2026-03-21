@@ -3,6 +3,22 @@
  * Use these instead of inline string arrays in useQuery / invalidateQueries calls.
  */
 export const queryKeys = {
+  dashboard: {
+    all: () => ['dashboard'] as const,
+  },
+  ventas: {
+    all: () => ['ventas'] as const,
+  },
+  insumos: {
+    all: () => ['insumos'] as const,
+    lotes: () => ['insumo-lotes'] as const,
+  },
+  productos: {
+    all: () => ['productos'] as const,
+  },
+  stock: {
+    fabricadoTotals: () => ['stock-fabricado-totals'] as const,
+  },
   gastos: {
     all: () => ['gastos'] as const,
     filtered: (filters?: { startDate?: string; endDate?: string; concepto_id?: string }) =>

@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
 import { InsumosList } from '../components/lists/InsumosList';
 import { useAllInsumoLotes } from '../hooks/useInsumoLotes';
+import { queryKeys } from '../lib/queryKeys';
 import type { Insumo, InsumoLote } from '../lib/types';
 
 type LoteWithInsumo = InsumoLote & { insumo: Insumo };
 
 export function Insumos() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
   const [selectedInsumoId, setSelectedInsumoId] = useState<string | undefined>(undefined);
   const [loteToEdit, setLoteToEdit] = useState<LoteWithInsumo | null>(null);
@@ -34,11 +38,19 @@ export function Insumos() {
     setLoteToEdit(null);
   };
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.insumos.lotes() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.insumos.all() }),
+    ]);
+  }, [queryClient]);
+
   return (
     <Layout
       title="Insumos"
       subtitle="Ingredientes - LIFO"
     >
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button
@@ -78,6 +90,7 @@ export function Insumos() {
           <InsumosList lotes={lotes || []} onEditLote={handleEditLote} />
         )}
       </div>
+      </PullToRefresh>
 
       <AddInsumoBatchForm
         isOpen={isAddBatchModalOpen}

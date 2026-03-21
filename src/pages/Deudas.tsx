@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -10,7 +11,9 @@ import { DeudaCard } from '../components/lists/DeudaCard';
 import { useDeudas, useDeudaPagos } from '../hooks/queries/useDeudasQueries';
 import { useCreateDeuda, useUpdateDeuda, useDeleteDeuda, useCreateDeudaPago, useDeleteDeudaPago } from '../hooks/mutations/useDeudasMutations';
 import { useDeudaModals } from '../hooks/domain/useDeudaModals';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { formatCurrency } from '../utils/formatters';
+import { queryKeys } from '../lib/queryKeys';
 import type { Deuda, DeudaFormData, DeudaPagoFormData } from '../lib/types';
 
 const STATUS_OPTIONS = [
@@ -21,6 +24,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function Deudas() {
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
   const {
     isDeudaModalOpen,
@@ -71,6 +75,10 @@ export function Deudas() {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.deudas.all() });
+  }, [queryClient]);
+
   const onSubmitDeuda = async (data: DeudaFormData) => {
     try {
       if (editingDeuda) {
@@ -101,6 +109,7 @@ export function Deudas() {
 
   return (
     <Layout title="Deudas" subtitle="Control de deudas y pagos">
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-2">
@@ -269,6 +278,7 @@ export function Deudas() {
           />
         )}
       </Modal>
+      </PullToRefresh>
     </Layout>
   );
 }

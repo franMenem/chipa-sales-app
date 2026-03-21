@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { CategoriaForm } from '../components/forms/CategoriaForm';
 import { useTopProducts } from '../hooks/useDashboard';
 import { useCategorias } from '../hooks/queries/useCategoriasQueries';
 import { useDeleteCategoria } from '../hooks/mutations/useCategoriasMutations';
 import { formatCurrency } from '../utils/formatters';
+import { queryKeys } from '../lib/queryKeys';
 import type { Categoria } from '../lib/types';
 
 export function Dashboard() {
+  const queryClient = useQueryClient();
   const { data: topProducts, isLoading } = useTopProducts(5);
   const { data: categorias } = useCategorias();
   const deleteMutation = useDeleteCategoria();
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.ventas.all() }),
+    ]);
+  }, [queryClient]);
 
   const [isCatFormOpen, setIsCatFormOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
@@ -51,6 +62,7 @@ export function Dashboard() {
 
   return (
     <Layout title="Inicio" subtitle="Resumen">
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         {/* Productos más vendidos */}
         {topProducts && topProducts.length > 0 ? (
@@ -159,6 +171,7 @@ export function Dashboard() {
           )}
         </Card>
       </div>
+      </PullToRefresh>
 
       <CategoriaForm
         isOpen={isCatFormOpen}

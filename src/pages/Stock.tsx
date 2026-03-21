@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
 import { useProductos } from '../hooks/queries/useProductosQueries';
@@ -11,9 +13,11 @@ import { useAutoProduceAll } from '../hooks/mutations/useAutoProduceAll';
 import { useProductionModals } from '../hooks/domain/useProductionModals';
 import { formatCurrency } from '../utils/formatters';
 import { calculateProducibleUnits } from '../utils/productionHelpers';
+import { queryKeys } from '../lib/queryKeys';
 
 export function Stock() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
   const { data: stockFabricadoTotals } = useStockFabricadoTotals();
@@ -30,6 +34,14 @@ export function Stock() {
 
   const autoProduceMutation = useAutoProduceAll();
   const isLoading = loadingProductos || loadingInsumos;
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.productos.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.insumos.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.stock.fabricadoTotals() }),
+    ]);
+  }, [queryClient]);
 
   // Candidatos para auto-fabricar: productos con insumos suficientes y sin categorías
   const autoCandidates = useMemo(() => {
@@ -66,6 +78,7 @@ export function Stock() {
       title="Stock"
       subtitle="Inventario de productos e insumos"
     >
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Button
@@ -231,6 +244,8 @@ export function Stock() {
         onClose={closeProduceModal}
         preselectedProductoId={selectedProductoId}
       />
+
+      </PullToRefresh>
 
       <AdjustFinishedStockForm
         isOpen={isAdjustModalOpen}

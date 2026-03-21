@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -6,7 +7,9 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { GastoForm } from '../components/forms/GastoForm';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 import { useGastoConceptos, useGastos } from '../hooks/queries/useGastosQueries';
+import { queryKeys } from '../lib/queryKeys';
 import { useCreateGasto, useUpdateGasto, useDeleteGasto } from '../hooks/mutations/useGastosMutations';
 import { useMonthlyGastoTotal } from '../hooks/domain/useMonthlyGastoTotal';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -14,6 +17,7 @@ import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
 import type { GastoWithConcepto, GastoFormData } from '../lib/types';
 
 export function Gastos() {
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGasto, setEditingGasto] = useState<GastoWithConcepto | null>(null);
   const [startDate, setStartDate] = useState(getDaysAgoForInput(30));
@@ -79,11 +83,19 @@ export function Gastos() {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.gastos.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.gastoConceptos.all() }),
+    ]);
+  }, [queryClient]);
+
   return (
     <Layout
       title="Mis Gastos"
       subtitle="Control de gastos"
     >
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-4">
         {/* Header with Add Button */}
         <div className="flex items-center gap-2">
@@ -324,6 +336,7 @@ export function Gastos() {
           isSubmitting={createMutation.isPending || updateMutation.isPending}
         />
       </Modal>
+      </PullToRefresh>
     </Layout>
   );
 }
