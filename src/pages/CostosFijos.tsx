@@ -285,7 +285,7 @@ export function CostosFijos() {
             placeholder="0"
             icon="payments"
             error={errors.amount?.message}
-            helperText="Monto en guaraníes (₲)"
+            helperText="Monto en pesos (ARS)"
             {...register('amount', { valueAsNumber: true })}
           />
 

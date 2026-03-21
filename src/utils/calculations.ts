@@ -1,4 +1,5 @@
 import type { InsumoWithStock, RecipeItem, UnitType } from '../lib/types';
+import { UNIT_BASE_MULTIPLIER } from '../lib/constants';
 
 /**
  * Calculates the base unit cost for an insumo based on its unit type
@@ -10,17 +11,7 @@ export function calculateBaseUnitCost(
   pricePerUnit: number,
   unitType: UnitType
 ): number {
-  switch (unitType) {
-    case 'kg':
-    case 'l':
-      return pricePerUnit / 1000;
-    case 'g':
-    case 'ml':
-    case 'unit':
-      return pricePerUnit;
-    default:
-      return pricePerUnit;
-  }
+  return pricePerUnit / (UNIT_BASE_MULTIPLIER[unitType] ?? 1);
 }
 
 /**

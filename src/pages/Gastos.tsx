@@ -8,6 +8,7 @@ import { Modal } from '../components/ui/Modal';
 import { GastoForm } from '../components/forms/GastoForm';
 import { useGastoConceptos, useGastos } from '../hooks/queries/useGastosQueries';
 import { useCreateGasto, useUpdateGasto, useDeleteGasto } from '../hooks/mutations/useGastosMutations';
+import { useMonthlyGastoTotal } from '../hooks/domain/useMonthlyGastoTotal';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getTodayForInput, getDaysAgoForInput } from '../utils/dates';
 import type { GastoWithConcepto, GastoFormData } from '../lib/types';
@@ -29,17 +30,7 @@ export function Gastos() {
   const updateMutation = useUpdateGasto();
   const deleteMutation = useDeleteGasto();
 
-  // Calculate monthly total
-  const monthlyTotal = useMemo(() => {
-    if (!gastos) return 0;
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
-    return gastos
-      .filter(g => g.payment_date >= firstDayOfMonth && g.payment_date <= lastDayOfMonth)
-      .reduce((sum, gasto) => sum + gasto.amount, 0);
-  }, [gastos]);
+  const monthlyTotal = useMonthlyGastoTotal(gastos);
 
   const conceptoOptions = useMemo(() => {
     return conceptos?.map((concepto) => ({

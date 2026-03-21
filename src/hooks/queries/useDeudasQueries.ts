@@ -3,11 +3,12 @@ import { supabase } from '../../lib/supabase';
 import { getCurrentUser } from '../../lib/auth';
 import type { Deuda, DeudaPago } from '../../lib/types';
 import { STALE_TIME } from '../../lib/constants';
+import { queryKeys } from '../../lib/queryKeys';
 
 // Fetch all deudas for current user
 export function useDeudas(statusFilter?: string) {
   return useQuery({
-    queryKey: ['deudas', statusFilter],
+    queryKey: queryKeys.deudas.filtered(statusFilter),
     staleTime: STALE_TIME.FREQUENT,
     queryFn: async () => {
       const user = await getCurrentUser();
@@ -34,7 +35,7 @@ export function useDeudas(statusFilter?: string) {
 // Fetch pagos for a specific deuda
 export function useDeudaPagos(deudaId: string | undefined) {
   return useQuery({
-    queryKey: ['deuda-pagos', deudaId],
+    queryKey: queryKeys.deudas.pagos(deudaId),
     staleTime: STALE_TIME.FREQUENT,
     enabled: !!deudaId,
     queryFn: async () => {

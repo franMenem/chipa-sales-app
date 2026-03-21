@@ -68,3 +68,12 @@ export const STALE_TIME = {
 // Locale and currency
 export const APP_LOCALE = 'es-AR' as const;
 export const APP_CURRENCY = 'ARS' as const;
+
+// Conversion factor: purchase unit → base unit (g / ml / unit)
+export const UNIT_BASE_MULTIPLIER: Record<string, number> = {
+  kg: 1000,
+  l: 1000,
+  g: 1,
+  ml: 1,
+  unit: 1,
+};

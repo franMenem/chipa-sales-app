@@ -64,8 +64,9 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
     setRecipeItems,
   } = useRecipeBuilder([]);
 
-  // Track initialization to prevent infinite loops
-  const prevEditIdRef = useRef<string | undefined>(undefined);
+  // Track initialization to prevent infinite loops.
+  // Uses 'CLOSED' sentinel so re-opening fresh (editData=undefined) always triggers reset.
+  const prevEditIdRef = useRef<string>('CLOSED');
 
   const {
     register,
@@ -98,11 +99,11 @@ export function ProductoForm({ isOpen, onClose, editData }: ProductoFormProps) {
   // Reset form when modal opens/closes or edit data changes
   useEffect(() => {
     if (!isOpen) {
-      prevEditIdRef.current = undefined;
+      prevEditIdRef.current = 'CLOSED';
       return;
     }
 
-    const currentEditId = editData?.id;
+    const currentEditId = editData?.id ?? 'NEW';
 
     // Only initialize if edit ID changed (or opened fresh)
     if (prevEditIdRef.current !== currentEditId) {

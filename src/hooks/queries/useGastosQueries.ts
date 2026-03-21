@@ -3,11 +3,12 @@ import { supabase } from '../../lib/supabase';
 import { getCurrentUser } from '../../lib/auth';
 import type { GastoConcepto, GastoWithConcepto, GastoTrendPoint } from '../../lib/types';
 import { STALE_TIME } from '../../lib/constants';
+import { queryKeys } from '../../lib/queryKeys';
 
 // Fetch all gasto conceptos for current user
 export function useGastoConceptos() {
   return useQuery({
-    queryKey: ['gasto-conceptos'],
+    queryKey: queryKeys.gastoConceptos.all(),
     staleTime: STALE_TIME.MASTER_DATA,
     queryFn: async () => {
       const user = await getCurrentUser();
@@ -27,7 +28,7 @@ export function useGastoConceptos() {
 // Fetch gastos with optional date filters
 export function useGastos(filters?: { startDate?: string; endDate?: string; concepto_id?: string }) {
   return useQuery({
-    queryKey: ['gastos', filters],
+    queryKey: queryKeys.gastos.filtered(filters),
     staleTime: STALE_TIME.FREQUENT,
     queryFn: async () => {
       const user = await getCurrentUser();
@@ -66,7 +67,7 @@ export function useGastos(filters?: { startDate?: string; endDate?: string; conc
 // Fetch gastos trend for a specific concepto (for charts)
 export function useGastosTrend(conceptoId: string | undefined) {
   return useQuery({
-    queryKey: ['gastos-trend', conceptoId],
+    queryKey: queryKeys.gastos.trend(conceptoId),
     staleTime: STALE_TIME.STANDARD,
     enabled: !!conceptoId,
     queryFn: async () => {
@@ -94,7 +95,7 @@ export function useGastosTrend(conceptoId: string | undefined) {
 // Fetch monthly totals per concepto (for overview chart)
 export function useGastosMonthlyByConcepto() {
   return useQuery({
-    queryKey: ['gastos-monthly-by-concepto'],
+    queryKey: queryKeys.gastos.monthlyByConcepto(),
     staleTime: STALE_TIME.STANDARD,
     queryFn: async () => {
       const user = await getCurrentUser();

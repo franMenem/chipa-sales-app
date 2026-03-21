@@ -9,6 +9,7 @@ import { DeudaPagoForm } from '../components/forms/DeudaPagoForm';
 import { DeudaCard } from '../components/lists/DeudaCard';
 import { useDeudas, useDeudaPagos } from '../hooks/queries/useDeudasQueries';
 import { useCreateDeuda, useUpdateDeuda, useDeleteDeuda, useCreateDeudaPago, useDeleteDeudaPago } from '../hooks/mutations/useDeudasMutations';
+import { useDeudaModals } from '../hooks/domain/useDeudaModals';
 import { formatCurrency } from '../utils/formatters';
 import type { Deuda, DeudaFormData, DeudaPagoFormData } from '../lib/types';
 
@@ -21,11 +22,20 @@ const STATUS_OPTIONS = [
 
 export function Deudas() {
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isDeudaModalOpen, setIsDeudaModalOpen] = useState(false);
-  const [isPagoModalOpen, setIsPagoModalOpen] = useState(false);
-  const [editingDeuda, setEditingDeuda] = useState<Deuda | null>(null);
-  const [selectedDeuda, setSelectedDeuda] = useState<Deuda | null>(null);
-  const [expandedDeudaId, setExpandedDeudaId] = useState<string | null>(null);
+  const {
+    isDeudaModalOpen,
+    isPagoModalOpen,
+    editingDeuda,
+    selectedDeuda,
+    expandedDeudaId,
+    handleAddDeuda,
+    handleEditDeuda,
+    handleAddPago,
+    closeDeudaModal,
+    closePagoModal,
+    toggleExpand,
+    collapseDeuda,
+  } = useDeudaModals();
 
   const { data: deudas, isLoading, error } = useDeudas(statusFilter);
   const { data: pagos } = useDeudaPagos(expandedDeudaId ?? undefined);
@@ -48,26 +58,11 @@ export function Deudas() {
     );
   }, [deudas]);
 
-  const handleAddDeuda = () => {
-    setEditingDeuda(null);
-    setIsDeudaModalOpen(true);
-  };
-
-  const handleEditDeuda = (deuda: Deuda) => {
-    setEditingDeuda(deuda);
-    setIsDeudaModalOpen(true);
-  };
-
   const handleDeleteDeuda = async (deuda: Deuda) => {
     if (window.confirm(`¿Eliminar la deuda "${deuda.description}"? Esto eliminará también todos sus pagos.`)) {
       await deleteDeudaMutation.mutateAsync(deuda.id);
-      if (expandedDeudaId === deuda.id) setExpandedDeudaId(null);
+      collapseDeuda(deuda.id);
     }
-  };
-
-  const handleAddPago = (deuda: Deuda) => {
-    setSelectedDeuda(deuda);
-    setIsPagoModalOpen(true);
   };
 
   const handleDeletePago = async (pagoId: string) => {
@@ -83,8 +78,7 @@ export function Deudas() {
       } else {
         await createDeudaMutation.mutateAsync(data);
       }
-      setIsDeudaModalOpen(false);
-      setEditingDeuda(null);
+      closeDeudaModal();
     } catch (err) {
       console.error(err);
     }
@@ -93,30 +87,17 @@ export function Deudas() {
   const onSubmitPago = async (data: DeudaPagoFormData) => {
     try {
       await createPagoMutation.mutateAsync(data);
-      setIsPagoModalOpen(false);
-      setSelectedDeuda(null);
+      closePagoModal();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleCloseDeudaModal = () => {
-    if (!createDeudaMutation.isPending && !updateDeudaMutation.isPending) {
-      setIsDeudaModalOpen(false);
-      setEditingDeuda(null);
-    }
-  };
+  const handleCloseDeudaModal = () =>
+    closeDeudaModal(createDeudaMutation.isPending || updateDeudaMutation.isPending);
 
-  const handleClosePagoModal = () => {
-    if (!createPagoMutation.isPending) {
-      setIsPagoModalOpen(false);
-      setSelectedDeuda(null);
-    }
-  };
-
-  const toggleExpand = (deudaId: string) => {
-    setExpandedDeudaId(expandedDeudaId === deudaId ? null : deudaId);
-  };
+  const handleClosePagoModal = () =>
+    closePagoModal(createPagoMutation.isPending);
 
   return (
     <Layout title="Deudas" subtitle="Control de deudas y pagos">

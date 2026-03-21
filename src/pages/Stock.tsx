@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
@@ -8,19 +8,25 @@ import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useInsumos } from '../hooks/queries/useInsumosQueries';
 import { useStockFabricadoTotals } from '../hooks/useStockFabricado';
 import { useAutoProduceAll } from '../hooks/mutations/useAutoProduceAll';
+import { useProductionModals } from '../hooks/domain/useProductionModals';
 import { formatCurrency } from '../utils/formatters';
 import { calculateProducibleUnits } from '../utils/productionHelpers';
-import type { ProductoWithCost } from '../lib/types';
 
 export function Stock() {
   const navigate = useNavigate();
   const { data: productos, isLoading: loadingProductos } = useProductos();
   const { data: insumos, isLoading: loadingInsumos } = useInsumos();
   const { data: stockFabricadoTotals } = useStockFabricadoTotals();
-  const [isProduceModalOpen, setIsProduceModalOpen] = useState(false);
-  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
-  const [selectedProductoId, setSelectedProductoId] = useState<string | undefined>(undefined);
-  const [selectedProducto, setSelectedProducto] = useState<ProductoWithCost | null>(null);
+  const {
+    isProduceModalOpen,
+    isAdjustModalOpen,
+    selectedProductoId,
+    selectedProducto,
+    handleProduce,
+    handleAdjustStock,
+    closeProduceModal,
+    closeAdjustModal,
+  } = useProductionModals();
 
   const autoProduceMutation = useAutoProduceAll();
   const isLoading = loadingProductos || loadingInsumos;
@@ -43,25 +49,6 @@ export function Stock() {
     autoProduceMutation.mutate(autoCandidates);
   };
 
-  const handleProduce = (productoId?: string) => {
-    setSelectedProductoId(productoId);
-    setIsProduceModalOpen(true);
-  };
-
-  const handleAdjustStock = (producto: ProductoWithCost) => {
-    setSelectedProducto(producto);
-    setIsAdjustModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsProduceModalOpen(false);
-    setSelectedProductoId(undefined);
-  };
-
-  const handleCloseAdjustModal = () => {
-    setIsAdjustModalOpen(false);
-    setSelectedProducto(null);
-  };
 
   // Ordenar productos por stock terminado (menor a mayor)
   const productosSorted = [...(productos || [])].sort(
@@ -241,13 +228,13 @@ export function Stock() {
 
       <ProduceProductoForm
         isOpen={isProduceModalOpen}
-        onClose={handleCloseModal}
+        onClose={closeProduceModal}
         preselectedProductoId={selectedProductoId}
       />
 
       <AdjustFinishedStockForm
         isOpen={isAdjustModalOpen}
-        onClose={handleCloseAdjustModal}
+        onClose={closeAdjustModal}
         producto={selectedProducto}
       />
     </Layout>

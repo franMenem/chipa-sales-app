@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { ProductoWithCost, InsumoWithStock } from '../../lib/types';
+import { UNIT_BASE_MULTIPLIER } from '../../lib/constants';
 
 /**
  * Calculate available stock for a product including:
@@ -24,12 +25,9 @@ export function useAvailableStock(
         const insumo = insumos.find((i) => i.id === item.insumo_id);
         if (!insumo) return 0;
 
-        // Convert insumo stock to base units
-        let availableInBaseUnits = insumo.total_stock;
-        if (insumo.unit_type === 'kg' || insumo.unit_type === 'l') {
-          // Convert kg/l to g/ml
-          availableInBaseUnits = insumo.total_stock * 1000;
-        }
+        // Convert insumo stock to base units (g / ml / unit)
+        const multiplier = UNIT_BASE_MULTIPLIER[insumo.unit_type] ?? 1;
+        const availableInBaseUnits = insumo.total_stock * multiplier;
 
         // Calculate how many units can be produced with this insumo
         const possibleUnits = Math.floor(

@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 
 /**
  * Invalidate all queries related to production operations
@@ -63,8 +64,8 @@ export async function invalidateCategoriasRelated(queryClient: QueryClient) {
  */
 export async function invalidateDeudasRelated(queryClient: QueryClient) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ['deudas'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['deuda-pagos'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.deudas.all(), exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.deudas.pagosAll(), exact: false, refetchType: 'active' }),
   ]);
 }
 
@@ -74,9 +75,9 @@ export async function invalidateDeudasRelated(queryClient: QueryClient) {
  */
 export async function invalidateGastosRelated(queryClient: QueryClient) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ['gastos'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['gastos-trend'], exact: false, refetchType: 'active' }),
-    queryClient.invalidateQueries({ queryKey: ['gastos-monthly-by-concepto'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.gastos.all(), exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.gastos.trendBase(), exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.gastos.monthlyByConcepto(), refetchType: 'active' }),
     queryClient.invalidateQueries({ queryKey: ['dashboard'], exact: false, refetchType: 'active' }),
   ]);
 }

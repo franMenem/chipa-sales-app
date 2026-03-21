@@ -432,7 +432,7 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId, editi
             min="0"
             placeholder="0.00"
             icon="payments"
-            helperText="Precio total que pagaste en guaraníes (₲)"
+            helperText="Precio total que pagaste en pesos (ARS)"
             value={totalPrice}
             onChange={(e) => setTotalPrice(Number(e.target.value))}
           />
@@ -458,7 +458,7 @@ export function AddInsumoBatchForm({ isOpen, onClose, preselectedInsumoId, editi
             min="0.01"
             placeholder="0.00"
             icon="payments"
-            helperText={`O ingresa directamente el precio en guaraníes (₲) por cada ${unitLabels[unitType]}`}
+            helperText={`O ingresa directamente el precio en pesos (ARS) por cada ${unitLabels[unitType]}`}
             {...register('price_per_unit', {
               valueAsNumber: true,
               required: 'Ingresa el precio',

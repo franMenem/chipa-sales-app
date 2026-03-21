@@ -4,13 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
-import { gastoSchema, gastoConceptoSchema } from '../../utils/validators';
+import { GastoConceptoModal } from './GastoConceptoModal';
+import { gastoSchema } from '../../utils/validators';
 import { PAYMENT_METHODS } from '../../lib/constants';
 import { getTodayForInput } from '../../utils/dates';
 import { useGastoConceptos } from '../../hooks/queries/useGastosQueries';
-import { useCreateGastoConcepto } from '../../hooks/mutations/useGastosMutations';
-import type { GastoFormData, GastoConceptoFormData } from '../../lib/types';
+import type { GastoFormData } from '../../lib/types';
 
 interface GastoFormProps {
   onSubmit: (data: GastoFormData) => Promise<void>;
@@ -22,7 +21,6 @@ interface GastoFormProps {
 export function GastoForm({ onSubmit, defaultValues, formId = 'gasto-form' }: GastoFormProps) {
   const [showConceptoModal, setShowConceptoModal] = useState(false);
   const { data: conceptos } = useGastoConceptos();
-  const createConceptoMutation = useCreateGastoConcepto();
 
   const {
     register,
@@ -38,28 +36,6 @@ export function GastoForm({ onSubmit, defaultValues, formId = 'gasto-form' }: Ga
       notes: '',
     },
   });
-
-  const {
-    register: registerConcepto,
-    handleSubmit: handleSubmitConcepto,
-    reset: resetConcepto,
-    formState: { errors: conceptoErrors, isSubmitting: isSubmittingConcepto },
-  } = useForm<GastoConceptoFormData>({
-    resolver: zodResolver(gastoConceptoSchema),
-    defaultValues: {
-      name: '',
-    },
-  });
-
-  const handleCreateConcepto = async (data: GastoConceptoFormData) => {
-    try {
-      await createConceptoMutation.mutateAsync(data);
-      setShowConceptoModal(false);
-      resetConcepto();
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const conceptoOptions = conceptos?.map((concepto) => ({
     value: concepto.id,
@@ -136,41 +112,10 @@ export function GastoForm({ onSubmit, defaultValues, formId = 'gasto-form' }: Ga
         </div>
       </form>
 
-      {/* Modal para crear nuevo concepto */}
-      <Modal
+      <GastoConceptoModal
         isOpen={showConceptoModal}
-        onClose={() => !isSubmittingConcepto && setShowConceptoModal(false)}
-        title="Nuevo Concepto"
-        size="sm"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => setShowConceptoModal(false)}
-              disabled={isSubmittingConcepto}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmitConcepto(handleCreateConcepto)}
-              disabled={isSubmittingConcepto}
-              icon="add"
-            >
-              {isSubmittingConcepto ? 'Creando...' : 'Crear'}
-            </Button>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmitConcepto(handleCreateConcepto)} className="space-y-4">
-          <Input
-            label="Nombre del concepto"
-            placeholder="Ej: Alquiler, Servicios, Marketing"
-            icon="label"
-            error={conceptoErrors.name?.message}
-            {...registerConcepto('name')}
-          />
-        </form>
-      </Modal>
+        onClose={() => setShowConceptoModal(false)}
+      />
     </>
   );
 }

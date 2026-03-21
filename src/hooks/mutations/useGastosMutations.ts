@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { getCurrentUser } from '../../lib/auth';
 import { useToast } from '../useToast';
 import { invalidateGastosRelated } from '../../utils/cacheInvalidation';
+import { queryKeys } from '../../lib/queryKeys';
 import type { GastoConceptoFormData, GastoFormData } from '../../lib/types';
 
 // Create a new gasto concepto
@@ -28,7 +29,7 @@ export function useCreateGastoConcepto() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gasto-conceptos'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.gastoConceptos.all(), refetchType: 'active' });
       toast.success('Concepto creado', 'El concepto se agregó correctamente');
     },
     onError: (error: Error) => {
