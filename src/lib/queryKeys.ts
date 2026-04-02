@@ -36,4 +36,10 @@ export const queryKeys = {
     pagosAll: () => ['deuda-pagos'] as const,
     pagos: (deudaId?: string) => ['deuda-pagos', deudaId] as const,
   },
+  retiros: {
+    all: () => ['retiros'] as const,
+    filtered: (filters?: { startDate?: string; endDate?: string }) =>
+      ['retiros', filters] as const,
+    monthlyTotal: () => ['retiros', 'monthly-total'] as const,
+  },
 };

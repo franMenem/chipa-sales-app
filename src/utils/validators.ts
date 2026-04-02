@@ -140,6 +140,33 @@ export const deudaPagoSchema = z.object({
 
 export type DeudaPagoSchema = z.infer<typeof deudaPagoSchema>;
 
+// Retiro Insumo validation schema
+export const retiroInsumoSchema = z.object({
+  insumo_id: z.string().min(1, 'Seleccioná un insumo'),
+  lote_id: z.string().min(1, 'Seleccioná un lote'),
+  quantity: z
+    .number()
+    .positive('La cantidad debe ser mayor a 0'),
+  reason: z.enum(['consumo_personal', 'merma', 'ajuste']),
+  notes: z.string().max(500, 'Las notas son demasiado largas').optional(),
+});
+
+export type RetiroInsumoSchema = z.infer<typeof retiroInsumoSchema>;
+
+// Retiro Producto validation schema
+export const retiroProductoSchema = z.object({
+  producto_id: z.string().min(1, 'Seleccioná un producto'),
+  stock_fabricado_id: z.string().min(1, 'Seleccioná un batch'),
+  quantity: z
+    .number()
+    .int('La cantidad debe ser un número entero')
+    .positive('La cantidad debe ser mayor a 0'),
+  reason: z.enum(['consumo_personal', 'merma', 'ajuste']),
+  notes: z.string().max(500, 'Las notas son demasiado largas').optional(),
+});
+
+export type RetiroProductoSchema = z.infer<typeof retiroProductoSchema>;
+
 // Login validation schema
 export const loginSchema = z.object({
   email: z

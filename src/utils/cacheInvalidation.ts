@@ -70,6 +70,21 @@ export async function invalidateDeudasRelated(queryClient: QueryClient) {
 }
 
 /**
+ * Invalidate all queries related to retiros
+ * (used when retiros are created — affects inventory, stock, and dashboard)
+ */
+export async function invalidateRetirosRelated(queryClient: QueryClient) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.retiros.all(), exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['stock-fabricado-totals'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: ['dashboard'], exact: false, refetchType: 'active' }),
+  ]);
+}
+
+/**
  * Invalidate all queries related to gastos
  * (used when gastos or gasto_conceptos are created/updated/deleted)
  */

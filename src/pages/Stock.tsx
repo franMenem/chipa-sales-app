@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 
 import { ProduceProductoForm } from '../components/forms/ProduceProductoForm';
 import { AdjustFinishedStockForm } from '../components/forms/AdjustFinishedStockForm';
+import { RetiroProductoForm } from '../components/forms/RetiroProductoForm';
 import { useProductos } from '../hooks/queries/useProductosQueries';
 import { useInsumos } from '../hooks/queries/useInsumosQueries';
 import { useStockFabricadoTotals } from '../hooks/useStockFabricado';
@@ -32,6 +33,7 @@ export function Stock() {
     closeAdjustModal,
   } = useProductionModals();
 
+  const [isRetiroModalOpen, setIsRetiroModalOpen] = useState(false);
   const autoProduceMutation = useAutoProduceAll();
   const isLoading = loadingProductos || loadingInsumos;
 
@@ -95,6 +97,14 @@ export function Stock() {
             onClick={() => handleProduce()}
           >
             Manual
+          </Button>
+          <Button
+            variant="secondary"
+            icon="remove_shopping_cart"
+            size="sm"
+            onClick={() => setIsRetiroModalOpen(true)}
+          >
+            Descontar
           </Button>
           <Button
             variant="ghost"
@@ -249,6 +259,11 @@ export function Stock() {
         isOpen={isAdjustModalOpen}
         onClose={closeAdjustModal}
         producto={selectedProducto}
+      />
+
+      <RetiroProductoForm
+        isOpen={isRetiroModalOpen}
+        onClose={() => setIsRetiroModalOpen(false)}
       />
     </Layout>
   );

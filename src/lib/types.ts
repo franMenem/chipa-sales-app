@@ -329,6 +329,41 @@ export interface DeudaPagoFormData {
   notes?: string;
 }
 
+// Retiros (withdrawals tracking)
+export type RetiroItemType = 'insumo' | 'producto';
+export type RetiroReason = 'consumo_personal' | 'merma' | 'ajuste';
+
+export interface Retiro {
+  id: string;
+  user_id: string;
+  item_type: RetiroItemType;
+  item_id: string;
+  item_name: string;
+  lote_id: string | null;
+  quantity: number;
+  cost_per_unit: number;
+  total_cost: number; // Generated: quantity * cost_per_unit
+  reason: RetiroReason;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface RetiroInsumoFormData {
+  insumo_id: string;
+  lote_id: string;
+  quantity: number;
+  reason: RetiroReason;
+  notes?: string;
+}
+
+export interface RetiroProductoFormData {
+  producto_id: string;
+  stock_fabricado_id: string;
+  quantity: number;
+  reason: RetiroReason;
+  notes?: string;
+}
+
 // Toast notification types
 export interface ToastMessage {
   id: string;
@@ -461,6 +496,12 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
+      }
+      retiros: {
+        Row: Retiro
+        Insert: Omit<Retiro, 'id' | 'total_cost' | 'created_at'>
+        Update: Partial<Omit<Retiro, 'id' | 'total_cost' | 'created_at'>>
+        Relationships: []
       }
     }
     Views: {

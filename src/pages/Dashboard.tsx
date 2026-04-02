@@ -1,56 +1,49 @@
-import { useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 
-import { CategoriaForm } from '../components/forms/CategoriaForm';
-import { useTopProducts } from '../hooks/useDashboard';
-import { useCategorias } from '../hooks/queries/useCategoriasQueries';
-import { useDeleteCategoria } from '../hooks/mutations/useCategoriasMutations';
+import { useDashboardStats } from '../hooks/useDashboard';
+import { useNetProfit } from '../hooks/domain/useNetProfit';
+import { useInsumos } from '../hooks/queries/useInsumosQueries';
+import { useVentas } from '../hooks/queries/useVentasQueries';
 import { formatCurrency } from '../utils/formatters';
 import { queryKeys } from '../lib/queryKeys';
-import type { Categoria } from '../lib/types';
+import { ROUTES } from '../lib/constants';
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: topProducts, isLoading } = useTopProducts(5);
-  const { data: categorias } = useCategorias();
-  const deleteMutation = useDeleteCategoria();
+
+  const { data: stats, isLoading: loadingStats } = useDashboardStats();
+  const netProfit = useNetProfit();
+  const { data: insumos } = useInsumos();
+  const { data: dueVentas } = useVentas({ payment_status: 'debe' });
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.ventas.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.retiros.all(), exact: false }),
     ]);
   }, [queryClient]);
 
-  const [isCatFormOpen, setIsCatFormOpen] = useState(false);
-  const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
+  // Insumos sin stock
+  const insumosOutOfStock = useMemo(
+    () => (insumos || []).filter((i) => i.total_stock <= 0),
+    [insumos]
+  );
 
-  const handleAddCategoria = () => {
-    setEditingCategoria(null);
-    setIsCatFormOpen(true);
-  };
+  // Total pendiente de cobro
+  const totalDue = useMemo(
+    () => (dueVentas || []).reduce((sum, v) => sum + v.total_income, 0),
+    [dueVentas]
+  );
+  const dueCount = dueVentas?.length || 0;
 
-  const handleEditCategoria = (cat: Categoria) => {
-    setEditingCategoria(cat);
-    setIsCatFormOpen(true);
-  };
-
-  const handleArchiveCategoria = async (e: React.MouseEvent, cat: Categoria) => {
-    e.stopPropagation();
-    if (window.confirm(`¿Archivar la categoría "${cat.name}"?`)) {
-      await deleteMutation.mutateAsync(cat.id);
-    }
-  };
-
-  const handleCloseCatForm = () => {
-    setIsCatFormOpen(false);
-    setEditingCategoria(null);
-  };
-
-  if (isLoading) {
+  if (loadingStats) {
     return (
       <Layout title="Inicio" subtitle="Resumen">
         <div className="flex flex-col items-center justify-center py-12">
@@ -66,119 +59,156 @@ export function Dashboard() {
         <div className="flex justify-end">
           <Button variant="ghost" icon="refresh" size="sm" onClick={handleRefresh} />
         </div>
-        {/* Productos más vendidos */}
-        {topProducts && topProducts.length > 0 ? (
-          <Card>
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
-              Productos más vendidos
-            </h3>
-            <div className="space-y-3">
-              {topProducts.map((product, index) => (
-                <div
-                  key={product.producto_name}
-                  className="flex items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 shrink-0">
-                      <span className="text-sm font-bold text-primary">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-slate-900 dark:text-white truncate">
-                        {product.producto_name}
-                      </h4>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">
-                        {product.total_quantity} unidades vendidas
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(product.total_income)}
-                    </p>
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      +{formatCurrency(product.total_profit)}
-                    </p>
-                  </div>
+
+        {/* Hoy */}
+        <Card>
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Hoy</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ventas</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">
+                {formatCurrency(stats?.salesToday || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ganancia bruta</p>
+              <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(stats?.profitToday || 0)}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Este mes — Ganancia Neta */}
+        <Card>
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Este mes</h3>
+          {netProfit.isLoading ? (
+            <div className="animate-pulse space-y-2">
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">Ganancia bruta</span>
+                <span className="font-medium text-slate-900 dark:text-white">
+                  {formatCurrency(netProfit.grossProfit)}
+                </span>
+              </div>
+              {netProfit.totalGastos > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Gastos</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">
+                    -{formatCurrency(netProfit.totalGastos)}
+                  </span>
                 </div>
+              )}
+              {netProfit.totalCostosFijos > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Costos fijos</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">
+                    -{formatCurrency(netProfit.totalCostosFijos)}
+                  </span>
+                </div>
+              )}
+              {netProfit.totalRetiros > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Retiros</span>
+                  <span className="font-medium text-orange-600 dark:text-orange-400">
+                    -{formatCurrency(netProfit.totalRetiros)}
+                  </span>
+                </div>
+              )}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-slate-900 dark:text-white">Ganancia neta</span>
+                  <span className={`text-xl font-bold ${
+                    netProfit.isPositive
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {formatCurrency(netProfit.netProfit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Stock bajo */}
+        {insumosOutOfStock.length > 0 && (
+          <Card>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-amber-500 text-[20px]">warning</span>
+              <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+                Sin stock ({insumosOutOfStock.length})
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {insumosOutOfStock.map((insumo) => (
+                <span
+                  key={insumo.id}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                >
+                  {insumo.name}
+                </span>
               ))}
             </div>
-          </Card>
-        ) : (
-          <Card className="text-center py-12">
-            <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-6xl mb-4">
-              analytics
-            </span>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              No hay datos aún
-            </h3>
-            <p className="text-slate-700 dark:text-slate-300">
-              Comienza registrando ventas para ver estadísticas
-            </p>
           </Card>
         )}
 
-        {/* Categorías */}
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-slate-900 dark:text-white">
-              Categorías
-            </h3>
-            <Button
-              size="sm"
-              variant="ghost"
-              icon="add"
-              onClick={handleAddCategoria}
+        {/* Te deben */}
+        {dueCount > 0 && (
+          <Card>
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => navigate(ROUTES.VENTAS)}
+              role="button"
+              tabIndex={0}
+              style={{ touchAction: 'manipulation' }}
             >
-              Nueva
-            </Button>
-          </div>
-
-          {categorias && categorias.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {categorias.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="inline-flex items-center rounded-full text-sm font-medium text-white overflow-hidden"
-                  style={{ backgroundColor: cat.color }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleEditCategoria(cat)}
-                    className="pl-3 pr-1 py-1.5 hover:brightness-90 transition-all"
-                    style={{ touchAction: 'manipulation' }}
-                  >
-                    {cat.name}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleArchiveCategoria(e, cat)}
-                    disabled={deleteMutation.isPending}
-                    className="inline-flex items-center justify-center pl-1 pr-2 py-1.5 hover:brightness-90 transition-all"
-                    style={{ touchAction: 'manipulation' }}
-                    aria-label={`Archivar ${cat.name}`}
-                  >
-                    <span className="material-symbols-outlined text-[14px]">
-                      close
-                    </span>
-                  </button>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-yellow-500 text-[20px]">account_balance_wallet</span>
+                <div>
+                  <h3 className="text-sm font-medium text-slate-900 dark:text-white">Te deben</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{dueCount} ventas pendientes</p>
                 </div>
-              ))}
+              </div>
+              <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                {formatCurrency(totalDue)}
+              </span>
             </div>
-          ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              No hay categorías. Creá la primera.
-            </p>
-          )}
-        </Card>
-      </div>
+          </Card>
+        )}
 
-      <CategoriaForm
-        isOpen={isCatFormOpen}
-        onClose={handleCloseCatForm}
-        categoria={editingCategoria}
-      />
+        {/* Acciones rápidas */}
+        <div className="grid grid-cols-3 gap-3">
+          <Button
+            variant="secondary"
+            icon="point_of_sale"
+            onClick={() => navigate(ROUTES.VENTAS)}
+            className="flex-col gap-1 py-4"
+          >
+            Venta
+          </Button>
+          <Button
+            variant="secondary"
+            icon="manufacturing"
+            onClick={() => navigate(ROUTES.STOCK)}
+            className="flex-col gap-1 py-4"
+          >
+            Fabricar
+          </Button>
+          <Button
+            variant="secondary"
+            icon="receipt_long"
+            onClick={() => navigate(ROUTES.GASTOS)}
+            className="flex-col gap-1 py-4"
+          >
+            Gasto
+          </Button>
+        </div>
+      </div>
     </Layout>
   );
 }

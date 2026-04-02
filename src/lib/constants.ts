@@ -69,6 +69,13 @@ export const STALE_TIME = {
 export const APP_LOCALE = 'es-AR' as const;
 export const APP_CURRENCY = 'ARS' as const;
 
+// Retiro reasons
+export const RETIRO_REASONS = [
+  { value: 'consumo_personal', label: 'Consumo familiar' },
+  { value: 'merma', label: 'Merma / Desperdicio' },
+  { value: 'ajuste', label: 'Ajuste de inventario' },
+] as const;
+
 // Conversion factor: purchase unit → base unit (g / ml / unit)
 export const UNIT_BASE_MULTIPLIER: Record<string, number> = {
   kg: 1000,

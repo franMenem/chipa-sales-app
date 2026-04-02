@@ -5,6 +5,7 @@ import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 
 import { AddInsumoBatchForm } from '../components/forms/AddInsumoBatchForm';
+import { RetiroInsumoForm } from '../components/forms/RetiroInsumoForm';
 import { InsumosList } from '../components/lists/InsumosList';
 import { useAllInsumoLotes } from '../hooks/useInsumoLotes';
 import { queryKeys } from '../lib/queryKeys';
@@ -16,6 +17,7 @@ export function Insumos() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
+  const [isRetiroModalOpen, setIsRetiroModalOpen] = useState(false);
   const [selectedInsumoId, setSelectedInsumoId] = useState<string | undefined>(undefined);
   const [loteToEdit, setLoteToEdit] = useState<LoteWithInsumo | null>(null);
   const { data: lotes, isLoading, error } = useAllInsumoLotes();
@@ -60,6 +62,14 @@ export function Insumos() {
             Registrar Compra
           </Button>
           <Button
+            variant="secondary"
+            icon="remove_shopping_cart"
+            size="sm"
+            onClick={() => setIsRetiroModalOpen(true)}
+          >
+            Descontar
+          </Button>
+          <Button
             variant="ghost"
             icon="receipt_long"
             size="sm"
@@ -96,6 +106,11 @@ export function Insumos() {
         onClose={handleCloseAddBatchModal}
         preselectedInsumoId={selectedInsumoId}
         editingLote={loteToEdit || undefined}
+      />
+
+      <RetiroInsumoForm
+        isOpen={isRetiroModalOpen}
+        onClose={() => setIsRetiroModalOpen(false)}
       />
     </Layout>
   );
