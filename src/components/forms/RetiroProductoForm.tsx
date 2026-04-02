@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -8,38 +7,15 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { retiroProductoSchema } from '../../utils/validators';
 import { RETIRO_REASONS } from '../../lib/constants';
-import { supabase } from '../../lib/supabase';
-import { getCurrentUser } from '../../lib/auth';
 import { useProductos } from '../../hooks/queries/useProductosQueries';
+import { useStockFabricadoBatches } from '../../hooks/useStockFabricado';
 import { useCreateRetiroProducto } from '../../hooks/mutations/useRetirosMutations';
 import { formatCurrency } from '../../utils/formatters';
-import type { RetiroProductoFormData, StockFabricado } from '../../lib/types';
+import type { RetiroProductoFormData } from '../../lib/types';
 
 interface RetiroProductoFormProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-function useStockFabricadoBatches(productoId: string | undefined) {
-  return useQuery({
-    queryKey: ['stock-fabricado', 'batches', productoId],
-    enabled: !!productoId,
-    queryFn: async () => {
-      if (!productoId) throw new Error('Producto ID required');
-      const user = await getCurrentUser();
-
-      const { data, error } = await supabase
-        .from('stock_fabricado')
-        .select('*')
-        .eq('producto_id', productoId)
-        .eq('user_id', user.id)
-        .gt('quantity_remaining', 0)
-        .order('production_date', { ascending: false });
-
-      if (error) throw error;
-      return data as StockFabricado[];
-    },
-  });
 }
 
 export function RetiroProductoForm({ isOpen, onClose }: RetiroProductoFormProps) {
