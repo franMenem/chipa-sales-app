@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { getCurrentUser } from '../../lib/auth';
 import type { Venta } from '../../lib/types';
 import { STALE_TIME } from '../../lib/constants';
+import { queryKeys } from '../../lib/queryKeys';
 
 export interface VentasFilters {
   startDate?: string;
@@ -43,6 +44,25 @@ export function useVentas(filters?: VentasFilters) {
 
       if (error) throw error;
       return data as Venta[];
+    },
+  });
+}
+
+// Suma total de ingresos de ventas cobradas (all time)
+export function useVentasTotalCobradas() {
+  return useQuery({
+    queryKey: queryKeys.ventas.totalCobradas(),
+    staleTime: STALE_TIME.FREQUENT,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const user = await getCurrentUser();
+      const { data, error } = await supabase
+        .from('ventas')
+        .select('total_income')
+        .eq('user_id', user.id)
+        .eq('payment_status', 'pagado');
+      if (error) throw error;
+      return (data || []).reduce((sum, v) => sum + v.total_income, 0);
     },
   });
 }

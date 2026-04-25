@@ -364,6 +364,22 @@ export interface RetiroProductoFormData {
   notes?: string;
 }
 
+// App configuration (buffer % y monto en MP)
+export interface AppConfig {
+  id: string;
+  user_id: string;
+  buffer_percentage: number;
+  mp_reserva_amount: number;
+  mp_reserva_updated_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppConfigFormData {
+  buffer_percentage: number;
+  mp_reserva_amount: number;
+}
+
 // Toast notification types
 export interface ToastMessage {
   id: string;

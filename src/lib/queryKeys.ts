@@ -8,10 +8,12 @@ export const queryKeys = {
   },
   ventas: {
     all: () => ['ventas'] as const,
+    totalCobradas: () => ['ventas', 'total-cobradas'] as const,
   },
   insumos: {
     all: () => ['insumos'] as const,
     lotes: () => ['insumo-lotes'] as const,
+    lotesTotal: () => ['insumo-lotes', 'total'] as const,
   },
   productos: {
     all: () => ['productos'] as const,
@@ -35,6 +37,9 @@ export const queryKeys = {
     filtered: (status?: string) => ['deudas', status] as const,
     pagosAll: () => ['deuda-pagos'] as const,
     pagos: (deudaId?: string) => ['deuda-pagos', deudaId] as const,
+  },
+  appConfig: {
+    all: () => ['app-config'] as const,
   },
   retiros: {
     all: () => ['retiros'] as const,

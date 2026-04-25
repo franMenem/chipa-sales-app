@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { getCurrentUser } from '../../lib/auth';
 import type { Insumo, InsumoWithStock } from '../../lib/types';
 import { STALE_TIME } from '../../lib/constants';
+import { queryKeys } from '../../lib/queryKeys';
 
 // Fetch insumos with stock (from view) - only active with stock > 0
 export function useInsumos() {
@@ -42,6 +43,26 @@ export function useAllInsumos() {
 
       if (error) throw error;
       return data as InsumoWithStock[];
+    },
+  });
+}
+
+// Suma total del costo de todos los lotes de insumos (price_per_unit × quantity_purchased)
+export function useInsumoLotesTotalCost() {
+  return useQuery({
+    queryKey: queryKeys.insumos.lotesTotal(),
+    staleTime: STALE_TIME.FREQUENT,
+    queryFn: async () => {
+      const user = await getCurrentUser();
+      const { data, error } = await supabase
+        .from('insumo_lotes')
+        .select('price_per_unit, quantity_purchased')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return (data || []).reduce(
+        (sum, lote) => sum + lote.price_per_unit * lote.quantity_purchased,
+        0
+      );
     },
   });
 }

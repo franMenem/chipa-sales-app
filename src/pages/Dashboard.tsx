@@ -12,6 +12,8 @@ import { useVentas } from '../hooks/queries/useVentasQueries';
 import { formatCurrency } from '../utils/formatters';
 import { queryKeys } from '../lib/queryKeys';
 import { ROUTES } from '../lib/constants';
+import { ReservaCard } from '../components/ui/ReservaCard';
+import { GananciasCard } from '../components/ui/GananciasCard';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -25,8 +27,10 @@ export function Dashboard() {
   const handleRefresh = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all() }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.ventas.all() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.ventas.all(), exact: false }),
       queryClient.invalidateQueries({ queryKey: queryKeys.retiros.all(), exact: false }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.insumos.lotes(), exact: false }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.appConfig.all() }),
     ]);
   }, [queryClient]);
 
@@ -180,6 +184,10 @@ export function Dashboard() {
             </div>
           </Card>
         )}
+
+        {/* Dinero disponible */}
+        <ReservaCard />
+        <GananciasCard />
 
         {/* Acciones rápidas */}
         <div className="grid grid-cols-3 gap-3">

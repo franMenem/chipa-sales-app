@@ -112,14 +112,18 @@ const LoteCard = memo(({ lote, onEditLote }: LoteCardProps) => {
           )}
         </div>
 
-        {/* Total cost of remaining stock */}
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
+        {/* Costs */}
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-700 dark:text-blue-300">
-              $ Stock
-            </span>
+            <span className="text-sm text-blue-700 dark:text-blue-300">Valor de compra</span>
             <span className="text-base font-bold text-blue-900 dark:text-blue-100">
-              {(lote.quantity_remaining * lote.price_per_unit).toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(lote.price_per_unit * lote.quantity_purchased)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t border-blue-200 dark:border-blue-900 pt-2">
+            <span className="text-sm text-blue-700 dark:text-blue-300">$ Stock restante</span>
+            <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+              {formatCurrency(lote.quantity_remaining * lote.price_per_unit)}
             </span>
           </div>
         </div>

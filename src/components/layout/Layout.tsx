@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AppBar } from './AppBar';
 import { BottomNav } from './BottomNav';
 import { Sidebar } from './Sidebar';
+import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,13 +17,19 @@ export function Layout({
   subtitle,
   showBottomNav = true,
 }: LayoutProps) {
+  const { isCollapsed, toggle } = useSidebarCollapsed();
+
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-x-clip">
       {/* Sidebar for desktop */}
-      {showBottomNav && <Sidebar />}
+      {showBottomNav && <Sidebar isCollapsed={isCollapsed} onToggle={toggle} />}
 
       {/* Main content area */}
-      <div className="md:ml-64 min-h-screen flex flex-col">
+      <div
+        className={`min-h-screen flex flex-col transition-all duration-200 ${
+          showBottomNav ? (isCollapsed ? 'md:ml-14' : 'md:ml-64') : ''
+        }`}
+      >
         <AppBar title={title} subtitle={subtitle} />
 
         <main
