@@ -36,6 +36,7 @@ export async function invalidateInventoryRelated(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: ['insumos'], exact: false, refetchType: 'active' }),
     queryClient.invalidateQueries({ queryKey: ['insumo-lotes'], exact: false, refetchType: 'active' }),
     queryClient.invalidateQueries({ queryKey: ['productos'], refetchType: 'active' }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.appConfig.all(), refetchType: 'active' }),
   ]);
 }
 
