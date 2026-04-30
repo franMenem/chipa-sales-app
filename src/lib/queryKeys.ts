@@ -14,6 +14,7 @@ export const queryKeys = {
     all: () => ['insumos'] as const,
     lotes: () => ['insumo-lotes'] as const,
     lotesTotal: () => ['insumo-lotes', 'total'] as const,
+    stockActualCost: () => ['insumo-lotes', 'stock-actual-cost'] as const,
   },
   productos: {
     all: () => ['productos'] as const,

@@ -47,7 +47,8 @@ export function useAllInsumos() {
   });
 }
 
-// Suma total del costo de todos los lotes de insumos (price_per_unit × quantity_purchased)
+// Suma total histórica del costo de todos los lotes (price_per_unit × quantity_purchased)
+// Usado en GananciasCard para calcular ganancia real (incluye insumos ya consumidos)
 export function useInsumoLotesTotalCost() {
   return useQuery({
     queryKey: queryKeys.insumos.lotesTotal(),
@@ -61,6 +62,28 @@ export function useInsumoLotesTotalCost() {
       if (error) throw error;
       return (data || []).reduce(
         (sum, lote) => sum + lote.price_per_unit * lote.quantity_purchased,
+        0
+      );
+    },
+  });
+}
+
+// Costo del stock actual: solo lotes con stock disponible (price_per_unit × quantity_remaining)
+// Usado en ReservaCard para calcular cuánto necesitás tener en reserva hoy
+export function useInsumoStockActualCost() {
+  return useQuery({
+    queryKey: queryKeys.insumos.stockActualCost(),
+    staleTime: STALE_TIME.FREQUENT,
+    queryFn: async () => {
+      const user = await getCurrentUser();
+      const { data, error } = await supabase
+        .from('insumo_lotes')
+        .select('price_per_unit, quantity_remaining')
+        .eq('user_id', user.id)
+        .gt('quantity_remaining', 0);
+      if (error) throw error;
+      return (data || []).reduce(
+        (sum, lote) => sum + lote.price_per_unit * lote.quantity_remaining,
         0
       );
     },

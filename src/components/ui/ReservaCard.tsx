@@ -64,9 +64,9 @@ export function ReservaCard() {
 
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Costo de insumos</span>
+          <span className="text-slate-500 dark:text-slate-400">Costo del stock actual</span>
           <span className="font-semibold text-slate-900 dark:text-white">
-            {formatCurrency(dinero.totalCostosInsumos)}
+            {formatCurrency(dinero.costoStockActual)}
           </span>
         </div>
 
@@ -75,7 +75,7 @@ export function ReservaCard() {
             Buffer inflación ({dinero.bufferPercentage}%)
           </span>
           <span className="font-semibold text-amber-600 dark:text-amber-400">
-            +{formatCurrency(dinero.deberiaTener - dinero.totalCostosInsumos)}
+            +{formatCurrency(dinero.deberiaTener - dinero.costoStockActual)}
           </span>
         </div>
 
