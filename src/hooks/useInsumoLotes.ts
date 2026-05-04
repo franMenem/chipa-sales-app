@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { getCurrentUser } from '../lib/auth';
 import type { InsumoLote, AddInsumoBatchFormData, PriceHistoryPoint, InsumoWithStock } from '../lib/types';
 import { useToast } from './useToast';
-import { queryKeys } from '../lib/queryKeys';
 
 // Fetch all lotes for a specific insumo
 export function useInsumoLotes(insumo_id: string | undefined) {
@@ -131,7 +130,6 @@ export function useAddInsumoBatch() {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] }); // All lotes queries
       queryClient.invalidateQueries({ queryKey: ['productos'] }); // Costs may change
-      queryClient.invalidateQueries({ queryKey: queryKeys.appConfig.all() }); // Refetch reserva MP
       toast.success('Compra registrada', 'El lote se agregó al inventario');
     },
     onError: (error: Error) => {
@@ -161,7 +159,6 @@ export function useUpdateInsumoBatch() {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
       queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.appConfig.all() }); // Refetch reserva MP
       toast.success('Compra actualizada', 'Los cambios del lote se guardaron correctamente');
     },
     onError: (error: Error) => {
@@ -199,7 +196,6 @@ export function useDeleteInsumoBatch() {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       queryClient.invalidateQueries({ queryKey: ['insumo-lotes'] });
       queryClient.invalidateQueries({ queryKey: ['productos'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.appConfig.all() }); // Refetch reserva MP
       toast.success('Lote eliminado', 'El lote se eliminó del inventario');
     },
     onError: (error: Error) => {

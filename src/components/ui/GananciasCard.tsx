@@ -37,9 +37,9 @@ export function GananciasCard() {
         </div>
 
         <div className="flex justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Reserva de costos</span>
+          <span className="text-slate-500 dark:text-slate-400">Costo de lo vendido</span>
           <span className="font-semibold text-red-600 dark:text-red-400">
-            -{formatCurrency(dinero.deberiaTener)}
+            -{formatCurrency(dinero.totalCostoVentas)}
           </span>
         </div>
 

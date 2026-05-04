@@ -67,6 +67,25 @@ export function useVentasTotalCobradas() {
   });
 }
 
+// Suma total del costo basis de TODAS las ventas (insumos consumidos para esas ventas)
+// Usado en ReservaCard: representa lo que tenés que reponer
+export function useVentasTotalCosto() {
+  return useQuery({
+    queryKey: queryKeys.ventas.totalCosto(),
+    staleTime: STALE_TIME.FREQUENT,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const user = await getCurrentUser();
+      const { data, error } = await supabase
+        .from('ventas')
+        .select('total_cost')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return (data || []).reduce((sum, v) => sum + (v.total_cost || 0), 0);
+    },
+  });
+}
+
 // Fetch single venta by ID
 export function useVenta(id: string | undefined) {
   return useQuery({

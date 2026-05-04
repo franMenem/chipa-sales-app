@@ -9,12 +9,12 @@ export const queryKeys = {
   ventas: {
     all: () => ['ventas'] as const,
     totalCobradas: () => ['ventas', 'total-cobradas'] as const,
+    totalCosto: () => ['ventas', 'total-costo'] as const,
   },
   insumos: {
     all: () => ['insumos'] as const,
     lotes: () => ['insumo-lotes'] as const,
     lotesTotal: () => ['insumo-lotes', 'total'] as const,
-    stockActualCost: () => ['insumo-lotes', 'stock-actual-cost'] as const,
   },
   productos: {
     all: () => ['productos'] as const,

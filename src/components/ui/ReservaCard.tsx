@@ -39,7 +39,7 @@ export function ReservaCard() {
     );
   }
 
-  const diferenciaColor = dinero.isPositiveMp
+  const disponibleColor = dinero.isPositiveDisponible
     ? 'text-green-600 dark:text-green-400'
     : 'text-red-600 dark:text-red-400';
 
@@ -48,7 +48,7 @@ export function ReservaCard() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-blue-500 text-[20px]">savings</span>
-          <h3 className="text-sm font-medium text-slate-900 dark:text-white">Reserva de costos</h3>
+          <h3 className="text-sm font-medium text-slate-900 dark:text-white">Reserva en MP</h3>
         </div>
         {!isEditing && (
           <button
@@ -63,40 +63,29 @@ export function ReservaCard() {
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Costo del stock actual</span>
-          <span className="font-semibold text-slate-900 dark:text-white">
-            {formatCurrency(dinero.costoStockActual)}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">
-            Buffer inflación ({dinero.bufferPercentage}%)
-          </span>
-          <span className="font-semibold text-amber-600 dark:text-amber-400">
-            +{formatCurrency(dinero.deberiaTener - dinero.costoStockActual)}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-sm border-t border-slate-200 dark:border-slate-700 pt-2">
-          <span className="font-medium text-slate-700 dark:text-slate-300">Debería tener</span>
-          <span className="font-semibold text-slate-900 dark:text-white">
-            {formatCurrency(dinero.deberiaTener)}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">Tengo en MP</span>
-          <span className="font-semibold text-slate-900 dark:text-white">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">Tengo en MP</span>
+          <span className="text-base font-bold text-slate-900 dark:text-white">
             {formatCurrency(dinero.tengoEnMp)}
           </span>
         </div>
 
+        <div className="flex justify-between text-sm pt-1">
+          <span className="text-slate-500 dark:text-slate-400">
+            Necesito reponer
+            <span className="text-xs text-slate-400 dark:text-slate-500 ml-1">
+              (+{dinero.bufferPercentage}% buffer)
+            </span>
+          </span>
+          <span className="font-semibold text-amber-600 dark:text-amber-400">
+            {formatCurrency(dinero.necesitoReponer)}
+          </span>
+        </div>
+
         <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2 flex justify-between items-center">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Diferencia</span>
-          <span className={`text-lg font-bold ${diferenciaColor}`}>
-            {dinero.isPositiveMp ? '+' : ''}{formatCurrency(dinero.diferenciaMp)}
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Disponible</span>
+          <span className={`text-lg font-bold ${disponibleColor}`}>
+            {dinero.isPositiveDisponible ? '+' : ''}{formatCurrency(dinero.disponible)}
           </span>
         </div>
       </div>

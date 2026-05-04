@@ -68,28 +68,6 @@ export function useInsumoLotesTotalCost() {
   });
 }
 
-// Costo del stock actual: solo lotes con stock disponible (price_per_unit × quantity_remaining)
-// Usado en ReservaCard para calcular cuánto necesitás tener en reserva hoy
-export function useInsumoStockActualCost() {
-  return useQuery({
-    queryKey: queryKeys.insumos.stockActualCost(),
-    staleTime: STALE_TIME.FREQUENT,
-    queryFn: async () => {
-      const user = await getCurrentUser();
-      const { data, error } = await supabase
-        .from('insumo_lotes')
-        .select('price_per_unit, quantity_remaining')
-        .eq('user_id', user.id)
-        .gt('quantity_remaining', 0);
-      if (error) throw error;
-      return (data || []).reduce(
-        (sum, lote) => sum + lote.price_per_unit * lote.quantity_remaining,
-        0
-      );
-    },
-  });
-}
-
 // Fetch single insumo by ID
 export function useInsumo(id: string | undefined) {
   return useQuery({
